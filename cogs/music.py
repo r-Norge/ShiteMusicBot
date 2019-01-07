@@ -13,6 +13,7 @@ import re
 import discord
 import lavalink
 from discord.ext import commands
+from lavasettings import *
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\/\/(?:www\.)?.+')
@@ -25,7 +26,8 @@ class Music:
         if not hasattr(bot, 'lavalink'):
             lavalink.Client(bot=bot, password='youshallnotpass',
                             loop=bot.loop, log_level=logging.DEBUG,
-                            ws_port=2333)
+                            host=host, ws_port=ws_port,
+                            rest_port=rest_port)
             self.bot.lavalink.register_hook(self._track_hook)
 
     def __unload(self):

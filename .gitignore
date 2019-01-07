@@ -1,6 +1,7 @@
 config.json
 data/
 lavalink/
+lavasettings.py
 
 #Python crap
 
