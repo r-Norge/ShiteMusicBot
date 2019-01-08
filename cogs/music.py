@@ -10,6 +10,8 @@ import logging
 import math
 import re
 
+from cogs.utils import RoxUtils
+
 import discord
 import lavalink
 from discord.ext import commands
@@ -46,10 +48,11 @@ class Music:
             return
 
         if isinstance(event, lavalink.Events.TrackStartEvent):
-            await channel.send(embed=discord.Embed(title='Now playing:',
-                                                   description=event.track.title,
-                                                   color=discord.Color.blurple()))
-
+            embed = discord.Embed(title='Now playing:', description=event.track.title, color=discord.Color.blurple())
+            thumbnail_url = RoxUtils.thumbnailer(self, event.player.current.identifier, event.player.current.uri)
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+            await channel.send(embed=embed)
         elif isinstance(event, lavalink.Events.QueueEndEvent):
             await channel.send('Queue ended! Why not queue more songs?')
 
@@ -83,6 +86,11 @@ class Music:
         else:
             track = results['tracks'][0]
             embed.title = 'Track Enqueued'
+
+            thumbnail_url = RoxUtils.thumbnailer(self, track['info']['identifier'], track['info']['uri'])
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+
             embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
             await ctx.send(embed=embed)
             player.add(requester=ctx.author.id, track=track)
@@ -207,6 +215,11 @@ class Music:
 
         embed = discord.Embed(color=discord.Color.blurple(),
                               title='Now Playing', description=song)
+
+        thumbnail_url = RoxUtils.thumbnailer(self, player.current.identifier, player.current.uri)
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+
         await ctx.send(embed=embed)
 
     @commands.command(name='queue', aliases=['q'])
