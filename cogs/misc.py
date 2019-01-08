@@ -75,7 +75,7 @@ class Misc:
         await ctx.send(f'{days}d {hours}h {minutes}m {seconds}s')
 
     @commands.command()
-    @commands.is_owner()
+    @checks.is_owner()
     async def servers(self, ctx):
         servers = f"{self.bot.user.name} is in:\n"
         for server in self.bot.guilds:

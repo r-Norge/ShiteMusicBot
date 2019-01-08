@@ -34,6 +34,14 @@ def is_even():
     return commands.check(predicate)
 
 
+def is_owner():
+    def predicate(ctx):
+        is_owner = (ctx.message.author.id == 120970603556503552 or
+            ctx.message.author.id == 142212883512557569)
+        return is_owner
+    return commands.check(predicate)
+
+
 def is_admin():
     async def pred(ctx):
         return await check_guild_permissions(ctx, {'administrator': True})
