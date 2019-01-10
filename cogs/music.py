@@ -19,6 +19,9 @@ from .utils import checks
 import discord
 import lavalink
 from discord.ext import commands
+
+from .utils.mixplayer.mixplayer import MixPlayer
+from .utils import checks
 from lavasettings import *
 
 time_rx = re.compile('[0-9]+')
@@ -478,4 +481,4 @@ class Music:
 
 
 def setup(bot):
-	bot.add_cog(Music(bot))
+    bot.add_cog(Music(bot))
