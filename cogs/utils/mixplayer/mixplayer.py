@@ -25,8 +25,6 @@ class MixPlayer(BasePlayer):
         self.position = 0
         self.position_timestamp = 0
         self.volume = 100
-        self.shuffle = False
-        self.repeat = False
 
         self.queue = MixQueue()
         self.current = None
@@ -107,10 +105,8 @@ class MixPlayer(BasePlayer):
         """ Randomly reorders the queue of requester """
         self.queue.shuffle_user_queue(requester)
 
-    async def play(self, track_index: int = 0, ignore_shuffle: bool = False):
+    async def play(self, track_index: int = 0):
         """ Plays the first track in the queue, if any or plays a track from the specified index in the queue. """
-        if self.repeat and self.current:
-            self.queue.append(self.current)
 
         self.current = None
         self.position = 0
@@ -129,7 +125,7 @@ class MixPlayer(BasePlayer):
     async def play_now(self, requester: int, track: dict):
         """ Add track and play it. """
         self.add_next(requester, track)
-        await self.play(ignore_shuffle=True)
+        await self.play()
 
     async def skip_to(self, index: int):
         """ Play the queue from a specific point. Disregards tracks before the index. """
