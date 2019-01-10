@@ -48,7 +48,7 @@ class Music:
 			return
 
 		if isinstance(event, lavalink.Events.TrackStartEvent):
-			embed = discord.Embed(title='Now playing:', description=event.track.title, color=discord.Color.blurple())
+			embed = discord.Embed(title='Now playing:', description=event.track.title, color=0xEFD26C)
 			thumbnail_url = await RoxUtils.ThumbNailer.identify(self, event.player.current.identifier, event.player.current.uri)
 			if thumbnail_url:
 				embed.set_thumbnail(url=thumbnail_url)
@@ -72,7 +72,7 @@ class Music:
 		if not results or not results['tracks']:
 			return await ctx.send('Nothing found!')
 
-		embed = discord.Embed(color=discord.Color.blurple())
+		embed = discord.Embed(color=0xEFD26C)
 
 		if results['loadType'] == 'PLAYLIST_LOADED':
 			tracks = results['tracks']
@@ -212,7 +212,7 @@ class Music:
 				duration = lavalink.Utils.format_time(player.current.duration)
 			song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
-		embed = discord.Embed(color=discord.Color.blurple(), title='Now Playing', description=song)
+		embed = discord.Embed(color=0xEFD26C, title='Now Playing', description=song)
 
 		thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
 		if thumbnail_url:
@@ -239,7 +239,7 @@ class Music:
 		for index, track in enumerate(player.queue[start:end], start=start):
 			queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri})\n'
 
-		embed = discord.Embed(colour=discord.Color.blurple(),
+		embed = discord.Embed(colour=0xEFD26C,
 								description=f'**{len(player.queue)} tracks**\n\n{queue_list}')
 		embed.set_footer(text=f'Viewing page {page}/{pages}')
 		await ctx.send(embed=embed)
@@ -338,7 +338,7 @@ class Music:
 
 			o += f'{react_emoji[index]} [{track_title}]({track_uri})\n'
 
-		embed_start = discord.Embed(color=discord.Color.blurple(), description=o)
+		embed_start = discord.Embed(color=0xEFD26C, description=o)
 		start_msg = await ctx.send(embed=embed_start)
 		await ctx.trigger_typing()
 		for num_index in range(min(len(tracks), 10)):
@@ -350,7 +350,7 @@ class Music:
 
 		while not_reacted:
 			await ctx.trigger_typing()
-			embed = discord.Embed(color=discord.Color.blurple())
+			embed = discord.Embed(color=0xEFD26C)
 			timer = time.time() - time_start
 			msg_id = await ctx.get_message(start_msg.id)
 			if int(timer) >= 10:
