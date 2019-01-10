@@ -10,7 +10,7 @@ from lavalink.Events import QueueEndEvent, TrackExceptionEvent, TrackEndEvent, T
 
 '''
 
-Version of lavalink.py's DefaultPlayer with a custom queue(mixqueue)
+Version of lavalink.py's DefaultPlayer with a custom queue(mixqueue).
 
 '''
 
@@ -30,7 +30,6 @@ class MixPlayer(BasePlayer):
 
         self.queue = MixQueue()
         self.current = None
-        self.previous = None
 
     @property
     def is_playing(self):
@@ -82,25 +81,37 @@ class MixPlayer(BasePlayer):
 
     def add(self, requester: int, track: dict):
         """ Adds a track to the queue. """
-        #self.queue.append(AudioTrack().build(track, requester))
-        self.queue.add_song(requester, AudioTrack().build(track, requester))
+        self.queue.add_track(requester, AudioTrack().build(track, requester))
 
     def add_next(self, requester: int, track: dict):
         """ Adds a track to beginning of the queue """
-        #self.queue.insert(0, AudioTrack().build(track, requester))
-        self.queue.add_next_song(AudioTrack().build(track, requester))
+        self.queue.add_next_track(AudioTrack().build(track, requester))
 
     def add_at(self, index: int, requester: int, track: dict):
         """ Adds a track at a specific index in the queue. """
-        #self.queue.insert(min(index, len(self.queue) - 1), AudioTrack().build(track, requester))
-        self.queue.add_song(requester, AudioTrack().build(track, requester), index)
+        self.queue.add_track(requester, AudioTrack().build(track, requester), index)
+
+    def move_user_track(self, requester: int, initial: int, final: int):
+        """ Moves a track in a users queue"""
+        self.queue.move_user_track(requester, initial, final)
+
+    def remove_user_track(self, requester: int, pos: int):
+        """ Removes the song at <pos> from the queue of requester """
+        self.queue.remove_user_track(requester, pos)
+
+    def remove_global_track(self, pos: int):
+        """ Removes the song at <pos> in the global queue """
+        self.queue.remove_global_track(pos)
+
+    def shuffle_user_queue(self, requester: int):
+        """ Randomly reorders the queue of requester """
+        self.queue.shuffle_user_queue(requester)
 
     async def play(self, track_index: int = 0, ignore_shuffle: bool = False):
         """ Plays the first track in the queue, if any or plays a track from the specified index in the queue. """
         if self.repeat and self.current:
             self.queue.append(self.current)
 
-        self.previous = self.current
         self.current = None
         self.position = 0
         self.paused = False
@@ -109,8 +120,6 @@ class MixPlayer(BasePlayer):
             await self.stop()
             await self._lavalink.dispatch_event(QueueEndEvent(self))
         else:
-#            if self.shuffle and not ignore_shuffle:
-#                track = self.queue.pop(randrange(len(self.queue)))
             track = self.queue.pop_first()
 
             self.current = track
@@ -122,17 +131,11 @@ class MixPlayer(BasePlayer):
         self.add_next(requester, track)
         await self.play(ignore_shuffle=True)
 
-    async def play_at(self, index: int):
+    async def skip_to(self, index: int):
         """ Play the queue from a specific point. Disregards tracks before the index. """
-        self.queue = self.queue[min(index, len(self.queue) - 1):len(self.queue)]
-        await self.play(ignore_shuffle=True)
-
-    async def play_previous(self):
-        """ Plays previous track if it exist, if it doesn't raises a NoPreviousTrack error. """
-        if not self.previous:
-            raise NoPreviousTrack
-        self.queue.insert(0, self.previous)
-        await self.play(ignore_shuffle=True)
+        for i in range(index):
+            _ = self.queue.pop_first()
+        await self.play()
 
     async def stop(self):
         """ Stops the player, if playing. """

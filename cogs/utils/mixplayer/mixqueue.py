@@ -29,6 +29,9 @@ class MixQueue:
             tmp += f'{requester}: {user_queue}\n'
         return tmp
 
+    def __bool__(self):
+        return self.is_empty()
+
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
         priority_queue = self.priority_queue 
@@ -51,7 +54,7 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
 
-    # if pos is true also returns global positions of songs
+    # if pos is true also returns global positions of tracks
     def get_user_queue(self, requester: int, pos: bool=False):
         queue = self.queues.get(requester, [])
         if pos and queue:
@@ -62,17 +65,17 @@ class MixQueue:
 
     def pop_first(self):
         if self.priority_queue:
-            next_song = self.priority_queue.pop(0)
-            return next_song
+            next_track = self.priority_queue.pop(0)
+            return next_track
         try:
-            next_song = self.queues[self.first_queue].pop(0)
+            next_track = self.queues[self.first_queue].pop(0)
             self._shuffle()
             self._clear_empty()
-            return next_song
+            return next_track
         except KeyError:
             pass
 
-    def add_song(self, requester: int, track: AudioTrack, pos: int=None):
+    def add_track(self, requester: int, track: AudioTrack, pos: int=None):
         user_queue = self.queues.get(requester)
         if user_queue is None:
             self.queues[requester] = [track]
@@ -81,17 +84,17 @@ class MixQueue:
         else:
             user_queue.insert(pos, track)
 
-    def add_next_song(self, track: AudioTrack):
+    def add_next_track(self, track: AudioTrack):
         self.priority_queue.append(track)
 
-    def remove_song_from(self, requester: int, pos: int):
+    def remove_user_track(self, requester: int, pos: int):
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
                 user_queue.pop(pos)
                 self._clear_empty()
 
-    def remove_song_at(self, pos: int):
+    def remove_global_track(self, pos: int):
         q, pos = self._glob_to_loc(pos)
         if q is None or pos is None:
             return
@@ -99,11 +102,12 @@ class MixQueue:
         queue.pop(pos)
         self._clear_empty()
 
-    def switch_user_songs(self, requester: int, first: int, second: int):
+    def move_user_track(self, requester: int, initial: int, final: int):
         queue = self.queues.get(requester, [])
         if queue:
             try:
-                queue[first], queue[second] = queue[second], queue[first]
+                track = queue.pop(initial)
+                queue.insert(final, track)
             except IndexError:
                 pass
 
@@ -127,23 +131,23 @@ class MixQueue:
         queue = self.queues.get(requester, [])
         if queue:
             try:
-                song = queue[pos]
-                for i, s in enumerate(self):
-                    if s == song:
+                track = queue[pos]
+                for i, t in enumerate(self):
+                    if t == track:
                         return i
             except IndexError:
                 pass
 
     def _glob_to_loc(self, pos: int):
-        song = None
-        for i, s in enumerate(self):
+        track = None
+        for i, t in enumerate(self):
             if i == pos:
-                song = s
-        if song is None:
+                track = t
+        if track is None:
             return None, None
         for requester, q in self.queues.items():
-            for i, s in enumerate(q):
-                if s == song:
+            for i, t in enumerate(q):
+                if t == track:
                     return requester, i
 
     @property
