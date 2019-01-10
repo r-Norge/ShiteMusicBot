@@ -1,3 +1,5 @@
 git+https://github.com/Rapptz/discord.py@rewrite
 asyncio
 lavalink
+bs4
+aiohttp

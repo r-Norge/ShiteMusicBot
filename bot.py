@@ -1,5 +1,4 @@
 import json
-import os
 import codecs
 import discord
 import time
@@ -11,22 +10,22 @@ from cogs.utils.settings import Settings
 
 
 initial_extension = [
-    'cogs.cogs',
-    'cogs.botsettings',
-    'cogs.misc',
-    'cogs.music'
+	'cogs.cogs',
+	'cogs.botsettings',
+	'cogs.misc',
+	'cogs.music'
 ]
 
 
 with codecs.open("config.json", 'r', encoding='utf8') as f:
-    config = json.load(f)
+	config = json.load(f)
 
 
 def _get_prefix(bot, message):
-    if not message.guild:
-        return default_prefix
-    prefixes = bot.settings.get_prefix(message.guild.id)
-    return commands.when_mentioned_or(*prefixes)(bot, message)
+	if not message.guild:
+		return default_prefix
+	prefixes = bot.settings.get_prefix(message.guild.id)
+	return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
 class Bot(commands.Bot):
