@@ -1,0 +1,17 @@
+ build:
+   image: docker:stable
+   services:
+     - docker:dind
+   variables:
+     DOCKER_HOST: tcp://docker:2375
+     DOCKER_DRIVER: overlay2
+     CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH
+   before_script:
+     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+   stage: build
+   script:
+     - docker build -t registry.gitlab.com/ev-1/shite-music-bot .
+     - docker push $CONTAINER_IMAGE:$CI_COMMIT_SHA
+     - docker push $CONTAINER_IMAGE:latest
+   only:
+     - master
