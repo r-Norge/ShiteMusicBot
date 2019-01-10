@@ -51,7 +51,7 @@ class Music:
 
 		if isinstance(event, lavalink.Events.TrackStartEvent):
 			embed = discord.Embed(title='Now playing:', description=event.track.title, color=discord.Color.blurple())
-			thumbnail_url = RoxUtils.thumbnailer(self, event.player.current.identifier, event.player.current.uri)
+			thumbnail_url = await RoxUtils.ThumbNailer.identify(self, event.player.current.identifier, event.player.current.uri)
 			if thumbnail_url:
 				embed.set_thumbnail(url=thumbnail_url)
 			await channel.send(embed=embed)
@@ -89,7 +89,7 @@ class Music:
 			track = results['tracks'][0]
 			embed.title = 'Track Enqueued'
 			print(track)
-			thumbnail_url = RoxUtils.thumbnailer(self, track['info']['identifier'], track['info']['uri'])
+			thumbnail_url = await RoxUtils.ThumbNailer.identify(self, track['info']['identifier'], track['info']['uri'])
 			if thumbnail_url:
 				embed.set_thumbnail(url=thumbnail_url)
 
@@ -218,7 +218,7 @@ class Music:
 		embed = discord.Embed(color=discord.Color.blurple(),
 		                      title='Now Playing', description=song)
 
-		thumbnail_url = RoxUtils.thumbnailer(self, player.current.identifier, player.current.uri)
+		thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
 		if thumbnail_url:
 			embed.set_thumbnail(url=thumbnail_url)
 
@@ -377,7 +377,7 @@ class Music:
 							track_ = tracks[track_num]
 							await self.send_to_play(ctx, track_)
 							embed.title = "Song sent to queue"
-							thumb_url = RoxUtils.thumbnailer(self, track_['info']['identifier'],track_['info']['uri'])
+							thumb_url = RoxUtils.ThumbNailer.identify(self, track_['info']['identifier'],track_['info']['uri'])
 							if thumb_url:
 								embed.set_thumbnail(url=thumb_url)
 							embed.description = f'[{track_["info"]["title"]}]({track_["info"]["uri"]})'
