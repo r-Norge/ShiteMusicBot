@@ -28,10 +28,8 @@ class Music:
 		self.bot = bot
 
 		if not hasattr(bot, 'lavalink'):
-			lavalink.Client(bot=bot, password='youshallnotpass',
-			                loop=bot.loop, log_level=logging.INFO,
-			                host=host, ws_port=ws_port,
-			                rest_port=rest_port)
+			lavalink.Client(bot=bot, password='youshallnotpass', loop=bot.loop, log_level=logging.INFO,
+							host=host, ws_port=ws_port, rest_port=rest_port)
 			self.bot.lavalink.register_hook(self._track_hook)
 
 	def __unload(self):
@@ -88,7 +86,6 @@ class Music:
 		else:
 			track = results['tracks'][0]
 			embed.title = 'Track Enqueued'
-			print(track)
 			thumbnail_url = await RoxUtils.ThumbNailer.identify(self, track['info']['identifier'], track['info']['uri'])
 			if thumbnail_url:
 				embed.set_thumbnail(url=thumbnail_url)
@@ -215,8 +212,7 @@ class Music:
 				duration = lavalink.Utils.format_time(player.current.duration)
 			song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
-		embed = discord.Embed(color=discord.Color.blurple(),
-		                      title='Now Playing', description=song)
+		embed = discord.Embed(color=discord.Color.blurple(), title='Now Playing', description=song)
 
 		thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
 		if thumbnail_url:
@@ -244,7 +240,7 @@ class Music:
 			queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri})\n'
 
 		embed = discord.Embed(colour=discord.Color.blurple(),
-		                      description=f'**{len(player.queue)} tracks**\n\n{queue_list}')
+								description=f'**{len(player.queue)} tracks**\n\n{queue_list}')
 		embed.set_footer(text=f'Viewing page {page}/{pages}')
 		await ctx.send(embed=embed)
 
@@ -377,7 +373,7 @@ class Music:
 							track_ = tracks[track_num]
 							await self.send_to_play(ctx, track_)
 							embed.title = "Song sent to queue"
-							thumb_url = RoxUtils.ThumbNailer.identify(self, track_['info']['identifier'],track_['info']['uri'])
+							thumb_url = await RoxUtils.ThumbNailer.identify(self, track_['info']['identifier'],track_['info']['uri'])
 							if thumb_url:
 								embed.set_thumbnail(url=thumb_url)
 							embed.description = f'[{track_["info"]["title"]}]({track_["info"]["uri"]})'
@@ -396,7 +392,6 @@ class Music:
 							await ping.delete()
 							await msg_id.delete()
 							break
-
 
 	@commands.command(name='disconnect', aliases=['dc'])
 	@commands.guild_only()
