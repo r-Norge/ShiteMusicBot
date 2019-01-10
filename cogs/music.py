@@ -13,6 +13,9 @@ import re
 import discord
 import lavalink
 from discord.ext import commands
+
+from .utils.mixplayer.mixplayer import MixPlayer
+from .utils import checks
 from lavasettings import *
 
 time_rx = re.compile('[0-9]+')
@@ -27,7 +30,8 @@ class Music:
             lavalink.Client(bot=bot, password='youshallnotpass',
                             loop=bot.loop, log_level=logging.INFO,
                             host=host, ws_port=ws_port,
-                            rest_port=rest_port)
+                            rest_port=rest_port,
+                            player=MixPlayer)
             self.bot.lavalink.register_hook(self._track_hook)
 
     def __unload(self):
@@ -48,7 +52,7 @@ class Music:
         if isinstance(event, lavalink.Events.TrackStartEvent):
             await channel.send(embed=discord.Embed(title='Now playing:',
                                                    description=event.track.title,
-                                                   color=discord.Color.blurple()))
+                                                   color=0xEFD26C))
 
         elif isinstance(event, lavalink.Events.QueueEndEvent):
             await channel.send('Queue ended! Why not queue more songs?')
@@ -69,7 +73,7 @@ class Music:
         if not results or not results['tracks']:
             return await ctx.send('Nothing found!')
 
-        embed = discord.Embed(color=discord.Color.blurple())
+        embed = discord.Embed(color=0xEFD26C)
 
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
@@ -129,19 +133,17 @@ class Music:
 
         await player.play_now(requester=ctx.author.id, track=track)
 
-    @commands.command(name='playat', aliases=['pa'])
+    @commands.command(name='skipto', aliases=['st'])
     @commands.guild_only()
-    async def _playat(self, ctx, index: int):
+    @checks.is_DJ()
+    async def _skip_to(self, ctx, index: int):
         """ Plays the queue from a specific point. Disregards tracks before the index. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-
         if index < 1:
             return await ctx.send('Invalid specified index.')
-
         if len(player.queue) < index:
             return await ctx.send('This index exceeds the queue\'s length.')
-
-        await player.play_at(index-1)
+        await player.skip_to(index-1)
 
     @commands.command(name='seek')
     @commands.guild_only()
@@ -205,7 +207,7 @@ class Music:
                 duration = lavalink.Utils.format_time(player.current.duration)
             song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
-        embed = discord.Embed(color=discord.Color.blurple(),
+        embed = discord.Embed(color=0xEFD26C,
                               title='Now Playing', description=song)
         await ctx.send(embed=embed)
 
@@ -215,21 +217,49 @@ class Music:
         """ Shows the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        if not player.queue:
+        if player.queue.is_empty():
             return await ctx.send('There\'s nothing in the queue! Why not queue something?')
 
+        queue = player.queue.get_queue()
         items_per_page = 10
-        pages = math.ceil(len(player.queue) / items_per_page)
-
+        pages = math.ceil(len(queue) / items_per_page)
         start = (page - 1) * items_per_page
         end = start + items_per_page
 
         queue_list = ''
-        for index, track in enumerate(player.queue[start:end], start=start):
-            queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri})\n'
+        for index, track in enumerate(queue[start:end], start=start):
+            queue_list += f'`{index + 1}.` [**{track.title}**]({track.uri}) _by <@{track.requester}>_\n'
 
-        embed = discord.Embed(colour=discord.Color.blurple(),
-                              description=f'**{len(player.queue)} tracks**\n\n{queue_list}')
+        embed = discord.Embed(color=0xEFD26C,
+                              description=f'**{len(queue)} tracks**\n\n{queue_list}')
+        embed.set_footer(text=f'Viewing page {page}/{pages}')
+        await ctx.send(embed=embed)
+
+    @commands.command(name='myqueue', aliases=['mq'])
+    @commands.guild_only()
+    async def _myqueue(self, ctx, page: int = 1):
+        """ Shows the player's queue. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        if player.queue.is_empty():
+            return await ctx.send('There\'s nothing in the queue! Why not queue something?')
+
+        queue = player.queue.get_user_queue(ctx.author.id, pos=True)
+        
+        if not queue:
+            return await ctx.send('You haven\'t queued anything')            
+
+        items_per_page = 10
+        pages = math.ceil(len(queue) / items_per_page)
+        start = (page - 1) * items_per_page
+        end = start + items_per_page
+
+        queue_list = ''
+        for index, (track, globalpos) in enumerate(queue[start:end], start=start):
+            queue_list += f'`{index + 1}({globalpos + 1}).` [**{track.title}**]({track.uri})\n'
+
+        embed = discord.Embed(color=0xEFD26C,
+                              description=f'**{len(queue)} tracks**\n\n{queue_list}')
         embed.set_footer(text=f'Viewing page {page}/{pages}')
         await ctx.send(embed=embed)
 
@@ -322,7 +352,7 @@ class Music:
 
             o += f'`{index}.` [{track_title}]({track_uri})\n'
 
-        embed = discord.Embed(color=discord.Color.blurple(), description=o)
+        embed = discord.Embed(color=0xEFD26C, description=o)
         await ctx.send(embed=embed)
 
     @commands.command(name='disconnect', aliases=['dc'])

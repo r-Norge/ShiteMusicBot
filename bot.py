@@ -91,7 +91,9 @@ class Bot(commands.Bot):
         try:
             super().run(config["token"], reconnect=True)
         except Exception as e:
-            print('ifkn', e)
+            tb = e.__traceback__
+            traceback.print_tb(tb)
+            print(e)
 
 
 def run_bot(debug: bool=False):

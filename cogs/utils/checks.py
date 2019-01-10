@@ -53,3 +53,11 @@ def is_mod():
         modrole = ctx.bot.settings.get_mod_role(ctx.guild.id)
         return has_role(ctx, modrole)
     return commands.check(pred)
+
+
+def is_DJ():
+    async def predicate(ctx):
+        is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
+        is_admin = await check_guild_permissions(ctx, {'administrator': True})
+        return is_dj or is_admin
+    return commands.check(predicate)
