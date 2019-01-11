@@ -30,7 +30,7 @@ class MixQueue:
         return tmp
 
     def __bool__(self):
-        return self.is_empty()
+        return not self.is_empty()
 
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
@@ -54,10 +54,10 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
 
-    # if pos is true also returns global positions of tracks
-    def get_user_queue(self, requester: int, pos: bool=False):
+    # if dual is true also returns global positions of tracks
+    def get_user_queue(self, requester: int, dual: bool=False):
         queue = self.queues.get(requester, [])
-        if pos and queue:
+        if dual and queue:
             pos = [self._loc_to_glob(requester, i) for i in range(len(queue))]
             combined = zip(queue, pos)
             return list(combined)
