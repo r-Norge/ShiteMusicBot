@@ -79,7 +79,7 @@ class MixPlayer(BasePlayer):
 
     def add(self, requester: int, track: dict):
         """ Adds a track to the queue. """
-        self.queue.add_track(requester, AudioTrack().build(track, requester))
+        return self.queue.add_track(requester, AudioTrack().build(track, requester))
 
     def add_next(self, requester: int, track: dict):
         """ Adds a track to beginning of the queue """
@@ -87,23 +87,29 @@ class MixPlayer(BasePlayer):
 
     def add_at(self, index: int, requester: int, track: dict):
         """ Adds a track at a specific index in the queue. """
-        self.queue.add_track(requester, AudioTrack().build(track, requester), index)
+        return self.queue.add_track(requester, AudioTrack().build(track, requester), index)
 
     def move_user_track(self, requester: int, initial: int, final: int):
         """ Moves a track in a users queue"""
-        self.queue.move_user_track(requester, initial, final)
+        return self.queue.move_user_track(requester, initial, final)
 
     def remove_user_track(self, requester: int, pos: int):
         """ Removes the song at <pos> from the queue of requester """
-        self.queue.remove_user_track(requester, pos)
+        return self.queue.remove_user_track(requester, pos)
 
     def remove_global_track(self, pos: int):
         """ Removes the song at <pos> in the global queue """
-        self.queue.remove_global_track(pos)
+        return self.queue.remove_global_track(pos)
 
     def shuffle_user_queue(self, requester: int):
         """ Randomly reorders the queue of requester """
         self.queue.shuffle_user_queue(requester)
+
+    def user_queue(self, user: int, dual: bool=False):
+        return self.queue.get_user_queue(user, dual)
+
+    def global_queue(self):
+        return self.queue.get_queue()
 
     async def play(self, track_index: int = 0):
         """ Plays the first track in the queue, if any or plays a track from the specified index in the queue. """

@@ -9,20 +9,17 @@ Because of the F-Strings, you also must have Python 3.6 or higher installed.
 import logging
 import math
 import re
-
+import typing
 import time
+
 import asyncio
-from cogs.utils import RoxUtils
-from .utils.mixplayer.mixplayer import MixPlayer
-from .utils import checks
-
 import discord
-import lavalink
 from discord.ext import commands
+import lavalink
 
+from .utils import checks, RoxUtils
 from .utils.mixplayer.mixplayer import MixPlayer
-from .utils import checks
-from .utils.embedscroller import EmbedScroller, ScrollerFromLines, QueueScroller
+from .utils.embedscroller import QueueScroller
 from lavasettings import *
 
 time_rx = re.compile('[0-9]+')
@@ -63,7 +60,7 @@ class Music:
                 embed.set_thumbnail(url=thumbnail_url)
             await channel.send(embed=embed)
         elif isinstance(event, lavalink.Events.QueueEndEvent):
-            await channel.send('Queue ended! Why not queue more songs?')
+            await channel.send('Queue ended.')
 
     @commands.command(name='play', aliases=['p'])
     @commands.guild_only()
@@ -229,31 +226,36 @@ class Music:
 
     @commands.command(name='queue', aliases=['q'])
     @commands.guild_only()
-    async def _queue(self, ctx):
-        """ Shows the player's queue. """
+    async def _queue(self, ctx, user: discord.Member=None):
+        """ Shows the global queue or another users queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-
         if player.queue.is_empty():
-            return await ctx.send('There\'s nothing in the queue! Why not queue something?')
+            return await ctx.send('The queue is empty')
+        
+        if user is None:
+            queue = player.global_queue()
+            scroller = QueueScroller(ctx, queue, lines_per_page=10)
+            await scroller.start_scrolling()
 
-        queue = player.queue.get_queue()
-        scroller = QueueScroller(ctx, queue, lines_per_page=10)
-        await scroller.start_scrolling()
+        else:
+            user_queue = player.user_queue(user.id, dual=True)
+            if not user_queue:
+                return await ctx.send(f'{user.name}\'s queue is empty')
+            
+            scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=user.name)
+            await scroller.start_scrolling()
 
     @commands.command(name='myqueue', aliases=['mq'])
     @commands.guild_only()
     async def _myqueue(self, ctx):
-        """ Shows the player's queue. """
+        """ Shows your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        if player.queue.is_empty():
-            return await ctx.send('There\'s nothing in the queue! Why not queue something?')
+        user_queue = player.user_queue(ctx.author.id, dual=True)
+        if not user_queue:
+            return await ctx.send('Your queue is empty')
 
-        queue = player.queue.get_user_queue(ctx.author.id, dual=True)
-        if not queue:
-            return await ctx.send('You haven\'t queued anything')
-
-        scroller = QueueScroller(ctx, queue, lines_per_page=10, user=ctx.author.name)
+        scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=ctx.author.name)
         await scroller.start_scrolling()
 
     @commands.command(name='pause', aliases=['resume'])
@@ -287,42 +289,87 @@ class Music:
     @commands.command(name='shuffle')
     @commands.guild_only()
     async def _shuffle(self, ctx):
-        """ Shuffles the player's queue. """
+        """ Shuffles your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        if not player.is_playing:
-            return await ctx.send('Nothing playing.')
+        user_queue = player.user_queue(ctx.author.id)
 
-        player.shuffle = not player.shuffle
-        await ctx.send('🔀 | Shuffle ' + ('enabled' if player.shuffle else 'disabled'))
+        if not user_queue:
+            return await ctx.send('Your queue is empty')
 
-    @commands.command(name='repeat', aliases=['loop'])
+        player.shuffle_user_queue(ctx.author.id)
+        await ctx.send('Your queue has been shuffled')
+
+    @commands.command(name='move', aliases=["m"])
     @commands.guild_only()
-    async def _repeat(self, ctx):
-        """ Repeats the current song until the command is invoked again. """
+    async def _move(self, ctx, from_pos: int, to_pos: int):
+        """ Moves a song in your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        if not player.is_playing:
-            return await ctx.send('Nothing playing.')
+        user_queue = player.user_queue(ctx.author.id)
+        if not user_queue:
+            return await ctx.send('Your queue is empty')
 
-        player.repeat = not player.repeat
-        await ctx.send('🔁 | Repeat ' + ('enabled' if player.repeat else 'disabled'))
+        if not all(x in range(1,len(user_queue)+1) for x in [from_pos, to_pos]):
+            return await ctx.send(f'Positions must be between 1 and {len(user_queue)}')
+
+        moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
+        if moved is None:
+            return await ctx.send('Check that the positions exist in your queue')
+        
+        await ctx.send(f'{moved.title} moved from position {from_pos} to {to_pos} in your queue')
 
     @commands.command(name='remove')
     @commands.guild_only()
-    async def _remove(self, ctx, index: int):
-        """ Removes an item from the player's queue with the given index. """
+    async def _remove(self, ctx, pos: int):
+        """ Removes the song at pos from your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        if not player.queue:
-            return await ctx.send('Nothing queued.')
+        if player.queue.is_empty():
+            return
 
-        if index > len(player.queue) or index < 1:
-            return await ctx.send(f'Index has to be **between** 1 and {len(player.queue)}')
+        user_queue = player.user_queue(ctx.author.id)
+        if not user_queue:
+            return
 
-        index -= 1
-        removed = player.queue.pop(index)
+        if pos > len(user_queue) or pos < 1:
+            return await ctx.send(f'Position has to be between 1 and {len(user_queue)}')
 
-        await ctx.send(f'Removed **{removed.title}** from the queue.')
+        removed = player.remove_user_track(ctx.author.id, pos - 1)
+
+        await ctx.send(f'**{removed.title}** removed.')
+
+    @commands.command(name="DJremove")
+    @commands.guild_only()
+    @checks.is_DJ()
+    async def _djremove(self, ctx, pos: int, user: discord.Member=None):
+        """ Remove a song from either the global queue or a users queue"""
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        if user is None:
+            if player.queue.is_empty():
+                return
+
+            if pos > len(player.queue) or pos < 1:
+                return await ctx.send(f'Position has to be between 1 and {len(player.queue)}')
+
+            removed = player.remove_global_track(pos - 1)
+            requester = self.bot.get_user(removed.requester)
+            await ctx.send(f'**{removed.title}** queued by {requester.name} removed.')
+
+        else:
+            if player.queue.is_empty():
+                return
+
+            user_queue = player.user_queue(user.id)
+            if not user_queue:
+                return
+
+            if pos > len(user_queue) or pos < 1:
+                return await ctx.send(f'Position has to be between 1 and {len(user_queue)}')
+
+            removed = player.remove_user_track(user.id, pos - 1)
+            await ctx.send(f'**{removed.title}** queued by {user.name} removed.')
+
 
     @commands.command(name='find')
     @commands.guild_only()

@@ -14,6 +14,7 @@ class EmbedScroller:
 
         self.bot = ctx.bot
         self.pages = pages
+        self.cmdmsg = ctx.message
         self.message = ctx.message
         self.channel = ctx.channel
         self.author = ctx.author
@@ -86,6 +87,7 @@ class EmbedScroller:
     async def stop_scrolling(self):
         self.scrolling = False
         await self.message.delete()
+        await self.cmdmsg.delete()
 
     def react_check(self, reaction, user):
         if user is None or user.id != self.author.id:
@@ -101,11 +103,9 @@ class EmbedScroller:
         return False
 
     async def start_scrolling(self):
-        """Actually paginate the entries and run the interactive loop if necessary."""
         if not self.scrolling:
             await self.send()
         else:
-            # allow us to react to reactions right away if we're paginating
             self.bot.loop.create_task(self.send())
 
         while self.scrolling:
@@ -123,7 +123,7 @@ class EmbedScroller:
             try:
                 await self.message.remove_reaction(reaction, user)
             except:
-                pass # can't remove it so don't bother doing so
+                pass
 
             await self.match()
 
@@ -154,18 +154,19 @@ class ScrollerFromLines(EmbedScroller):
 
 
 class QueueScroller(EmbedScroller):
-    def __init__(self, ctx, queue, lines_per_page=10, user: str=None):
+    """ Fugly, but works for now """
+    def __init__(self, ctx, queue, lines_per_page=10, user_name: str=None):
 
         pagecount = math.ceil(len(queue) / lines_per_page)
 
-        if user is None:
+        if user_name is None:
             title = f'**Queue** `{len(queue)} songs`'
         else:
-            title = f'**{user}\'s queue** `{len(queue)} songs`'
+            title = f'**{user_name}\'s queue** `{len(queue)} songs`'
         pages = []
         page = ''
         for index, temp in enumerate(queue):
-            if user is None:
+            if user_name is None:
                 track = temp
                 page += f'`{index + 1}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
             else:
