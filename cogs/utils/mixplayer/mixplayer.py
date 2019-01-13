@@ -3,6 +3,7 @@ from .mixqueue import MixQueue
 from abc import ABC, abstractmethod
 from random import randrange
 
+import lavalink
 from lavalink import BasePlayer
 from lavalink.AudioTrack import AudioTrack
 from lavalink.Events import QueueEndEvent, TrackExceptionEvent, TrackEndEvent, TrackStartEvent, TrackStuckEvent
@@ -28,6 +29,10 @@ class MixPlayer(BasePlayer):
 
         self.queue = MixQueue()
         self.current = None
+
+        self.listeners = set()
+        self.skip_voters = set()
+        self.boosted = False
 
     @property
     def is_playing(self):
@@ -79,7 +84,7 @@ class MixPlayer(BasePlayer):
 
     def add(self, requester: int, track: dict):
         """ Adds a track to the queue. """
-        self.queue.add_track(requester, AudioTrack().build(track, requester))
+        return self.queue.add_track(requester, AudioTrack().build(track, requester))
 
     def add_next(self, requester: int, track: dict):
         """ Adds a track to beginning of the queue """
@@ -87,23 +92,41 @@ class MixPlayer(BasePlayer):
 
     def add_at(self, index: int, requester: int, track: dict):
         """ Adds a track at a specific index in the queue. """
-        self.queue.add_track(requester, AudioTrack().build(track, requester), index)
+        return self.queue.add_track(requester, AudioTrack().build(track, requester), index)
 
     def move_user_track(self, requester: int, initial: int, final: int):
         """ Moves a track in a users queue"""
-        self.queue.move_user_track(requester, initial, final)
+        return self.queue.move_user_track(requester, initial, final)
 
     def remove_user_track(self, requester: int, pos: int):
         """ Removes the song at <pos> from the queue of requester """
-        self.queue.remove_user_track(requester, pos)
+        return self.queue.remove_user_track(requester, pos)
 
     def remove_global_track(self, pos: int):
         """ Removes the song at <pos> in the global queue """
-        self.queue.remove_global_track(pos)
+        return self.queue.remove_global_track(pos)
 
     def shuffle_user_queue(self, requester: int):
         """ Randomly reorders the queue of requester """
         self.queue.shuffle_user_queue(requester)
+
+    def user_queue(self, user: int, dual: bool=False):
+        return self.queue.get_user_queue(user, dual)
+
+    def global_queue(self):
+        return self.queue.get_queue()
+
+    def queue_duration(self, include_current: bool=True):
+        duration = 0
+        for track in self.queue:
+            duration += track.duration
+        remaining = self.current.duration - self.position
+        if include_current:
+            return lavalink.Utils.format_time(duration + remaining)
+        return lavalink.Utils.format_time(duration)
+
+    def current_pos(self):
+        return lavalink.Utils.format_time(self.position)
 
     async def play(self, track_index: int = 0):
         """ Plays the first track in the queue, if any or plays a track from the specified index in the queue. """
@@ -140,6 +163,7 @@ class MixPlayer(BasePlayer):
 
     async def skip(self):
         """ Plays the next track in the queue, if any. """
+        self.skip_voters.clear()
         await self.play()
 
     async def set_pause(self, pause: bool):
@@ -164,3 +188,46 @@ class MixPlayer(BasePlayer):
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             await self.play()
+
+    def update_listeners(self, member, voice_state=None):
+        if self.is_connected:
+            vc = self.connected_channel
+            if voice_state is None or vc != voice_state.channel:
+                self.listeners.discard(member)
+                self.skip_voters.discard(member)
+            else:
+                if voice_state.deaf or voice_state.self_deaf:
+                    self.listeners.discard(member)
+                    self.skip_voters.discard(member)
+                else:
+                    self.listeners.add(member)
+
+
+    def add_skipper(self, member):
+        if member in self.listeners:
+            self.skip_voters.add(member)
+
+
+    async def bassboost(self, boost: bool=False):
+        if boost:
+            boostval = 1
+        else:
+            boostval = 0
+
+        bands = [
+            {"band": 0, "gain": boostval * 0.15},   # 25Hz
+            {"band": 1, "gain": boostval * 0.15},   # 40Hz
+            {"band": 2, "gain": boostval * 0.25},   # 63Hz
+            {"band": 3, "gain": boostval * 0.15},   #100Hz
+            {"band": 4, "gain": boostval * -0.15},  #160Hz
+            {"band": 5, "gain": boostval * -0.1},   #250Hz
+            {"band": 6, "gain": boostval * -0.05},  #400Hz
+        ]
+
+        if boost:
+            await self._lavalink.ws.send(op="equalizer", guildId=self.guild_id, bands=bands)
+            self.boosted = True
+        else:
+            await self._lavalink.ws.send(op="equalizer", guildId=self.guild_id, bands=bands)
+            self.boosted = False
+

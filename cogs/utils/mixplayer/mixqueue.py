@@ -3,6 +3,7 @@ from itertools import cycle, islice, chain
 from random import shuffle
 from lavalink import AudioTrack
 
+
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
     # Recipe credited to George Sakkis
@@ -30,7 +31,7 @@ class MixQueue:
         return tmp
 
     def __bool__(self):
-        return self.is_empty()
+        return not self.is_empty()
 
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
@@ -54,10 +55,10 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
 
-    # if pos is true also returns global positions of tracks
-    def get_user_queue(self, requester: int, pos: bool=False):
+    # if dual is true also returns global positions of tracks
+    def get_user_queue(self, requester: int, dual: bool=False):
         queue = self.queues.get(requester, [])
-        if pos and queue:
+        if dual and queue:
             pos = [self._loc_to_glob(requester, i) for i in range(len(queue))]
             combined = zip(queue, pos)
             return list(combined)
@@ -79,10 +80,16 @@ class MixQueue:
         user_queue = self.queues.get(requester)
         if user_queue is None:
             self.queues[requester] = [track]
+            localpos = 0
         elif pos is None:
             user_queue.append(track)
+            localpos = len(user_queue) - 1
         else:
             user_queue.insert(pos, track)
+            localpos = pos
+
+        # Return info about track position
+        return track, self._loc_to_glob(requester, localpos), localpos
 
     def add_next_track(self, track: AudioTrack):
         self.priority_queue.append(track)
@@ -91,16 +98,18 @@ class MixQueue:
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
-                user_queue.pop(pos)
+                track = user_queue.pop(pos)
                 self._clear_empty()
+                return track
 
     def remove_global_track(self, pos: int):
         q, pos = self._glob_to_loc(pos)
         if q is None or pos is None:
             return
         queue = self.queues.get(q)
-        queue.pop(pos)
+        track = queue.pop(pos)
         self._clear_empty()
+        return track
 
     def move_user_track(self, requester: int, initial: int, final: int):
         queue = self.queues.get(requester, [])
@@ -108,6 +117,7 @@ class MixQueue:
             try:
                 track = queue.pop(initial)
                 queue.insert(final, track)
+                return track
             except IndexError:
                 pass
 

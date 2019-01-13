@@ -10,22 +10,24 @@ from cogs.utils.settings import Settings
 
 
 initial_extension = [
-	'cogs.cogs',
-	'cogs.botsettings',
-	'cogs.misc',
-	'cogs.music'
+    'cogs.cogs',
+    'cogs.botsettings',
+    'cogs.misc',
+    'cogs.music'
 ]
 
 
 with codecs.open("config.json", 'r', encoding='utf8') as f:
-	config = json.load(f)
+    config = json.load(f)
+
+default_prefix = config["default_prefix"]
 
 
 def _get_prefix(bot, message):
-	if not message.guild:
-		return default_prefix
-	prefixes = bot.settings.get_prefix(message.guild.id)
-	return commands.when_mentioned_or(*prefixes)(bot, message)
+    if not message.guild:
+        return default_prefix
+    prefixes = bot.settings.get_prefix(message.guild.id)
+    return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
 class Bot(commands.Bot):
@@ -101,6 +103,6 @@ def run_bot(debug: bool=False):
 
 if __name__ == '__main__':
     if 'debug' in sys.argv:
-        run_bot(debug=True)        
+        run_bot(debug=True)
     else:
         run_bot(debug=False)
