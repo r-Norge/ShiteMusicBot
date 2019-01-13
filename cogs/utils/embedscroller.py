@@ -171,7 +171,7 @@ class QueueScroller(EmbedScroller):
                 page += f'`{index + 1}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
             else:
                 track, globpos = temp
-                page += f'`{index + 1}({globpos + 1}).` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
+                page += f'`{index + 1}({globpos + 1}).` **[{track.title}]({track.uri})**\n'
 
             if index%lines_per_page == lines_per_page - 1:
                 embed = discord.Embed(color=0xEFD26C,
