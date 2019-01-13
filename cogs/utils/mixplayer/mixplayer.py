@@ -3,6 +3,7 @@ from .mixqueue import MixQueue
 from abc import ABC, abstractmethod
 from random import randrange
 
+import lavalink
 from lavalink import BasePlayer
 from lavalink.AudioTrack import AudioTrack
 from lavalink.Events import QueueEndEvent, TrackExceptionEvent, TrackEndEvent, TrackStartEvent, TrackStuckEvent
@@ -28,6 +29,10 @@ class MixPlayer(BasePlayer):
 
         self.queue = MixQueue()
         self.current = None
+
+        self.listeners = set()
+        self.skip_voters = set()
+        self.boosted = False
 
     @property
     def is_playing(self):
@@ -111,6 +116,18 @@ class MixPlayer(BasePlayer):
     def global_queue(self):
         return self.queue.get_queue()
 
+    def queue_duration(self, include_current: bool=True):
+        duration = 0
+        for track in self.queue:
+            duration += track.duration
+        remaining = self.current.duration - self.position
+        if include_current:
+            return lavalink.Utils.format_time(duration + remaining)
+        return lavalink.Utils.format_time(duration)
+
+    def current_pos(self):
+        return lavalink.Utils.format_time(self.position)
+
     async def play(self, track_index: int = 0):
         """ Plays the first track in the queue, if any or plays a track from the specified index in the queue. """
 
@@ -146,6 +163,7 @@ class MixPlayer(BasePlayer):
 
     async def skip(self):
         """ Plays the next track in the queue, if any. """
+        self.skip_voters.clear()
         await self.play()
 
     async def set_pause(self, pause: bool):
@@ -170,3 +188,46 @@ class MixPlayer(BasePlayer):
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             await self.play()
+
+    def update_listeners(self, member, voice_state=None):
+        if self.is_connected:
+            vc = self.connected_channel
+            if voice_state is None or vc != voice_state.channel:
+                self.listeners.discard(member)
+                self.skip_voters.discard(member)
+            else:
+                if voice_state.deaf or voice_state.self_deaf:
+                    self.listeners.discard(member)
+                    self.skip_voters.discard(member)
+                else:
+                    self.listeners.add(member)
+
+
+    def add_skipper(self, member):
+        if member in self.listeners:
+            self.skip_voters.add(member)
+
+
+    async def bassboost(self, boost: bool=False):
+        if boost:
+            boostval = 1
+        else:
+            boostval = 0
+
+        bands = [
+            {"band": 0, "gain": boostval * 0.15},   # 25Hz
+            {"band": 1, "gain": boostval * 0.15},   # 40Hz
+            {"band": 2, "gain": boostval * 0.25},   # 63Hz
+            {"band": 3, "gain": boostval * 0.15},   #100Hz
+            {"band": 4, "gain": boostval * -0.15},  #160Hz
+            {"band": 5, "gain": boostval * -0.1},   #250Hz
+            {"band": 6, "gain": boostval * -0.05},  #400Hz
+        ]
+
+        if boost:
+            await self._lavalink.ws.send(op="equalizer", guildId=self.guild_id, bands=bands)
+            self.boosted = True
+        else:
+            await self._lavalink.ws.send(op="equalizer", guildId=self.guild_id, bands=bands)
+            self.boosted = False
+
