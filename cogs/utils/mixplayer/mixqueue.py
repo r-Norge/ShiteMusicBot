@@ -31,7 +31,7 @@ class MixQueue:
         return tmp
 
     def __bool__(self):
-        return not self.is_empty()
+        return not self.empty
 
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
@@ -47,9 +47,6 @@ class MixQueue:
 
     def get_queue(self):
         return list(self)
-
-    def is_empty(self):
-        return len(self) == 0
 
     def clear(self):
         self.queues = OrderedDict()
@@ -166,3 +163,8 @@ class MixQueue:
             return list(self.queues.keys())[0]
         except IndexError:
             pass
+
+    @property
+    def empty(self):
+        return len(self) == 0
+

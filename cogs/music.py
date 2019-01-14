@@ -66,6 +66,7 @@ class Music:
             await channel.send(embed=embed)
         elif isinstance(event, lavalink.Events.QueueEndEvent):
             await channel.send('Queue ended.')
+            await self.check_leave_voice(channel.guild)
 
     @commands.command(name='play', aliases=['p'])
     async def _play(self, ctx, *, query: str):
@@ -238,7 +239,7 @@ class Music:
     async def _queue(self, ctx, user: discord.Member=None):
         """ Shows the global queue or another users queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        if player.queue.is_empty():
+        if player.queue.empty:
             return await ctx.send('The queue is empty')
         
         if user is None:
@@ -344,7 +345,7 @@ class Music:
         """ Removes the song at pos from your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        if player.queue.is_empty():
+        if player.queue.empty:
             return
 
         user_queue = player.user_queue(ctx.author.id)
@@ -365,7 +366,7 @@ class Music:
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         if user is None:
-            if player.queue.is_empty():
+            if player.queue.empty:
                 return
 
             if pos > len(player.queue) or pos < 1:
@@ -376,7 +377,7 @@ class Music:
             await ctx.send(f'**{removed.title}** queued by {requester.name} removed.')
 
         else:
-            if player.queue.is_empty():
+            if player.queue.empty:
                 return
 
             user_queue = player.user_queue(user.id)
@@ -534,12 +535,15 @@ class Music:
 
     async def on_voice_state_update(self, member, before, after):
         if not member.bot:
-            if after.channel is not None:
-                player = self.bot.lavalink.players.get(after.channel.guild.id)
-                player.update_listeners(member, after)
-            else:
-                player = self.bot.lavalink.players.get(before.channel.guild.id)
-                player.update_listeners(member)
+            player = self.bot.lavalink.players.get(member.guild.id)
+            player.update_listeners(member, after)
+            await self.check_leave_voice(member.guild)
+
+    async def check_leave_voice(self, guild):
+        player = self.bot.lavalink.players.get(guild.id)
+        if len(player.listeners) == 0 and player.is_connected:
+            if player.queue.empty and player.current is None:
+                await player.disconnect()
 
 
 def setup(bot):

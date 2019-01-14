@@ -135,7 +135,7 @@ class MixPlayer(BasePlayer):
         self.position = 0
         self.paused = False
 
-        if self.queue.is_empty():
+        if self.queue.empty:
             await self.stop()
             await self._lavalink.dispatch_event(QueueEndEvent(self))
         else:
@@ -189,10 +189,10 @@ class MixPlayer(BasePlayer):
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             await self.play()
 
-    def update_listeners(self, member, voice_state=None):
+    def update_listeners(self, member, voice_state):
         if self.is_connected:
             vc = self.connected_channel
-            if voice_state is None or vc != voice_state.channel:
+            if voice_state.channel is None or voice_state.channel != vc:
                 self.listeners.discard(member)
                 self.skip_voters.discard(member)
             else:
