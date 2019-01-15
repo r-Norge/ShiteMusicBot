@@ -435,6 +435,7 @@ class Music:
         player = self.bot.lavalink.players.get(guild.id)
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
+                await player.stop()
                 await self.connect_to(guild.id, None)
 
 
