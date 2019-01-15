@@ -9,9 +9,11 @@ import asyncio
 import discord
 import lavalink
 from discord.ext import commands
+import time
 
 from .utils import checks, RoxUtils
 from .utils.mixplayer.mixplayer import MixPlayer
+from typing import Optional
 
 from .utils.embedscroller import QueueScroller
 from lavasettings import *
@@ -340,6 +342,11 @@ class Music:
     async def find(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
+        # Rox
+        limit_results = 5  # Var to set max results
+        react_emoji = {1: "\u0030\u20E3", 2: "\u0031\u20E3", 3: "\u0032\u20E3", 4: "\u0033\u20E3", 5: "\u0034\u20E3",
+                       6: "\u0035\u20E3", 7: "\u0036\u20E3", 8: "\u0037\u20E3", 9: "\u0038\u20E3", 10: "\u0039\u20E3"}
+        # Rox
 
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
             query = 'ytsearch:' + query
@@ -349,7 +356,7 @@ class Music:
         if not results or not results['tracks']:
             return await ctx.send('Nothing found')
 
-        tracks = results['tracks'][:10]  # First 10 results
+        tracks = results['tracks'][:limit_results]  # First 10 results
 
         o = ''
         for index, track in enumerate(tracks, start=1):
@@ -357,8 +364,50 @@ class Music:
             track_uri = track['info']['uri']
             o += f'`{index}.` [{track_title}]({track_uri})\n'
 
-        embed = discord.Embed(color=discord.Color.blurple(), description=o)
-        await ctx.send(embed=embed)
+        embed = discord.Embed(color=0xEFD26C, description=o)
+        start_msg = await ctx.send(embed=embed)  # Sending a message, so we can delete it later
+
+        # Adding reactions to messages, doing this outside previous loop to give the user some
+        # "thinkingtime while reacting
+        for num_index in range(min(len(tracks), limit_results)):
+            index = num_index + 1
+            await start_msg.add_reaction(react_emoji[index])
+        await start_msg.add_reaction("\u274C")
+
+        # Loop to detect reactions on the message
+        time_start = time.time()
+        while True:
+            timer = time.time() - time_start
+            msg_id = await ctx.get_message(start_msg.id)
+            if int(timer) >= 10:  # Checks timer. ends loop after 10 seconds
+                await start_msg.clear_reactions()
+                embed = discord.Embed(color=0xEFD26C, title="Sorry", description="Timer expired")
+                await start_msg.edit(embed=embed)
+                return
+
+            for react in msg_id.reactions:
+                async for user in react.users():
+                    if user is ctx.author:
+                        if react.emoji[:-1].isdigit():
+                            track_ = tracks[int(react.emoji[:-1])]
+                            info = track_['info']
+                            embed = discord.Embed(color=0xEFD26C, title="Song sent to queue")
+                            thumb_url = await RoxUtils.ThumbNailer.identify(self, info['identifier'], info['uri'])
+                            if thumb_url:
+                                embed.set_thumbnail(url=thumb_url)
+                            embed.description = f'[{info["title"]}]({info["uri"]})'
+                            await start_msg.edit(embed=embed)
+                            await start_msg.clear_reactions()
+                            # await self.ensure_voice(ctx, True)
+                            player.add(requester=ctx.author.id, track=track_)
+                            if not player.is_playing:
+                                await player.play()
+                            return
+                        if react.emoji == "\u274C":
+                            await start_msg.clear_reactions()
+                            embed = discord.Embed(color=0xEFD26C, title="Sorry", description="Search cancelled by user")
+                            await start_msg.edit(embed=embed)
+                            return
 
     @commands.command(aliases=['dc'])
     async def disconnect(self, ctx):
@@ -389,12 +438,12 @@ class Music:
         else:
             await ctx.send('Bass boost is off')
 
-    async def ensure_voice(self, ctx):
+    async def ensure_voice(self, ctx, do_connect: Optional[bool] = None):
         """ This check ensures that the bot and command author are in the same voicechannel. """
         player = self.bot.lavalink.players.create(ctx.guild.id, endpoint=ctx.guild.region.value)
         # Create returns a player if one exists, otherwise creates.
 
-        should_connect = ctx.command.name in ('play')  # Add commands that require joining voice to work.
+        should_connect = ctx.command.name in ('play', "find")  # Add commands that require joining voice to work.
 
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise commands.CommandInvokeError('Join a voicechannel first.')
