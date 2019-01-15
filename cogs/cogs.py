@@ -62,6 +62,12 @@ class Cogs:
         except Exception as e:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
+    @_cogs.command(name='shutdown')
+    @checks.is_owner()
+    async def _shutdown(self, ctx):
+        """Logs out and stops."""
+        await self.bot.logout()
+
 
 def setup(bot):
     bot.add_cog(Cogs(bot))
