@@ -36,6 +36,9 @@ class MixPlayer(DefaultPlayer):
         """ Moves a track in a users queue"""
         return self.queue.move_user_track(requester, initial, final)
 
+    def remove_user_queue(self, requester: int):
+        self.queue.remove_user_queue(requester)
+
     def remove_user_track(self, requester: int, pos: int):
         """ Removes the song at <pos> from the queue of requester """
         return self.queue.remove_user_track(requester, pos)
@@ -214,6 +217,11 @@ class MixQueue:
     def add_next_track(self, track: AudioTrack):
         self.priority_queue.append(track)
 
+    def remove_user_queue(self, requester: int):
+        user_queue = self.queues.get(requester, [])
+        if user_queue:
+            self.queues.pop(requester)
+
     def remove_user_track(self, requester: int, pos: int):
         user_queue = self.queues.get(requester)
         if user_queue is not None:
@@ -257,6 +265,7 @@ class MixQueue:
             self.queues.pop(i)
 
     # Convert between global and local queue positions
+    # Pretty shit atm, todo: implement algorithm thing I made.
     def _loc_to_glob(self, requester: int, pos: int):
         queue = self.queues.get(requester, [])
         if queue:

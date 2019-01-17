@@ -246,18 +246,6 @@ class Music:
             await player.set_pause(True)
             await ctx.send('⏯ | Paused')
 
-    @commands.command(aliases=['vol'])
-    @checks.is_DJ()
-    async def volume(self, ctx, volume: int = None):
-        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
-        player = self.bot.lavalink.players.get(ctx.guild.id)
-
-        if not volume:
-            return await ctx.send(f'🔈 | {player.volume}%')
-
-        await player.set_volume(volume)
-        await ctx.send(f'🔈 | Set to {player.volume}%')
-
     @commands.command(name='shuffle')
     async def _shuffle(self, ctx):
         """ Shuffles your queue. """
@@ -337,6 +325,25 @@ class Music:
 
             removed = player.remove_user_track(user.id, pos - 1)
             await ctx.send(f'**{removed.title}** queued by {user.name} removed.')
+
+
+    @commands.command(name="removeuser")
+    @checks.DJ_or_alone()
+    async def _user_queue_remove(self, ctx, user: discord.Member):
+        """ Remove a song from either the global queue or a users queue"""
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        if player.queue.empty:
+            return
+
+        user_queue = player.user_queue(user.id)
+        if not user_queue:
+            return
+
+        player.remove_user_queue(user.id)
+        embed = discord.Embed(color=0x36393F)
+        embed.description = f'Removed all songs queued by <@{user.id}>.'
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def search(self, ctx, *, query):
@@ -447,6 +454,34 @@ class Music:
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
         embed = discord.Embed(description='Disconnected', color=0x36393F)
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=['vol'])
+    @checks.DJ_or_current()
+    async def volume(self, ctx, volume: int = None):
+        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        # todo: limit to 50%-125% if user has current song.
+
+        if not volume:
+            return await ctx.send(f'🔈 | {player.volume}%')
+
+        await player.set_volume(volume)
+        embed = discord.Embed(color=0x36393F)
+        embed.description = f'Volume set to {player.volume}'
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=['normal','nl'])
+    @checks.DJ_or_alone()
+    async def normalize(self, ctx):
+        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        await player.set_volume(100)
+        await player.bassboost(False)
+        embed = discord.Embed(color=0x36393F)
+        embed.description = 'Volume and equalizer reset'
         await ctx.send(embed=embed)
 
     @commands.command(name='boost', aliases=['boo'])
