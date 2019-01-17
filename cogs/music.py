@@ -12,7 +12,7 @@ from discord.ext import commands
 import time
 
 from .utils import checks, RoxUtils
-from .utils.mixplayer.mixplayer import MixPlayer
+from .utils.mixplayer import MixPlayer
 from typing import Optional
 
 from .utils.embedscroller import QueueScroller
@@ -145,18 +145,18 @@ class Music:
 
     @commands.command(name='skipto', aliases=['st','skip_to'])
     @checks.is_DJ()
-    async def skip_to(self, ctx, index: int):
-        """ Plays the queue from a specific point. Disregards tracks before the index. """
+    async def skip_to(self, ctx, pos: int):
+        """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         if ctx.author not in player.listeners:
             return await ctx.send('You have to be listening to the bot')
 
-        if index < 1:
-            return await ctx.send('Invalid specified index.')
-        if len(player.queue) < index:
-            return await ctx.send('This index exceeds the queue\'s length.')
-        await player.skip(index - 1)
+        if pos < 1:
+            return await ctx.send('Invalid specified position.')
+        if len(player.queue) < pos:
+            return await ctx.send('The position exceeds the queue\'s length.')
+        await player.skip(pos - 1)
 
     @commands.command()
     @checks.is_DJ()
@@ -289,8 +289,8 @@ class Music:
         await ctx.send(f'{moved.title} moved from position {from_pos} to {to_pos} in your queue')
 
     @commands.command()
-    async def remove(self, ctx, index: int):
-        """ Removes an item from the player's queue with the given index. """
+    async def remove(self, ctx, pos: int):
+        """ Removes an item from the player's queue with the given pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         if player.queue.empty:
