@@ -12,8 +12,7 @@ from cogs.utils.settings import Settings
 initial_extension = [
     'cogs.cogs',
     'cogs.botsettings',
-    'cogs.misc',
-    'cogs.music'
+    'cogs.misc'
 ]
 
 
@@ -83,6 +82,8 @@ class Bot(commands.Bot):
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
         print(f'Version: {discord.__version__}\n')
+
+        self.load_extension('cogs.music')
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=config["playing"]),

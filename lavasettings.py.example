@@ -1,3 +1,4 @@
 host            =   'localhost'
-rest_port       =   2333
-ws_port         =   2333
+port            =   2333
+password        =   'youshallnotpass'
+region          =   'eu'
