@@ -158,6 +158,7 @@ class QueueScroller(EmbedScroller):
     def __init__(self, ctx, queue, lines_per_page=10, user_name: str=None):
 
         pagecount = math.ceil(len(queue) / lines_per_page)
+        self.queue = queue
 
         if user_name is None:
             title = f'**Queue** `{len(queue)} songs`'
@@ -189,3 +190,10 @@ class QueueScroller(EmbedScroller):
             pages.append(embed)
 
         super().__init__(ctx=ctx, pages=pages)
+
+    async def scroll(self, page):
+        # overwrite to add ability to update queue length/add scrubber.
+        if page < 0 or page >= len(self.pages):
+            return
+        self.current_page = page
+        await self.message.edit(embed=self.pages[page])

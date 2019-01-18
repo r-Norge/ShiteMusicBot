@@ -87,15 +87,8 @@ class Music:
             await ctx.send(embed=embed)
         else:
             track = results['tracks'][0]
-            embed.title = 'Track Enqueued'
-            # Rox
-            thumbnail_url = await RoxUtils.ThumbNailer.identify(self, track['info']['identifier'], track['info']['uri'])
-            if thumbnail_url:
-                embed.set_thumbnail(url=thumbnail_url)
-
-            embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
+            await self.enqueue(ctx, track, embed)
             await ctx.send(embed=embed)
-            player.add(requester=ctx.author.id, track=track)
 
         if not player.is_playing:
             await player.play()
@@ -157,6 +150,7 @@ class Music:
         if len(player.queue) < pos:
             return await ctx.send('The position exceeds the queue\'s length.')
         await player.skip(pos - 1)
+        await ctx.send(f'skipped to `{player.current.title}` at position `{pos}`')
 
     @commands.command()
     @checks.DJ_or_alone()
@@ -326,7 +320,6 @@ class Music:
             removed = player.remove_user_track(user.id, pos - 1)
             await ctx.send(f'**{removed.title}** queued by {user.name} removed.')
 
-
     @commands.command(name="removeuser")
     @checks.DJ_or_alone()
     async def _user_queue_remove(self, ctx, user: discord.Member):
@@ -424,17 +417,8 @@ class Music:
             else:
                 await result_msg.clear_reactions()
                 track = tracks[choice - 1]
-                info = track['info']
-                embed.title = 'Song sent to queue'
-                thumb_url = await RoxUtils.ThumbNailer.identify(self,
-                                                                info['identifier'],
-                                                                info['uri'])
-                if thumb_url:
-                    embed.set_thumbnail(url=thumb_url)
-                embed.description = f'[{info["title"]}]({info["uri"]})'
+                await self.enqueue(ctx, track, embed)
                 await result_msg.edit(embed=embed)
-
-                player.add(requester=ctx.author.id, track=track)
                 if not player.is_playing:
                     await player.play()
 
@@ -475,7 +459,7 @@ class Music:
     @commands.command(aliases=['normal','nl'])
     @checks.DJ_or_alone()
     async def normalize(self, ctx):
-        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        """ Reset the equalizer and  """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         await player.set_volume(100)
@@ -487,7 +471,7 @@ class Music:
     @commands.command(name='boost', aliases=['boo'])
     @checks.DJ_or_alone()
     async def _boost(self, ctx, boost: bool=None):
-        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.players.get(ctx.guild.id)
         
         if boost is not None:
@@ -501,6 +485,84 @@ class Music:
         else:
             embed.description = 'Bass boost is off'
             await ctx.send(embed=embed)
+
+    @commands.command()
+    @checks.DJ_or_alone()
+    async def scrub(self, ctx):
+        """ Lists the first 10 search results from a given query. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        controls = '''
+        **Controls**
+        Play/pause: \N{BLACK RIGHT-POINTING TRIANGLE}  \N{DOUBLE VERTICAL BAR}
+        skip 15 seconds forward/backward: \N{BLACK LEFT-POINTING DOUBLE TRIANGLE} \N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}
+        Skip to beginning/end of song:  \N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR} \N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}
+
+        '''
+        embed = discord.Embed(description='Nothing playing', color=0x36393F)
+        if player.current is None:
+            return await ctx.send(embed=embed)
+
+        scrubber = [
+            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, -1000),
+            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', player.seek, -15),
+            ('\N{DOUBLE VERTICAL BAR}', player.set_pause, True),
+            ('\N{BLACK RIGHT-POINTING TRIANGLE}', player.set_pause, False),
+            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', player.seek, 15),
+            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, 1000),
+        ]
+
+        selection = None
+        arg = None
+
+        def check(reaction, user):
+            if user is None or user.id != ctx.author.id:
+                return False
+
+            if reaction.message.id != msg.id:
+                return False
+
+            for (emoji, func, _arg) in scrubber:
+                if emoji == reaction.emoji:
+                    nonlocal selection
+                    nonlocal arg
+                    selection = func
+                    arg = _arg
+                    return True
+            return False
+
+        embed.description = 'Adding controls'
+        msg = await ctx.send(embed=embed)
+
+        for (emoji, _, _) in scrubber:
+            await msg.add_reaction(emoji)
+
+        embed.description = controls
+        await msg.edit(embed=embed)
+        scrubbing = True
+        while scrubbing:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add',
+                                                         timeout=15.0,
+                                                         check=check)
+            except asyncio.TimeoutError:
+                scrolling = False
+                try:
+                    await msg.delete()
+                    await ctx.message.delete()
+                except:
+                    pass
+                finally:
+                    break
+
+            try:
+                await msg.remove_reaction(reaction, user)
+            except:
+                pass
+            if selection is not None:
+                if not isinstance(arg, bool):
+                    arg = player.position + arg * 1000
+                await selection(arg)
 
     async def ensure_voice(self, ctx, do_connect: Optional[bool] = None):
         """ This check ensures that the bot and command author are in the same voicechannel. """
@@ -527,7 +589,7 @@ class Music:
             # Get listeners
             voice_channel = ctx.author.voice.channel
             while not player.is_connected:
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)
 
             for member in voice_channel.members:
                 if not member.bot:
@@ -550,6 +612,43 @@ class Music:
             if player.queue.empty and player.current is None:
                 await player.stop()
                 await self.connect_to(guild.id, None)
+
+    def max_track_length(self, guild):
+        player = self.bot.lavalink.players.get(guild.id)
+        if len(player.listeners):
+            listeners = len(player.listeners)
+        else:
+            listeners = 1
+        maxlen = max(60*60/listeners, 60*10)
+        return maxlen
+
+    async def enqueue(self, ctx, track, embed):
+
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
+
+        if player.current is not None:
+            queue_duration = 0
+            for i, track in enumerate(player.queue):
+                if i == pos_global:
+                    break
+                queue_duration += int(track.duration)
+
+            until_play = queue_duration + player.current.duration - player.position
+            until_play = lavalink.utils.format_time(until_play)
+            embed.add_field(name="Position", value=f"`{pos_local + 1}({pos_global + 1})`", inline=True)
+            embed.add_field(name="Playing in", value=f"`{until_play} (estimated)`", inline=True)
+
+        embed.title = 'Song enqueued'
+        thumb_url = await RoxUtils.ThumbNailer.identify(self,
+                                                        track.identifier,
+                                                        track.uri)
+
+        if thumb_url:
+            embed.set_thumbnail(url=thumb_url)
+
+        duration = lavalink.utils.format_time(int(track.duration))
+        embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
 
 def setup(bot):
