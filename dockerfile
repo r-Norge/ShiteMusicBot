@@ -1,15 +1,11 @@
-FROM lsiobase/alpine.python3
+FROM amd64/python:3.7.2-alpine
 
 LABEL maintainer="Roxedus"
 
 
 COPY / /app
 
-RUN \
-    python3 -m pip install -r /app/requirements.txt && \
-    chown -R abc:abc \
-    /config \
-    /app
+RUN python3 -m pip install -r /app/requirements.txt
 
 WORKDIR /app
 
