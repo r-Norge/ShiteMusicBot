@@ -6,10 +6,7 @@ COPY / /app
 
 RUN \
     apk add --no-cache git && \
-    python3 -m pip install -r /app/requirements.txt && \
-    chown -R abc:abc \
-    /config \
-    /app
+    python3 -m pip install -r /app/requirements.txt
 
 
 WORKDIR /app
