@@ -4,10 +4,16 @@ LABEL maintainer="Roxedus"
 
 COPY / /app
 
-RUN python3 -m pip install -r /app/requirements.txt
+RUN \
+    apk add --no-cache git && \
+    python3 -m pip install -r /app/requirements.txt && \
+    chown -R abc:abc \
+    /config \
+    /app
+
 
 WORKDIR /app
 
-CMD python3 /app/bot.py
+CMD ln -sf /app/data /config && python3 /app/bot.py
 
 VOLUME /config
