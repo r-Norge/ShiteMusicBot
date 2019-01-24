@@ -94,7 +94,7 @@ class Music:
             await player.play()
 
     @commands.command()
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -118,7 +118,7 @@ class Music:
 
         await ctx.send(f'Moved track to **{lavalink.utils.format_time(track_time)}**')
 
-    @commands.command(aliases=['forceskip'])
+    @commands.command()
     async def skip(self, ctx):
         """ Skips the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -136,9 +136,9 @@ class Music:
             if skips != 0:
                 await ctx.send(f'{skips} out of {math.ceil(total/2)} required haters have voted to skip.')
 
-    @commands.command(name='skipto', aliases=['st','skip_to'])
-    @checks.DJ_or_alone()
-    async def skip_to(self, ctx, pos: int):
+    @commands.command(name='skipto', aliases=['st','skip_to','forceskip'])
+    @checks.DJ_or(alone=True)
+    async def skip_to(self, ctx, pos: int=1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
@@ -153,7 +153,7 @@ class Music:
         await ctx.send(f'skipped to `{player.current.title}` at position `{pos}`')
 
     @commands.command()
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def stop(self, ctx):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -168,7 +168,7 @@ class Music:
         await player.stop()
         await ctx.send('⏹ | Stopped.')
 
-    @commands.command(aliases=['np', 'n', 'playing'])
+    @commands.command(aliases=['np', 'n', 'playing','current'])
     async def now(self, ctx):
         """ Shows some stats about the currently playing song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -183,12 +183,13 @@ class Music:
             duration = lavalink.utils.format_time(player.current.duration)
         song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
-        embed = discord.Embed(color=0xEFD26C,
-                              title='Now Playing', description=song)
+        member = ctx.guild.get_member(player.current.requester)
 
+        embed = discord.Embed(color=0xEFD26C, description=song, title='Now playing')
         thumbnail_url = await RoxUtils.ThumbNailer.identify(self,player.current.identifier, player.current.uri)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
+        embed.set_footer(text=f'Requested by {member.nick}', icon_url=member.avatar_url)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['q'])
@@ -225,7 +226,7 @@ class Music:
         await scroller.start_scrolling()
 
     @commands.command(aliases=['resume'])
-    @checks.is_DJ()
+    @checks.DJ_or(alone=True)
     async def pause(self, ctx):
         """ Pauses/Resumes the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -290,7 +291,7 @@ class Music:
         await ctx.send(f'**{removed.title}** removed.')
 
     @commands.command(name="DJremove")
-    @checks.is_DJ()
+    @checks.DJ_or()
     async def _djremove(self, ctx, pos: int, user: discord.Member=None):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -321,7 +322,7 @@ class Music:
             await ctx.send(f'**{removed.title}** queued by {user.name} removed.')
 
     @commands.command(name="removeuser")
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def _user_queue_remove(self, ctx, user: discord.Member):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -398,6 +399,7 @@ class Music:
 
         embed.description = search_results
         embed.title = 'Results'
+        embed.color = 0xEFD26C
         await result_msg.edit(embed=embed)
 
         try:
@@ -423,7 +425,7 @@ class Music:
                     await player.play()
 
     @commands.command(aliases=['dc'])
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -441,15 +443,17 @@ class Music:
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['vol'])
-    @checks.DJ_or_current()
+    @checks.DJ_or(alone=True, current=True)
     async def volume(self, ctx, volume: int = None):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
-        # todo: limit to 50%-125% if user has current song.
-
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
+
+        if int(player.current.requester) == ctx.author.id:
+            if volume not in list(range(50,125)):
+                return await ctx.send(f'you can only set the volume between 50 and 125')
 
         await player.set_volume(volume)
         embed = discord.Embed(color=0x36393F)
@@ -457,7 +461,7 @@ class Music:
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['normal','nl'])
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def normalize(self, ctx):
         """ Reset the equalizer and  """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -469,7 +473,7 @@ class Music:
         await ctx.send(embed=embed)
 
     @commands.command(name='boost', aliases=['boo'])
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def _boost(self, ctx, boost: bool=None):
         """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -487,7 +491,7 @@ class Music:
             await ctx.send(embed=embed)
 
     @commands.command()
-    @checks.DJ_or_alone()
+    @checks.DJ_or(alone=True)
     async def scrub(self, ctx):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)

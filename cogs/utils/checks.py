@@ -55,35 +55,18 @@ def is_mod():
     return commands.check(pred)
 
 
-def is_DJ():
-    async def predicate(ctx):
-        is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
-        is_admin = await check_guild_permissions(ctx, {'administrator': True})
-        return is_dj or is_admin
-    return commands.check(predicate)
-
-
-def DJ_or_current():
+def DJ_or(alone: bool=False, current: bool=False):
     async def predicate(ctx):
         try:
             player = ctx.bot.lavalink.players.get(ctx.guild.id)
-            requester = player.current.requester
+            is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
+            print(alone, is_alone, (ctx.author in player.listeners and len(player.listeners) == 1))
+            requester = (player.current.requester == ctx.author.id) and current
+
             is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
             is_admin = await check_guild_permissions(ctx, {'administrator': True})
-            return is_dj or is_admin or requester == ctx.author.id
-        except AttributeError:
-            return False
-    return commands.check(predicate)
 
-
-def DJ_or_alone():
-    async def predicate(ctx):
-        try:
-            player = ctx.bot.lavalink.players.get(ctx.guild.id)
-            alone = ctx.author in player.listeners and len(player.listeners) == 1
-            is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
-            is_admin = await check_guild_permissions(ctx, {'administrator': True})
-            return is_dj or is_admin or alone
+            return is_dj or is_admin or is_alone or requester
         except AttributeError:
             return False
     return commands.check(predicate)
