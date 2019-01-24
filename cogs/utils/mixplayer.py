@@ -1,7 +1,7 @@
 import time
 import lavalink
 
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from itertools import cycle, islice, chain
 from random import shuffle
 
@@ -56,6 +56,9 @@ class MixPlayer(DefaultPlayer):
 
     def global_queue(self):
         return self.queue.get_queue()
+
+    def get_history(self):
+        return self.queue.history
 
     def queue_duration(self, include_current: bool=True):
         duration = 0
@@ -155,6 +158,7 @@ class MixQueue:
     def __init__(self):
         self.queues = OrderedDict()
         self.priority_queue = []
+        self._history = deque(maxlen=11) # 10 + current
 
     def __str__(self):
         tmp = ''
@@ -197,11 +201,13 @@ class MixQueue:
     def pop_first(self):
         if self.priority_queue:
             next_track = self.priority_queue.pop(0)
+            self._history.append(next_track)
             return next_track
         try:
             next_track = self.queues[self.first_queue].pop(0)
             self._shuffle()
             self._clear_empty()
+            self._history.append(next_track)
             return next_track
         except KeyError:
             pass
@@ -286,16 +292,19 @@ class MixQueue:
         return globpos
 
     def _glob_to_loc(self, pos: int):
-        track = None
-        for i, t in enumerate(self):
-            if i == pos:
-                track = t
-        if track is None:
+        try:
+            song = next(islice(self, pos, pos + 1))
+        except (ValueError, StopIteration):
             return None, None
-        for requester, q in self.queues.items():
-            for i, t in enumerate(q):
-                if t == track:
-                    return requester, i
+        user_queue = self.queues.get(song.requester, [])
+
+        # In case song is in the priority queue
+        if not user_queue or song not in user_queue:
+            return None, pos
+
+        for i, s in enumerate(user_queue):
+            if s == song:
+                return song.requester, i
 
     @property
     def first_queue(self):
@@ -307,3 +316,8 @@ class MixQueue:
     @property
     def empty(self):
         return len(self) == 0
+
+    @property
+    def history(self):
+        return list(reversed(self._history))
+    

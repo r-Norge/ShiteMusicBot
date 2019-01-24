@@ -38,6 +38,7 @@ class Music:
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.TrackEndEvent):
+            print('AGA')
             pass  # Send track ended message to channel.
         if isinstance(event, lavalink.events.QueueEndEvent):
             channel = self.bot.get_channel(event.player.fetch('channel'))
@@ -489,6 +490,28 @@ class Music:
         else:
             embed.description = 'Bass boost is off'
             await ctx.send(embed=embed)
+
+    @commands.command(name='history', aliases=['h','hist'])
+    async def _history(self, ctx):
+        """ Show the last 10 songs played """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        history = player.get_history()
+        track = history[0]
+        description = f'`Current` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n\n'
+        description += f'**{len(history)-1} Previous songs:**\n'
+        thumb_url = await RoxUtils.ThumbNailer.identify(self,
+                                                track.identifier,
+                                                track.uri)
+        for index, track in enumerate(history[1:], start=1):
+            description += f'`{-index}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
+
+        embed = discord.Embed(title='Track history', color=0xEFD26C, description=description)
+
+        if thumb_url:
+            embed.set_thumbnail(url=thumb_url)
+        await ctx.send(embed=embed)
+
 
     @commands.command()
     @checks.DJ_or(alone=True)

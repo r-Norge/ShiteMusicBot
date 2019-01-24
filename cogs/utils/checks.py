@@ -60,7 +60,7 @@ def DJ_or(alone: bool=False, current: bool=False):
         try:
             player = ctx.bot.lavalink.players.get(ctx.guild.id)
             is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
-            print(alone, is_alone, (ctx.author in player.listeners and len(player.listeners) == 1))
+
             requester = (player.current.requester == ctx.author.id) and current
 
             is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
