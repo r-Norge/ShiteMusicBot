@@ -38,7 +38,6 @@ class Music:
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.TrackEndEvent):
-            print('AGA')
             pass  # Send track ended message to channel.
         if isinstance(event, lavalink.events.QueueEndEvent):
             channel = self.bot.get_channel(event.player.fetch('channel'))
