@@ -112,6 +112,13 @@ class MixPlayer(DefaultPlayer):
         if member in self.listeners:
             self.skip_voters.add(member)
 
+    async def handle_event(self, event):
+        """ Handles the given event as necessary. """
+        if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
+                isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
+            self.skip_voters.clear()
+            await self.play()
+
     async def bassboost(self, boost: bool=False):
         if boost:
             gains = [
@@ -264,18 +271,19 @@ class MixQueue:
         for i in to_remove:
             self.queues.pop(i)
 
-    # Convert between global and local queue positions
-    # Pretty shit atm, todo: implement algorithm thing I made.
-    def _loc_to_glob(self, requester: int, pos: int):
-        queue = self.queues.get(requester, [])
-        if queue:
-            try:
-                track = queue[pos]
-                for i, t in enumerate(self):
-                    if t == track:
-                        return i
-            except IndexError:
-                pass
+    def _loc_to_glob(self, requester, pos):
+        globpos = len(self.priority_queue)
+        passed = False
+        for key, queue in self.queues.items():
+            if len(queue) < pos:
+                globpos += len(queue)
+            else:
+                globpos += pos
+                if key == requester:
+                    passed = True
+                if not passed:
+                    globpos += 1
+        return globpos
 
     def _glob_to_loc(self, pos: int):
         track = None
