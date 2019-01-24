@@ -281,7 +281,7 @@ class MixQueue:
         globpos = len(self.priority_queue)
         passed = False
         for key, queue in self.queues.items():
-            if len(queue) < pos:
+            if len(queue) <= pos:
                 globpos += len(queue)
             else:
                 globpos += pos

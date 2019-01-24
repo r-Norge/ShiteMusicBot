@@ -189,7 +189,12 @@ class Music:
         thumbnail_url = await RoxUtils.ThumbNailer.identify(self,player.current.identifier, player.current.uri)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
-        embed.set_footer(text=f'Requested by {member.nick}', icon_url=member.avatar_url)
+
+        if member.nick:
+            member_identifier = member.nick
+        else:
+            member_identifier = member.name
+        embed.set_footer(text=f'Requested by {member_identifier}', icon_url=member.avatar_url)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['q'])
@@ -452,7 +457,7 @@ class Music:
             return await ctx.send(f'🔈 | {player.volume}%')
 
         if int(player.current.requester) == ctx.author.id:
-            if volume not in list(range(50,125)):
+            if not 50 <= volume <= 125:
                 return await ctx.send(f'you can only set the volume between 50 and 125')
 
         await player.set_volume(volume)
