@@ -7,7 +7,9 @@ from cogs.utils.dict_utils import flatten, SafeDict
 
 import json
 
+import copy
 
+from discord import Embed
 
 """
 Localizer for bot
@@ -38,10 +40,9 @@ class Localizer:
             self.localization_table[lang] = False
             self._load_localization(lang)
 
-        tmp_d = flatten(self.localization_table)
-        print(tmp_d)
+        self.all_localizations = flatten(self.localization_table)
         for lang, d in self.localization_table.items():
-            self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang], tmp_d)
+            self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang], self.all_localizations)
 
     # internal function for loading a localization
     def _load_localization(self, lang):
@@ -49,12 +50,10 @@ class Localizer:
         if localization is None:
             raise Exception(f'Localization for {lang} does not exist')
         elif localization is False:
-            print(f'Loading {lang}')
             self.localization_table[lang] = {}
             l_table = self.localization_table[lang]
             for file in glob(path.join(self.localization_folder, lang, "*.json")):
                 file_base = path.basename(file).split(".")[0]
-                print(f'{file_base} -> {file}')
                 with open(file) as f:
                     data = json.load(f)
                 
@@ -64,7 +63,6 @@ class Localizer:
             self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)
             for file in glob(path.join(self.localization_folder, lang, "*.txt")):
                 file_base = path.basename(file).split(".")[0]
-                print(f'{file_base} -> {file}')
                 with open(file) as f:
                     content = Localizer._parse_localization_string(f.read(), self.localization_table[lang])
                 self.localization_table[lang][file_base] = content
@@ -101,4 +99,37 @@ class Localizer:
         
         return self.localization_table.get(lang, {}).get(key.replace(".", "/"))
         
+    # inserts translations into a string
+    def format_str(self, s, lang=None):
+        lang = lang or self.default_lang
+        if not self.isLoaded(lang):
+            self._load_localization(lang)
+
+        ns = Localization._parse_localization_string(s, self.localization_table.get(lang, {}))
+        return Localization._parse_localization_string(s, self.all_localizations)
+    
+    # inserts translations into a values of a dictionary
+    def format_dict(self, d, lang=None):
+        lang = lang or self.default_lang
+        if not self.isLoaded(lang):
+            self._load_localization(lang)
         
+        nd = copy.deepcopy(d)
+        cursorQueue = [nd]
+        while cursorQueue:
+            cursor = cursorQueue.pop()
+            for k, v in (cursor.items() if type(cursor) == dict else enumerate(cursor)):
+                if type(v) == str:
+                    # insert translations based on lang
+                    v = Localizer._parse_localization_string(v, self.localization_table.get(lang, {}))
+                    # insert translations based on key prefix, e.g 'global.', 'en_en.'
+                    cursor[k] = Localizer._parse_localization_string(v, self.all_localizations)
+                elif type(v) == dict or type(v) == list:
+                    cursorQueue.append(v)
+
+        return nd
+
+    # inserts translations into a values of a embed
+    def format_embed(self, embed, lang=None):
+        raw = embed.to_dict()
+        return Embed.from_data(self.format_dict(raw, lang))
