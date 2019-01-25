@@ -489,7 +489,7 @@ class Music:
 
         await player.set_volume(volume)
         embed = discord.Embed(color=0x36393F)
-        embed.description = self.bot.localizer.get("music.response.volume.set_to", lang).format(_volume=player.volume)'
+        embed.description = self.bot.localizer.get("music.response.volume.set_to", lang).format(_volume=player.volume)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['normal','nl'])
