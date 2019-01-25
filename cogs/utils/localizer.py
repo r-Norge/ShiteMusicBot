@@ -91,6 +91,9 @@ class Localizer:
     def isLoaded(self, lang):
         return self.localization_table.get(lang, False)
     
+    def getAvaliableLocalizations(self):
+        return self.localization_table.keys()
+
     # returns translation string from a key
     def get(self, key, lang=None):
         lang = lang or self.default_lang
