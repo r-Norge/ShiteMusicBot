@@ -1,5 +1,7 @@
 {
-  "what": "what?",
-  "description": "Made by /r/Norge",
-  "infotext": "Shite Music Bot"
+  "name": "what?",
+  "infotext": "Made by /r/Norge",
+  "footer": {
+    "text": "Shite Music Bot"
+  }
 }

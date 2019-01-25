@@ -1,4 +1,0 @@
-Example file 
-title: {example.title}
-Repo: {global.vars.repo}
-Some Norwegian: {nb_no.example.title}

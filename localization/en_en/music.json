@@ -1,0 +1,70 @@
+{
+  "response": {
+    "nothing_found": "Nothing found!",
+    "not_playing": "Not playing.",
+    "nothing_playing": "Nothing playing",
+    "have_to_listen": "You have to be listening to the bot",
+    "playlist_enqued": "Playlist Enqueued!",
+    "tracks": "tracks",
+    "seek": {
+      "missing_amount": "You need to specify the amount of seconds to skip!",
+      "track_moved": "Moved track to **{_position}**"
+    },
+    "skip": {
+      "skipped": "Skipped.",
+      "require_vote": "{_skips} out of {_total} required haters have voted to skip."
+    },
+    "skip_to": {
+      "invalid_pos": "Invalid specified position.",
+      "exceeds_queue": "The position exceeds the queue\\'s length.",
+      "skipped_to": "skipped to `{_title}` at position `{_pos}`"
+    },
+    "stop": "⏹ | Stopped.",
+    "live": "🔴 LIVE",
+    "now": "Now Playing",
+    "queue": {
+      "empty": "The queue is empty",
+      "user_empty": "{_user}'s queue is empty"
+    },
+    "my_queue": "Your queue is empty",
+    "resume": {
+      "resumed": "⏯ | Resumed",
+      "paused": "⏯ | Paused"
+    },
+    "shuffle": "Your queue has been shuffled",
+    "out_of_range": "Positions must be between 1 and {_len}",
+    "move": {
+      "not_in_queue": "Check that the positions exist in your queue",
+      "moved_to": "{_title} moved from position {_from} to {_to} in your queue"
+    },
+    "remove": "**{_title}** removed.",
+    "dj_removed": "**{_title}** queued by {_user} removed.",
+    "dj_remove_user": "Removed all songs queued by <@{_id}>.",
+    "search": "searching",
+    "results": "Results",
+    "time_expired": "Timer Expired",
+    "disconnect": {
+      "not_in_voice": "You\\'re not in my voicechannel!",
+      "disconnected": "Disconnected"
+    },
+    "not_connected": "Not connected.",
+    "volume": {
+      "set_to": "Volume set to {_volume}",
+      "reset": "Volume and equalizer reset"
+    },
+    "boost": {
+      "on": "Bass boost is on",
+      "off": "'Bass boost is off"
+    },
+    "scrub": {
+      "add": "Adding controls",
+      "controls": "{music_controls}",
+      "_comment_controls": "scrub.controls read from music_controls.txt"
+    },
+    "enqueue": {
+      "position": "position",
+      "playing_in": "Playing in",
+      "enqueued": "Song enqueued"
+    }
+  }
+}
