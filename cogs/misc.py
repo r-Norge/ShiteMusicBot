@@ -63,23 +63,25 @@ class Misc:
         avatar = self.bot.user.avatar_url_as(format=None,
                                                 static_format='png',
                                                 size=1024)
-        infotext = f'Musikkbot skrevet for bruk på /r/Norge sine Discord Servere. Kildekoden er åpen! Den kan du finne [HER](https://gitlab.com/Ev-1/shite-music-bot)'
-        spectext = f'**Python:** [{platform.python_version()}](https://www.python.org/)\n**Discord.py:** [{discord.__version__}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{LavalinkVersion}](https://github.com/Devoxin/Lavalink.py)'
-        stattext = f'**Guilder:** {guilds}\n**Brukere:** {members}'
+        infotext = '{info.infotext}'
+        spectext = self.bot.localizer.get("info.spectext").format(_python_v=platform.python_version, _discord_v=discord.__version__, _lavalink_v=LavalinkVersion)
+        stattext = self.bot.localizer.get("info.stattext").format(_guilds=guilds, _members=members)
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
         embed = discord.Embed(color=0xD9C04D)
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
-        embed.add_field(name="Hva?",
+        embed.add_field(name="{info.what}",
                         value=infotext, inline=False)
         embed.set_footer(icon_url="https://cdn.discordapp.com/icons/297798952538079233/0198dc7b01ccf288b985b8a394cb1d44.jpg?size=64",
-                            text="Laget av /r/Norge, for /r/Norge")
-        embed.add_field(name="Hvordan?",
+                            text="{info.footer_text}")
+        embed.add_field(name="{info.how}",
                         value=spectext)
-        embed.add_field(name="Hvor mange?",
+        embed.add_field(name="{info.how_many}",
                         value=stattext)
-        embed.add_field(name="Hvor lenge?",
+        embed.add_field(name="{info.how_long}",
                         value=uptimetext)
+
+        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
         await ctx.send(embed=embed)
 
         @commands.command()

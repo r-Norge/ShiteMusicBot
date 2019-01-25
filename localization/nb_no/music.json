@@ -5,6 +5,7 @@
     "nothing_playing": "Nothing playing",
     "have_to_listen": "You have to be listening to the bot",
     "playlist_enqued": "Playlist Enqueued!",
+    "requested_by": "Requested by",
     "tracks": "tracks",
     "seek": {
       "missing_amount": "You need to specify the amount of seconds to skip!",
