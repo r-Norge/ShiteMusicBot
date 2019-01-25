@@ -64,7 +64,8 @@
     "enqueue": {
       "position": "position",
       "playing_in": "Playing in",
-      "enqueued": "Song enqueued"
+      "enqueued": "Song enqueued",
+      "estimated": "estimated"
     }
   }
 }
