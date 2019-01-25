@@ -1,0 +1,4 @@
+Eksempel fil 
+Tittel: {example.title}
+Repo: {global.vars.repo}
+Noe engelsk: {en_en.example.title}
