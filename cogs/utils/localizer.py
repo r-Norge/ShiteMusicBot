@@ -54,19 +54,25 @@ class Localizer:
             l_table = self.localization_table[lang]
             for file in glob(path.join(self.localization_folder, lang, "*.json")):
                 file_base = path.basename(file).split(".")[0]
-                with open(file) as f:
+                with open(file, "r", encoding='utf-8') as f:
                     data = json.load(f)
                 
                 l_table[file_base] = data
-            
-            l_table = flatten(l_table)
-            self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)
+
             for file in glob(path.join(self.localization_folder, lang, "*.txt")):
                 file_base = path.basename(file).split(".")[0]
-                with open(file) as f:
-                    content = Localizer._parse_localization_string(f.read(), self.localization_table[lang])
-                self.localization_table[lang][file_base] = content
+                with open(file, "r", encoding='utf-8') as f:
+                    content = f.read()
+                l_table[file_base] = content
 
+
+            l_table = flatten(l_table)
+            # parsing a few times to resolve all values
+            for i in range(0, 5):
+                l_table = Localizer._parse_localization_dictionary(l_table, l_table)
+            
+            self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)
+            
     # parses and interpolates translation dictionary
     @staticmethod
     def _parse_localization_dictionary(d, lookup):
