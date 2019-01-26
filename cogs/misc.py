@@ -14,7 +14,6 @@ class Misc:
         self.bot = bot
 
     @commands.command(name='ping', hidden=True)
-    @checks.is_mod()
     async def _ping(self, ctx):
             start = time.perf_counter()
             message = await ctx.send('Ping...')
@@ -40,6 +39,23 @@ class Misc:
         for guild in self.bot.guilds:
             guilds += f"{guild.name}\n"
         await ctx.send(guilds)
+
+    @commands.command()
+    async def musicinfo(self, ctx):
+        """
+        Info om musikkspilleren
+        """
+        embed = discord.Embed(title='Music info', color=ctx.me.color)
+        lavalink = self.bot.lavalink
+
+        listeners = 0
+        for guild, player in lavalink.players:
+            listeners += len(player.listeners)
+
+        embed.add_field(name='Players', value=f'{len(lavalink.players)}')
+        embed.add_field(name='Listeners', value=f'{listeners}')
+        await ctx.send(embed=embed)
+
     
     @commands.command()
     async def info(self, ctx):
@@ -65,14 +81,15 @@ class Misc:
                                                 size=1024)
         infotext = f'Musikkbot skrevet for bruk på /r/Norge sine Discord Servere. Kildekoden er åpen! Den kan du finne [HER](https://gitlab.com/Ev-1/shite-music-bot)'
         spectext = f'**Python:** [{platform.python_version()}](https://www.python.org/)\n**Discord.py:** [{discord.__version__}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{LavalinkVersion}](https://github.com/Devoxin/Lavalink.py)'
-        stattext = f'**Guilder:** {guilds}\n**Brukere:** {members}'
+        stattext = f'**Tenarar:** {guilds}\n**Brukere:** {members}'
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
-        embed = discord.Embed(color=0xD9C04D)
+        embed = discord.Embed(color=ctx.me.color)
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
+        embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/368118192251469835/vintage1turntable.png')
         embed.add_field(name="Hva?",
                         value=infotext, inline=False)
-        embed.set_footer(icon_url="https://cdn.discordapp.com/icons/297798952538079233/0198dc7b01ccf288b985b8a394cb1d44.jpg?size=64",
+        embed.set_footer(icon_url="https://cdn.discordapp.com/icons/532176350019321917/92f43a1f67308a99a30c169db4b671dd.png?size=64",
                             text="Laget av /r/Norge, for /r/Norge")
         embed.add_field(name="Hvordan?",
                         value=spectext)

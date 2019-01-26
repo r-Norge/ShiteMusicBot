@@ -2,6 +2,7 @@ import discord
 import os
 import json
 import codecs
+import traceback
 from discord.ext import commands
 from cogs.utils import checks
 
@@ -66,6 +67,7 @@ class Cogs:
     @checks.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
+        self.bot.lavalink.players.clear()
         await self.bot.logout()
 
 
