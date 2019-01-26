@@ -89,6 +89,7 @@ class Music:
         else:
             track = results['tracks'][0]
             await self.enqueue(ctx, track, embed)
+            embed = self.bot.localizer.format_embed(embed, lang)
             await ctx.send(embed=embed)
 
         if not player.is_playing:
@@ -449,6 +450,7 @@ class Music:
                 await result_msg.clear_reactions()
                 track = tracks[choice - 1]
                 await self.enqueue(ctx, track, embed)
+                embed = self.bot.localizer.format_embed(embed, lang)
                 await result_msg.edit(embed=embed)
                 if not player.is_playing:
                     await player.play()
@@ -710,7 +712,6 @@ class Music:
 
         duration = lavalink.utils.format_time(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
-        embed = self.bot.localizer.format_embed(embed, lang)
 
 def setup(bot):
     bot.add_cog(Music(bot))
