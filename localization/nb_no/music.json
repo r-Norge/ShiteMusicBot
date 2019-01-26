@@ -22,18 +22,18 @@
     },
     "stop": "⏹ | Stopped.",
     "live": "🔴 LIVE",
-    "now": "Now Playing",
+    "now": "Spiller nå",
     "queue": {
-      "empty": "The queue is empty",
-      "user_empty": "{_user}'s queue is empty"
+      "empty": "Køen er tom",
+      "user_empty": "{_user} sin kø er tom"
     },
-    "my_queue": "Your queue is empty",
+    "my_queue": "Din kø er tom",
     "resume": {
       "resumed": "⏯ | Resumed",
       "paused": "⏯ | Paused"
     },
-    "shuffle": "Your queue has been shuffled",
-    "out_of_range": "Positions must be between 1 and {_len}",
+    "shuffle": "Din kø har blitt stokket",
+    "out_of_range": "Posisjonene må være mellom 1 og {_len}",
     "move": {
       "not_in_queue": "Check that the positions exist in your queue",
       "moved_to": "{_title} moved from position {_from} to {_to} in your queue"
@@ -41,8 +41,8 @@
     "remove": "**{_title}** removed.",
     "dj_removed": "**{_title}** queued by {_user} removed.",
     "dj_remove_user": "Removed all songs queued by <@{_id}>.",
-    "search": "searching",
-    "results": "Results",
+    "search": "søker",
+    "results": "Resultater",
     "time_expired": "Timer Expired",
     "disconnect": {
       "not_in_voice": "You\\'re not in my voicechannel!",
@@ -50,15 +50,15 @@
     },
     "not_connected": "Not connected.",
     "volume": {
-      "set_to": "Volume set to {_volume}",
-      "reset": "Volume and equalizer reset"
+      "set_to": "Volume satt til {_volume}",
+      "reset": "Volume og equalizer resatt"
     },
     "boost": {
-      "on": "Bass boost is on",
-      "off": "'Bass boost is off"
+      "on": "Bass boost er på",
+      "off": "'Bass boost er av"
     },
     "scrub": {
-      "add": "Adding controls",
+      "add": "Legger til kontrollere",
       "controls": "{music_controls}",
       "_comment_controls": "scrub.controls read from music_controls.txt"
     },
