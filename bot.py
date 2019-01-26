@@ -36,7 +36,7 @@ class Bot(commands.Bot):
                          description=config["description"])
 
         self.settings = Settings(**config)
-        self.localizer = Localizer("./localization", "en_en")
+        self.localizer = Localizer(self.settings.get_language_path(), "en_en")
         self.debug = debug
 
         for extension in initial_extension:

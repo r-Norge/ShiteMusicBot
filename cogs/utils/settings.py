@@ -11,7 +11,7 @@ class Settings:
         self.default_admin = default_settings["default_admin"]
         self.default_mod = default_settings["default_mod"]
         self.default_locale = default_settings["default_locale"]
-
+        self.default_lang_path = default_settings["default_lang_path"] or "./localization"
         if not self.default_locale:
             locale, codepage = locale.getlocale()
             default_locale, default_codepage = locale.getdefaultlocale()
@@ -71,3 +71,5 @@ class Settings:
         guild_id = str(guild_id)
         return self.settings.get("locale", {}).get(guild_id, self.default_locale).lower()
 
+    def get_language_path(self):
+        return self.settings.get("language_path", self.default_lang_path)
