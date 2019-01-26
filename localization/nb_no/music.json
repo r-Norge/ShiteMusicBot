@@ -1,24 +1,24 @@
 {
   "response": {
-    "nothing_found": "Nothing found!",
-    "not_playing": "Not playing.",
-    "nothing_playing": "Nothing playing",
-    "have_to_listen": "You have to be listening to the bot",
-    "playlist_enqued": "Playlist Enqueued!",
-    "requested_by": "Requested by",
-    "tracks": "tracks",
+    "nothing_found": "Ingenting funnet!",
+    "not_playing": "Spiller ikke.",
+    "nothing_playing": "Ingenting spiller av",
+    "have_to_listen": "Du må høre på botten",
+    "playlist_enqued": "Spilleliste lagt til!",
+    "requested_by": "Etterspurt av",
+    "tracks": "spor",
     "seek": {
-      "missing_amount": "You need to specify the amount of seconds to skip!",
-      "track_moved": "Moved track to **{_position}**"
+      "missing_amount": "Du må spesifisere antall sekunder å spole!",
+      "track_moved": "Flyttet spor til **{_position}**"
     },
     "skip": {
-      "skipped": "Skipped.",
-      "require_vote": "{_skips} out of {_total} required haters have voted to skip."
+      "skipped": "Hoppet over.",
+      "require_vote": "{_skips} av {_total} hatere må stemme for å hoppe over."
     },
     "skip_to": {
-      "invalid_pos": "Invalid specified position.",
-      "exceeds_queue": "The position exceeds the queue\\'s length.",
-      "skipped_to": "skipped to `{_title}` at position `{_pos}`"
+      "invalid_pos": "Ugyldig posisjon.",
+      "exceeds_queue": "Posisjonen overgår køens lengde.",
+      "skipped_to": "hoppet til `{_title}` posisjon `{_pos}`"
     },
     "stop": "⏹ | Stopped.",
     "live": "🔴 LIVE",
@@ -35,20 +35,20 @@
     "shuffle": "Din kø har blitt stokket",
     "out_of_range": "Posisjonene må være mellom 1 og {_len}",
     "move": {
-      "not_in_queue": "Check that the positions exist in your queue",
-      "moved_to": "{_title} moved from position {_from} to {_to} in your queue"
+      "not_in_queue": "Sjekk av posisjonen eksisterer i køen din",
+      "moved_to": "{_title} flyttet fra {_from} til {_to} i køen din"
     },
-    "remove": "**{_title}** removed.",
-    "dj_removed": "**{_title}** queued by {_user} removed.",
-    "dj_remove_user": "Removed all songs queued by <@{_id}>.",
+    "remove": "**{_title}** fjernet.",
+    "dj_removed": "**{_title}** køet av {_user} fjernet.",
+    "dj_remove_user": "Fjernet alle sanger køet av <@{_id}>.",
     "search": "søker",
     "results": "Resultater",
-    "time_expired": "Timer Expired",
+    "time_expired": "Tid utgått",
     "disconnect": {
-      "not_in_voice": "You\\'re not in my voicechannel!",
-      "disconnected": "Disconnected"
+      "not_in_voice": "Du er ikke i min stemmekanal!",
+      "disconnected": "Frakoblet"
     },
-    "not_connected": "Not connected.",
+    "not_connected": "Ikke koblet til.",
     "volume": {
       "set_to": "Volume satt til {_volume}",
       "reset": "Volume og equalizer resatt"
@@ -63,10 +63,10 @@
       "_comment_controls": "scrub.controls read from music_controls.txt"
     },
     "enqueue": {
-      "position": "position",
-      "playing_in": "Playing in",
-      "enqueued": "Song enqueued",
-      "estimated": "estimated"
+      "position": "posisjon",
+      "playing_in": "Spiller av om",
+      "enqueued": "Song køet",
+      "estimated": "estimert"
     }
   }
 }

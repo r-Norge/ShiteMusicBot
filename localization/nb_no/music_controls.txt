@@ -1,5 +1,5 @@
 **Kontrollere**
-Play/pause: 
+Spill/pause: 
 \N{BLACK RIGHT-POINTING TRIANGLE}  
 \N{DOUBLE VERTICAL BAR}
 skip 15 seconds forward/backward: 
