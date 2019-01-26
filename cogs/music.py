@@ -254,10 +254,10 @@ class Music:
 
         if player.paused:
             await player.set_pause(False)
-            await ctx.send(self.bot.localizer.get("music.respone.resume.resumed", lang))
+            await ctx.send(self.bot.localizer.get("music.response.resume.resumed", lang))
         else:
             await player.set_pause(True)
-            await ctx.send(self.bot.localizer.get("music.respone.resume.paused", lang))
+            await ctx.send(self.bot.localizer.get("music.response.resume.paused", lang))
 
     @commands.command(name='shuffle')
     async def _shuffle(self, ctx):
