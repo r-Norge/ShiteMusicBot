@@ -1,6 +1,5 @@
 """
-This is an example cog that shows how you would make use of Lavalink.py.
-This example cog requires that you have python 3.6 or higher due to the f-strings.
+Music commands
 """
 import math
 import re
@@ -31,19 +30,9 @@ class Music:
             bot.lavalink.add_node(host, port, password, region, 'default-node')  # Host, Port, Password, Region, Name
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-        bot.lavalink.add_event_hook(self.track_hook)
-
-    def __unload(self):
-        self.bot.lavalink._event_hooks.clear()
-
-    async def track_hook(self, event):
-        if isinstance(event, lavalink.events.TrackEndEvent):
-            pass  # Send track ended message to channel.
-        if isinstance(event, lavalink.events.QueueEndEvent):
-            channel = self.bot.get_channel(event.player.fetch('channel'))
-            await self.check_leave_voice(channel.guild)
-
     async def __before_invoke(self, ctx):
+        # TODO: rewrite this thing. Probably remove ensure_voice.
+
         guild_check = ctx.guild is not None
         #  This is essentially the same as `@commands.guild_only()`
         #  except it saves us repeating ourselves (and also a few lines).
@@ -74,7 +63,7 @@ class Music:
         if not results or not results['tracks']:
             return await ctx.send('Nothing found!')
 
-        embed = discord.Embed(color=0xEFD26C)
+        embed = discord.Embed(color=ctx.me.color)
 
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
@@ -185,7 +174,7 @@ class Music:
 
         member = ctx.guild.get_member(player.current.requester)
 
-        embed = discord.Embed(color=0xEFD26C, description=song, title='Now playing')
+        embed = discord.Embed(color=ctx.me.color, description=song, title='Now playing')
         thumbnail_url = await RoxUtils.ThumbNailer.identify(self,player.current.identifier, player.current.uri)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
@@ -267,7 +256,7 @@ class Music:
         if not user_queue:
             return await ctx.send('Your queue is empty')
 
-        if not all(x in range(1,len(user_queue)+1) for x in [from_pos, to_pos]):
+        if not all(x in range(1, len(user_queue) + 1) for x in [from_pos, to_pos]):
             return await ctx.send(f'Positions must be between 1 and {len(user_queue)}')
 
         moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
@@ -340,7 +329,7 @@ class Music:
             return
 
         player.remove_user_queue(user.id)
-        embed = discord.Embed(color=0x36393F)
+        embed = discord.Embed(color=ctx.me.color)
         embed.description = f'Removed all songs queued by <@{user.id}>.'
         await ctx.send(embed=embed)
 
@@ -404,7 +393,7 @@ class Music:
 
         embed.description = search_results
         embed.title = 'Results'
-        embed.color = 0xEFD26C
+        embed.color = ctx.me.color
         await result_msg.edit(embed=embed)
 
         try:
@@ -444,7 +433,7 @@ class Music:
         player.queue.clear()
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
-        embed = discord.Embed(description='Disconnected', color=0x36393F)
+        embed = discord.Embed(description='Disconnected', color=ctx.me.color)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['vol'])
@@ -461,7 +450,7 @@ class Music:
                 return await ctx.send(f'you can only set the volume between 50 and 125')
 
         await player.set_volume(volume)
-        embed = discord.Embed(color=0x36393F)
+        embed = discord.Embed(color=ctx.me.color)
         embed.description = f'Volume set to {player.volume}'
         await ctx.send(embed=embed)
 
@@ -473,7 +462,7 @@ class Music:
 
         await player.set_volume(100)
         await player.bassboost(False)
-        embed = discord.Embed(color=0x36393F)
+        embed = discord.Embed(color=ctx.me.color)
         embed.description = 'Volume and equalizer reset'
         await ctx.send(embed=embed)
 
@@ -486,7 +475,7 @@ class Music:
         if boost is not None:
             await player.bassboost(boost)
 
-        embed = discord.Embed(color=0x36393F)
+        embed = discord.Embed(color=ctx.me.color)
 
         if player.boosted:
             embed.description = 'Bass boost is on'
@@ -510,7 +499,7 @@ class Music:
         for index, track in enumerate(history[1:], start=1):
             description += f'`{-index}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
 
-        embed = discord.Embed(title='Track history', color=0xEFD26C, description=description)
+        embed = discord.Embed(title='Track history', color=ctx.me.color, description=description)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
@@ -530,7 +519,7 @@ class Music:
         Skip to beginning/end of song:  \N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR} \N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}
 
         '''
-        embed = discord.Embed(description='Nothing playing', color=0x36393F)
+        embed = discord.Embed(description='Nothing playing', color=ctx.me.color)
         if player.current is None:
             return await ctx.send(embed=embed)
 
@@ -629,20 +618,6 @@ class Music:
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
                 raise commands.CommandInvokeError('You need to be in my voicechannel.')
-
-    async def on_voice_state_update(self, member, before, after):
-        if not member.bot:
-            player = self.bot.lavalink.players.get(member.guild.id)
-            if player is not None:
-                player.update_listeners(member, after)
-                await self.check_leave_voice(member.guild)
-
-    async def check_leave_voice(self, guild):
-        player = self.bot.lavalink.players.get(guild.id)
-        if len(player.listeners) == 0 and player.is_connected:
-            if player.queue.empty and player.current is None:
-                await player.stop()
-                await self.connect_to(guild.id, None)
 
     def max_track_length(self, guild):
         player = self.bot.lavalink.players.get(guild.id)
