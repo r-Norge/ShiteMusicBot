@@ -41,6 +41,13 @@ class Misc:
             guilds += f"{guild.name}\n"
         await ctx.send(guilds)
     
+
+    @commands.command(name="reloadlocale")
+    async def reload_locale(self, ctx):
+        self.bot.localizer.index_localizations()
+        self.bot.localizer.load_localizations()
+        await ctx.send("Localizations reloaded.")
+
     @commands.command()
     async def info(self, ctx):
         """

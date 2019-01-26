@@ -22,7 +22,7 @@ class Settings:
 
         if not os.path.isfile(self.SETTINGS_PATH):
             with codecs.open(self.SETTINGS_PATH, "w+", encoding='utf8') as f:
-                json.dump({"prefixes": {},
+                json.dump({"locale": {}, "prefixes": {},
                            "roles": {}}, f, indent=4)
 
         with codecs.open(self.SETTINGS_PATH, "r", encoding='utf8') as f:
@@ -64,6 +64,12 @@ class Settings:
             self.settings["role"][guild_id]["mod"] = mod
             self.settings["role"][guild_id]["admin"] = admin
 
+        with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
+            json.dump(self.settings, f, indent=4)
+
+    def set_locale(self, guild_id, locale):
+        guild_id = str(guild_id)
+        self.settings["locale"][guild_id] = locale
         with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
             json.dump(self.settings, f, indent=4)
 
