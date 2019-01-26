@@ -214,7 +214,7 @@ class Music:
         lang = self.bot.settings.get_locale(ctx.guild.id)
 
         if player.queue.empty:
-            return await ctx.send(self.bot.localizer.get("music.respone.queue.empty", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.queue.empty", lang))
         
         if user is None:
             queue = player.global_queue()
@@ -224,7 +224,7 @@ class Music:
         else:
             user_queue = player.user_queue(user.id, dual=True)
             if not user_queue:
-                return await ctx.send(self.bot.localizer.get("music.respone.queue.empty", lang).format(_user=user.name))
+                return await ctx.send(self.bot.localizer.get("music.response.queue.empty", lang).format(_user=user.name))
             
             scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=user.name)
             await scroller.start_scrolling()
@@ -237,7 +237,7 @@ class Music:
 
         user_queue = player.user_queue(ctx.author.id, dual=True)
         if not user_queue:
-            return await ctx.send(self.bot.localizer.get("music.respone.my_queue", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.my_queue", lang))
 
         scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=ctx.author.name)
         await scroller.start_scrolling()
@@ -250,7 +250,7 @@ class Music:
         lang = self.bot.settings.get_locale(ctx.guild.id)
 
         if not player.is_playing:
-            return await ctx.send(self.bot.localizer.get("music.respone.not_playing", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.not_playing", lang))
 
         if player.paused:
             await player.set_pause(False)
@@ -268,10 +268,10 @@ class Music:
         user_queue = player.user_queue(ctx.author.id)
 
         if not user_queue:
-            return await ctx.send(self.bot.localizer.get("music.respone.my_queue", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.my_queue", lang))
 
         player.shuffle_user_queue(ctx.author.id)
-        await ctx.send(self.bot.localizer.get("music.respone.shuffle", lang))
+        await ctx.send(self.bot.localizer.get("music.response.shuffle", lang))
 
     @commands.command(name='move', aliases=["m"])
     async def _move(self, ctx, from_pos: int, to_pos: int):
@@ -281,16 +281,16 @@ class Music:
 
         user_queue = player.user_queue(ctx.author.id)
         if not user_queue:
-            return await ctx.send(self.bot.localizer.get("music.respone.my_queue", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.my_queue", lang))
 
         if not all(x in range(1,len(user_queue)+1) for x in [from_pos, to_pos]):
-            return await ctx.send(self.bot.localizer.get("music.respone.my_queue", lang).format(_len=len(user_queue)))
+            return await ctx.send(self.bot.localizer.get("music.response.my_queue", lang).format(_len=len(user_queue)))
 
         moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
         if moved is None:
-            return await ctx.send(self.bot.localizer.get("music.respone.move.not_in_queue", lang))
+            return await ctx.send(self.bot.localizer.get("music.response.move.not_in_queue", lang))
         
-        msg = self.bot.localizer.get("music.respone.move.moved_to", lang).format(_title=moved.title, _from=from_pos, _to=to_pos)
+        msg = self.bot.localizer.get("music.response.move.moved_to", lang).format(_title=moved.title, _from=from_pos, _to=to_pos)
         await ctx.send(msg)
 
     @commands.command()
@@ -307,11 +307,11 @@ class Music:
             return
 
         if pos > len(user_queue) or pos < 1:
-            return await ctx.send(self.bot.localizer.get("music.respone.out_of_range", lang).format(_len=len(user_queue)))
+            return await ctx.send(self.bot.localizer.get("music.response.out_of_range", lang).format(_len=len(user_queue)))
 
         removed = player.remove_user_track(ctx.author.id, pos - 1)
 
-        await ctx.send(self.bot.localizer.get("music.respone.remove", lang).format(_title=removed.title))
+        await ctx.send(self.bot.localizer.get("music.response.remove", lang).format(_title=removed.title))
 
     @commands.command(name="DJremove")
     @checks.DJ_or()
@@ -325,11 +325,11 @@ class Music:
                 return
 
             if pos > len(player.queue) or pos < 1:
-                return await ctx.send(self.bot.localizer.get("music.respone.out_of_range", lang).format(_len=len(player.queue)))
+                return await ctx.send(self.bot.localizer.get("music.response.out_of_range", lang).format(_len=len(player.queue)))
 
             removed = player.remove_global_track(pos - 1)
             requester = self.bot.get_user(removed.requester)
-            await ctx.send(self.bot.localizer.get("music.respone.dj_removed", lang).format(_title=removed.title, _user=requester.name))
+            await ctx.send(self.bot.localizer.get("music.response.dj_removed", lang).format(_title=removed.title, _user=requester.name))
 
         else:
             if player.queue.empty:
@@ -340,10 +340,10 @@ class Music:
                 return
 
             if pos > len(user_queue) or pos < 1:
-                return await ctx.send(self.bot.localizer.get("music.respone.out_of_range", lang).format(_len=len(user_queue)))
+                return await ctx.send(self.bot.localizer.get("music.response.out_of_range", lang).format(_len=len(user_queue)))
 
             removed = player.remove_user_track(user.id, pos - 1)
-            await ctx.send(self.bot.localizer.get("music.respone.dj_removed", lang).format(_title=removed.title, _user=requester.name))
+            await ctx.send(self.bot.localizer.get("music.response.dj_removed", lang).format(_title=removed.title, _user=requester.name))
 
     @commands.command(name="removeuser")
     @checks.DJ_or(alone=True)
@@ -361,7 +361,7 @@ class Music:
 
         player.remove_user_queue(user.id)
         embed = discord.Embed(color=0x36393F)
-        embed.description = self.bot.localizer.get("music.respone.dj_remove_user", lang).format(_id=user.id)
+        embed.description = self.bot.localizer.get("music.response.dj_remove_user", lang).format(_id=user.id)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -375,7 +375,7 @@ class Music:
 
         results = await player.node.get_tracks(query)
 
-        embed = discord.Embed(description='{music.respone.nothing_found}', color=0x36393F)
+        embed = discord.Embed(description='{music.response.nothing_found}', color=0x36393F)
         if not results or not results['tracks']:
             embed = self.bot.localizer.format_embed(embed, lang)
             return await ctx.send(embed=embed)
@@ -438,7 +438,7 @@ class Music:
         except asyncio.TimeoutError:
             await result_msg.clear_reactions()
             embed.title = ''
-            embed.description='{music.respone.time_expired}'
+            embed.description='{music.response.time_expired}'
             embed = self.bot.localizer.format_embed(embed, lang)
             await result_msg.edit(embed=embed)
             await asyncio.sleep(5)
