@@ -52,6 +52,15 @@ class MusicEvents:
         await ws.voice_state(str(guild_id), channel_id)
 
     async def on_voice_state_update(self, member, before, after):
+        """ Updates listeners when the bot or a user changes voice state """
+        if member.id == self.bot.user.id and after.channel is not None:
+            voice_channel = after.channel
+            player = self.bot.lavalink.players.get(member.guild.id)
+            player.clear_listeners()
+            for member in voice_channel.members:
+                if not member.bot:
+                    player.update_listeners(member, member.voice)
+
         if not member.bot:
             player = self.bot.lavalink.players.get(member.guild.id)
             if player is not None:

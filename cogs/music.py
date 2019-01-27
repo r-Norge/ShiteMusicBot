@@ -606,15 +606,6 @@ class Music:
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
 
-            # Get listeners
-            voice_channel = ctx.author.voice.channel
-            while not player.is_connected:
-                await asyncio.sleep(0.5)
-
-            for member in voice_channel.members:
-                if not member.bot:
-                    player.update_listeners(member, member.voice)
-
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
                 raise commands.CommandInvokeError('You need to be in my voicechannel.')
