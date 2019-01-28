@@ -45,18 +45,26 @@ class Misc:
         """
         Info om musikkspilleren
         """
-        embed = discord.Embed(title='Music info', color=ctx.me.color)
+        embed = discord.Embed(title='{info.music.title}', color=ctx.me.color)
         lavalink = self.bot.lavalink
 
         listeners = 0
         for guild, player in lavalink.players:
             listeners += len(player.listeners)
 
-        embed.add_field(name='Players', value=f'{len(lavalink.players)}')
-        embed.add_field(name='Listeners', value=f'{listeners}')
+        embed.add_field(name='{info.music.players}', value=f'{len(lavalink.players)}')
+        embed.add_field(name='{info.music.listeners}', value=f'{listeners}')
+        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
         await ctx.send(embed=embed)
 
     
+
+    @commands.command(name="reloadlocale")
+    async def reload_locale(self, ctx):
+        self.bot.localizer.index_localizations()
+        self.bot.localizer.load_localizations()
+        await ctx.send("Localizations reloaded.")
+
     @commands.command()
     async def info(self, ctx):
         """
@@ -79,24 +87,31 @@ class Misc:
         avatar = self.bot.user.avatar_url_as(format=None,
                                                 static_format='png',
                                                 size=1024)
-        infotext = f'Musikkbot skrevet for bruk på /r/Norge sine Discord Servere. Kildekoden er åpen! Den kan du finne [HER](https://gitlab.com/Ev-1/shite-music-bot)'
-        spectext = f'**Python:** [{platform.python_version()}](https://www.python.org/)\n**Discord.py:** [{discord.__version__}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{LavalinkVersion}](https://github.com/Devoxin/Lavalink.py)'
-        stattext = f'**Tenarar:** {guilds}\n**Brukere:** {members}'
+
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
         embed = discord.Embed(color=ctx.me.color)
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
         embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/368118192251469835/vintage1turntable.png')
-        embed.add_field(name="Hva?",
-                        value=infotext, inline=False)
+        embed.add_field(name="{info.bot.what}",
+                        value='{info.bot.infotext}', inline=False)
         embed.set_footer(icon_url="https://cdn.discordapp.com/icons/532176350019321917/92f43a1f67308a99a30c169db4b671dd.png?size=64",
-                            text="Laget av /r/Norge, for /r/Norge")
-        embed.add_field(name="Hvordan?",
-                        value=spectext)
-        embed.add_field(name="Hvor mange?",
-                        value=stattext)
-        embed.add_field(name="Hvor lenge?",
+                            text="{info.bot.footer_text}")
+        embed.add_field(name="{info.bot.how}",
+                        value='{info.bot.spectext}')
+        embed.add_field(name="{info.bot.how_many}",
+                        value='{info.bot.stattext}')
+        embed.add_field(name="{info.bot.how_long}",
                         value=uptimetext)
+
+        embed = self.bot.localizer.format_embed(embed, 
+            self.bot.settings.get_locale(ctx.guild.id), 
+            _python_v=platform.python_version(),
+            _discord_v=discord.__version__,
+            _lavalink_v=LavalinkVersion,
+            _guilds=guilds,
+            _members=members
+        )
         await ctx.send(embed=embed)
 
         @commands.command()

@@ -37,7 +37,7 @@ def is_even():
 def is_owner():
     def predicate(ctx):
         is_owner = (ctx.message.author.id == 120970603556503552 or
-            ctx.message.author.id == 142212883512557569)
+            ctx.message.author.id == 142212883512557569 or ctx.message.author.id == 212635519706726410)
         return is_owner
     return commands.check(predicate)
 

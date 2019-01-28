@@ -1,0 +1,79 @@
+{
+  "response": {
+    "nothing_found": "Ingenting funnet!",
+    "not_playing": "Spiller ikke.",
+    "nothing_playing": "Ingenting spiller av",
+    "have_to_listen": "Du må høre på botten",
+    "playlist_enqued": "Spilleliste lagt til!",
+    "requested_by": "Etterspurt av",
+    "tracks": "spor",
+    "seek": {
+      "missing_amount": "Du må spesifisere antall sekunder å spole!",
+      "track_moved": "Flyttet spor til **{_position}**"
+    },
+    "skip": {
+      "skipped": "Hoppet over.",
+      "require_vote": "{_skips} av {_total} hatere må stemme for å hoppe over."
+    },
+    "skip_to": {
+      "invalid_pos": "Ugyldig posisjon.",
+      "exceeds_queue": "Posisjonen overgår køens lengde.",
+      "skipped_to": "hoppet til `{_title}` posisjon `{_pos}`"
+    },
+    "stop": "⏹ | Stopped.",
+    "live": "🔴 LIVE",
+    "now": "Spiller nå",
+    "queue": {
+      "empty": "Køen er tom",
+      "user_empty": "{_user} sin kø er tom"
+    },
+    "my_queue": "Din kø er tom",
+    "resume": {
+      "resumed": "⏯ | Resumed",
+      "paused": "⏯ | Paused"
+    },
+    "shuffle": "Din kø har blitt stokket",
+    "out_of_range": "Posisjonene må være mellom 1 og {_len}",
+    "move": {
+      "not_in_queue": "Sjekk av posisjonen eksisterer i køen din",
+      "moved_to": "{_title} flyttet fra {_from} til {_to} i køen din"
+    },
+    "remove": "**{_title}** fjernet.",
+    "dj_removed": "**{_title}** køet av {_user} fjernet.",
+    "dj_remove_user": "Fjernet alle sanger køet av <@{_id}>.",
+    "search": "søker",
+    "results": "Resultater",
+    "time_expired": "Tid utgått",
+    "disconnect": {
+      "not_in_voice": "Du er ikke i min stemmekanal!",
+      "disconnected": "Frakoblet"
+    },
+    "not_connected": "Ikke koblet til.",
+    "volume": {
+      "set_to": "Volume satt til {_volume}",
+      "reset": "Volume og equalizer resatt",
+      "out_of_range": "Du kan bare sette volum mellom 50 og 125"
+    },
+    "boost": {
+      "on": "Bass boost er på",
+      "off": "'Bass boost er av"
+    },
+    "scrub": {
+      "add": "Legger til kontrollere",
+      "controls": "{music_controls}",
+      "_comment_controls": "scrub.controls read from music_controls.txt"
+    },
+    "enqueue": {
+      "position": "posisjon",
+      "playing_in": "Spiller av om",
+      "enqueued": "Song køet",
+      "estimated": "estimert"
+    },
+    "history": {
+      "title": "Sporhistorie",
+      "current": "`Nåværende` **[{_title}]({_uri})** _av <@{_id}>_",
+      "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
+      "previous": "**{_len} Tidligere sanger:**"
+    }
+  }
+}
