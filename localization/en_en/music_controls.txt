@@ -1,10 +1,4 @@
 **Controls**
-Play/pause: 
-\N{BLACK RIGHT-POINTING TRIANGLE}  
-\N{DOUBLE VERTICAL BAR}
-skip 15 seconds forward/backward: 
-\N{BLACK LEFT-POINTING DOUBLE TRIANGLE} 
-\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}
-Skip to beginning/end of song:  
-\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR} 
-\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}
+Play/pause: ▶ ⏸
+skip 15 seconds forward/backward: ⏪ ⏩
+Skip to beginning/end of song: ⏮ ⏭

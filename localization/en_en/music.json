@@ -68,6 +68,12 @@
       "playing_in": "Playing in",
       "enqueued": "Song enqueued",
       "estimated": "estimated"
+    },
+    "history": {
+      "title": "Track history",
+      "current": "`Current` **[{_title}]({_uri})** _by <@{_id}>_",
+      "track": "`{_index}.` **[{_title}]({_uri})** _by <@{_id}>_",
+      "previous": "**{_len} Previous songs:**"
     }
   }
 }

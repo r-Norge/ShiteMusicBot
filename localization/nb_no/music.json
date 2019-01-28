@@ -68,6 +68,12 @@
       "playing_in": "Spiller av om",
       "enqueued": "Song køet",
       "estimated": "estimert"
+    },
+    "history": {
+      "title": "Sporhistorie",
+      "current": "`Nåværende` **[{_title}]({_uri})** _av <@{_id}>_",
+      "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
+      "previous": "**{_len} Tidligere sanger:**"
     }
   }
 }
