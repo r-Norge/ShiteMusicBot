@@ -51,7 +51,8 @@
     "not_connected": "Not connected.",
     "volume": {
       "set_to": "Volume set to {_volume}",
-      "reset": "Volume and equalizer reset"
+      "reset": "Volume and equalizer reset",
+      "out_of_range": "you can only set the volume between 50 and 125"
     },
     "boost": {
       "on": "Bass boost is on",

@@ -51,7 +51,8 @@
     "not_connected": "Ikke koblet til.",
     "volume": {
       "set_to": "Volume satt til {_volume}",
-      "reset": "Volume og equalizer resatt"
+      "reset": "Volume og equalizer resatt",
+      "out_of_range": "Du kan bare sette volum mellom 50 og 125"
     },
     "boost": {
       "on": "Bass boost er på",
