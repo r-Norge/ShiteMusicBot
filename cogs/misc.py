@@ -70,25 +70,30 @@ class Misc:
         avatar = self.bot.user.avatar_url_as(format=None,
                                                 static_format='png',
                                                 size=1024)
-        infotext = '{info.infotext}'
-        spectext = self.bot.localizer.get("info.spectext").format(_python_v=platform.python_version, _discord_v=discord.__version__, _lavalink_v=LavalinkVersion)
-        stattext = self.bot.localizer.get("info.stattext").format(_guilds=guilds, _members=members)
+
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
         embed = discord.Embed(color=0xD9C04D)
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
         embed.add_field(name="{info.what}",
-                        value=infotext, inline=False)
+                        value='{info.infotext}', inline=False)
         embed.set_footer(icon_url="https://cdn.discordapp.com/icons/297798952538079233/0198dc7b01ccf288b985b8a394cb1d44.jpg?size=64",
                             text="{info.footer_text}")
         embed.add_field(name="{info.how}",
-                        value=spectext)
+                        value='{info.spectext}')
         embed.add_field(name="{info.how_many}",
-                        value=stattext)
+                        value='{info.stattext}')
         embed.add_field(name="{info.how_long}",
                         value=uptimetext)
 
-        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
+        embed = self.bot.localizer.format_embed(embed, 
+            self.bot.settings.get_locale(ctx.guild.id), 
+            _python_v=platform.python_version(),
+            _discord_v=discord.__version__,
+            _lavalink_v=LavalinkVersion,
+            _guilds=guilds,
+            _members=members
+        )
         await ctx.send(embed=embed)
 
         @commands.command()

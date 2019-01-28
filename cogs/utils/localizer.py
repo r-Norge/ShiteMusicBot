@@ -15,7 +15,7 @@ from discord import Embed
 Localizer for bot
 """
 
-kmatch = re.compile('({[^{}]+})')
+kmatch = re.compile('({(?!_)([^{}]+)})')
 
 class Localizer:
     def __init__(self, localization_folder, default_lang):
@@ -75,22 +75,30 @@ class Localizer:
             
     # parses and interpolates translation dictionary
     @staticmethod
-    def _parse_localization_dictionary(d, lookup):
+    def _parse_localization_dictionary(d, lookup, prefix=None):
         n_dict = {}
         for k, v in d.items():
             if type(v) is str:
-                n_dict[k] = Localizer._parse_localization_string(v, lookup)
+                n_dict[k] = Localizer._parse_localization_string(v, lookup, prefix)
             else:
                 n_dict[k] = v
         return n_dict
 
+    @staticmethod
+    def _replace_keys(value, prefix=None):
+        for outer, inner in kmatch.findall(value):
+            nstr = inner
+            if prefix is not None: 
+                nstr = f'{prefix}.{inner}'
+            nstr = f'{{{nstr}}}'
+            nstr = nstr.replace(".", "/")
+            value = value.replace(outer, nstr)
+        return value
     # parses and interpolates strings
     @staticmethod
-    def _parse_localization_string(value, d):
+    def _parse_localization_string(value, d, prefix=None):
         d = SafeDict(d)
-        for match in kmatch.findall(value):
-            nstr = match.replace(".", "/")
-            value = value.replace(match, nstr)
+        value = Localizer._replace_keys(value, prefix)
         return value.format_map(d)
     
     # returns true if localization is currently loaded
@@ -109,16 +117,17 @@ class Localizer:
         return self.localization_table.get(lang, {}).get(key.replace(".", "/"))
         
     # inserts translations into a string
-    def format_str(self, s, lang=None):
+    def format_str(self, s, lang=None, prefix=None, **kvpairs):
         lang = lang or self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
-
-        ns = Localization._parse_localization_string(s, self.localization_table.get(lang, {}))
-        return Localization._parse_localization_string(s, self.all_localizations)
-    
+        
+        ns = Localizer._parse_localization_string(s, self.localization_table.get(lang, {}), prefix)
+        ns = Localizer._parse_localization_string(ns, self.all_localizations, prefix)
+        return ns.format_map(SafeDict(kvpairs))
+        
     # inserts translations into a values of a dictionary
-    def format_dict(self, d, lang=None):
+    def format_dict(self, d, lang=None, prefix=None, **kvpairs):
         lang = lang or self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
@@ -130,15 +139,29 @@ class Localizer:
             for k, v in (cursor.items() if type(cursor) == dict else enumerate(cursor)):
                 if type(v) == str:
                     # insert translations based on lang
-                    v = Localizer._parse_localization_string(v, self.localization_table.get(lang, {}))
-                    # insert translations based on key prefix, e.g 'global.', 'en_en.'
-                    cursor[k] = Localizer._parse_localization_string(v, self.all_localizations)
+                    cursor[k] = self.format_str(v, lang, prefix, **kvpairs)
                 elif type(v) == dict or type(v) == list:
                     cursorQueue.append(v)
 
         return nd
 
     # inserts translations into a values of a embed
-    def format_embed(self, embed, lang=None):
+    def format_embed(self, embed, lang=None, prefix=None, **kvpairs):
         raw = embed.to_dict()
-        return Embed.from_data(self.format_dict(raw, lang))
+        return Embed.from_data(self.format_dict(raw, lang, prefix, **kvpairs))
+
+
+class LocalizerWrapper:
+    def __init__(self, localizer, lang=None, prefix=None):
+        self.localizer = localizer
+        self.lang = lang
+        self.prefix = prefix
+    
+    def format_str(self, s, **kvpairs):
+        return self.localizer.format_str(s, self.lang, self.prefix, **kvpairs)
+
+    def format_dict(self, d, **kvpairs):
+        return self.localizer.format_dict(d, self.lang, self.prefix, **kvpairs)
+        
+    def format_embed(self, embed, **kvpairs):
+        return self.localizer.format_embed(embed, self.lang, self.prefix, **kvpairs)
