@@ -45,15 +45,16 @@ class Misc:
         """
         Info om musikkspilleren
         """
-        embed = discord.Embed(title='Music info', color=ctx.me.color)
+        embed = discord.Embed(title='{info.music.title}', color=ctx.me.color)
         lavalink = self.bot.lavalink
 
         listeners = 0
         for guild, player in lavalink.players:
             listeners += len(player.listeners)
 
-        embed.add_field(name='Players', value=f'{len(lavalink.players)}')
-        embed.add_field(name='Listeners', value=f'{listeners}')
+        embed.add_field(name='{info.music.players}', value=f'{len(lavalink.players)}')
+        embed.add_field(name='{info.music.listeners}', value=f'{listeners}')
+        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
         await ctx.send(embed=embed)
 
     
@@ -92,15 +93,15 @@ class Misc:
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
         embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/368118192251469835/vintage1turntable.png')
-        embed.add_field(name="{info.what}",
-                        value='{info.infotext}', inline=False)
+        embed.add_field(name="{info.bot.what}",
+                        value='{info.bot.infotext}', inline=False)
         embed.set_footer(icon_url="https://cdn.discordapp.com/icons/532176350019321917/92f43a1f67308a99a30c169db4b671dd.png?size=64",
-                            text="{info.footer_text}")
-        embed.add_field(name="{info.how}",
-                        value='{info.spectext}')
-        embed.add_field(name="{info.how_many}",
-                        value='{info.stattext}')
-        embed.add_field(name="{info.how_long}",
+                            text="{info.bot.footer_text}")
+        embed.add_field(name="{info.bot.how}",
+                        value='{info.bot.spectext}')
+        embed.add_field(name="{info.bot.how_many}",
+                        value='{info.bot.stattext}')
+        embed.add_field(name="{info.bot.how_long}",
                         value=uptimetext)
 
         embed = self.bot.localizer.format_embed(embed, 

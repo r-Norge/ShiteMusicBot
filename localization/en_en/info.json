@@ -1,11 +1,18 @@
 {
-  "name": "What?",
-  "infotext": "Music bot written for use on /r/Norge's Discord Servers. It's open source! You can find it [HERE]({global.vars.repo})",
-  "spectext": "**Python:** [{_python_v}](https://www.python.org/)\n**Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)",
-  "stattext": "**Guilds:** {_guilds}\n**Users:** {_members}",
-  "what": "What?",
-  "how": "How?",
-  "how_many": "How many?",
-  "how_long": "How long?",
-  "footer_text": "Made by /r/Norge, for /r/Norge"
+  "bot": {
+    "name": "What?",
+    "infotext": "Music bot written for use on /r/Norge's Discord Servers. It's open source! You can find it [HERE]({global.vars.repo})",
+    "spectext": "**Python:** [{_python_v}](https://www.python.org/)\n**Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)",
+    "stattext": "**Guilds:** {_guilds}\n**Users:** {_members}",
+    "what": "What?",
+    "how": "How?",
+    "how_many": "How many?",
+    "how_long": "How long?",
+    "footer_text": "Made by /r/Norge, for /r/Norge"
+  },
+  "music": {
+    "title": "Music info",
+    "players": "Players",
+    "listeners": "Listeners"
+  }
 }
