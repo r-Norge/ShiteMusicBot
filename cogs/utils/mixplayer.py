@@ -111,6 +111,9 @@ class MixPlayer(DefaultPlayer):
                 else:
                     self.listeners.add(member)
 
+    def clear_listeners(self):
+        self.listeners.clear()
+
     def add_skipper(self, member):
         if member in self.listeners:
             self.skip_voters.add(member)

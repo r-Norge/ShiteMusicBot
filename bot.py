@@ -86,6 +86,7 @@ class Bot(commands.Bot):
         print(f'Version: {discord.__version__}\n')
 
         self.load_extension('cogs.music')
+        self.load_extension('cogs.musicevents')
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=config["playing"]),

@@ -2,7 +2,7 @@
   "name": "hva?",
   "infotext": "Musikkbot skrevet for bruk på /r/Norge sine Discord Servere. Kildekoden er åpen! Den kan du finne [HER]({global.vars.repo})",
   "spectext": "**Python:** [{_python_v}](https://www.python.org/)\n**Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)",
-  "stattext": "**Guilder:** {_guilds}\n**Brukere:** {_members}",
+  "stattext": "**Tenarar:** {_guilds}\n**Brukere:** {_members}",
   "what": "Hva?",
   "how": "Hvordan?",
   "how_many": "Hvor mange?",

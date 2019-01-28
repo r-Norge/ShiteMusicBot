@@ -14,7 +14,6 @@ class Misc:
         self.bot = bot
 
     @commands.command(name='ping', hidden=True)
-    @checks.is_mod()
     async def _ping(self, ctx):
             start = time.perf_counter()
             message = await ctx.send('Ping...')
@@ -40,6 +39,23 @@ class Misc:
         for guild in self.bot.guilds:
             guilds += f"{guild.name}\n"
         await ctx.send(guilds)
+
+    @commands.command()
+    async def musicinfo(self, ctx):
+        """
+        Info om musikkspilleren
+        """
+        embed = discord.Embed(title='Music info', color=ctx.me.color)
+        lavalink = self.bot.lavalink
+
+        listeners = 0
+        for guild, player in lavalink.players:
+            listeners += len(player.listeners)
+
+        embed.add_field(name='Players', value=f'{len(lavalink.players)}')
+        embed.add_field(name='Listeners', value=f'{listeners}')
+        await ctx.send(embed=embed)
+
     
 
     @commands.command(name="reloadlocale")
@@ -72,12 +88,13 @@ class Misc:
                                                 size=1024)
 
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
-        embed = discord.Embed(color=0xD9C04D)
+        embed = discord.Embed(color=ctx.me.color)
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
+        embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/368118192251469835/vintage1turntable.png')
         embed.add_field(name="{info.what}",
                         value='{info.infotext}', inline=False)
-        embed.set_footer(icon_url="https://cdn.discordapp.com/icons/297798952538079233/0198dc7b01ccf288b985b8a394cb1d44.jpg?size=64",
+        embed.set_footer(icon_url="https://cdn.discordapp.com/icons/532176350019321917/92f43a1f67308a99a30c169db4b671dd.png?size=64",
                             text="{info.footer_text}")
         embed.add_field(name="{info.how}",
                         value='{info.spectext}')
