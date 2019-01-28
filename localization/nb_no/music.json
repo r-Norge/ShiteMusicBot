@@ -18,7 +18,7 @@
     "skip_to": {
       "invalid_pos": "Ugyldig køposisjon.",
       "exceeds_queue": "Posisjonen overgår køens lengde.",
-      "skipped_to": "hoppet til `{_title}` posisjon `{_pos}`"
+      "skipped_to": "hoppet til `{_title}` i posisjon `{_pos}`"
     },
     "stop": "⏹ | Stoppet avspillingen.",
     "live": "🔴 DIREKTE",
@@ -36,7 +36,7 @@
     "out_of_range": "Posisjonene må være mellom 1 og {_len}",
     "move": {
       "not_in_queue": "Sjekk at posisjonen eksisterer i køen din",
-      "moved_to": "{_title} flyttet fra {_from} til {_to} i køen din"
+      "moved_to": "`{_title}` flyttet fra plass `{_from}` til `{_to}` i køen din"
     },
     "remove": "**{_title}** ble fjernet fra køen.",
     "dj_removed": "**{_title}** som ble lagt til i køen av {_user}, ble fjernet.",
