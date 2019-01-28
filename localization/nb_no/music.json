@@ -1,10 +1,10 @@
 {
   "response": {
-    "nothing_found": "Ingenting funnet!",
-    "not_playing": "Spiller ikke.",
+    "nothing_found": "Kunne ikke finne sangen!",
+    "not_playing": "Spiller ikke av noe.",
     "nothing_playing": "Ingenting spiller av",
     "have_to_listen": "Du må høre på botten",
-    "playlist_enqued": "Spilleliste lagt til!",
+    "playlist_enqued": "Spilleliste ble lagt til i køen!",
     "requested_by": "Etterspurt av",
     "tracks": "spor",
     "seek": {
@@ -16,12 +16,12 @@
       "require_vote": "{_skips} av {_total} hatere må stemme for å hoppe over."
     },
     "skip_to": {
-      "invalid_pos": "Ugyldig posisjon.",
+      "invalid_pos": "Ugyldig køposisjon.",
       "exceeds_queue": "Posisjonen overgår køens lengde.",
       "skipped_to": "hoppet til `{_title}` posisjon `{_pos}`"
     },
-    "stop": "⏹ | Stopped.",
-    "live": "🔴 LIVE",
+    "stop": "⏹ | Stoppet avspillingen.",
+    "live": "🔴 DIREKTE",
     "now": "Spiller nå",
     "queue": {
       "empty": "Køen er tom",
@@ -29,34 +29,34 @@
     },
     "my_queue": "Din kø er tom",
     "resume": {
-      "resumed": "⏯ | Resumed",
-      "paused": "⏯ | Paused"
+      "resumed": "⏯ | Avspilling gjenopptatt",
+      "paused": "⏯ | Pauset avspillingen"
     },
-    "shuffle": "Din kø har blitt stokket",
+    "shuffle": "Køen din har blitt omstokket",
     "out_of_range": "Posisjonene må være mellom 1 og {_len}",
     "move": {
-      "not_in_queue": "Sjekk av posisjonen eksisterer i køen din",
+      "not_in_queue": "Sjekk at posisjonen eksisterer i køen din",
       "moved_to": "{_title} flyttet fra {_from} til {_to} i køen din"
     },
-    "remove": "**{_title}** fjernet.",
-    "dj_removed": "**{_title}** køet av {_user} fjernet.",
-    "dj_remove_user": "Fjernet alle sanger køet av <@{_id}>.",
+    "remove": "**{_title}** ble fjernet fra køen.",
+    "dj_removed": "**{_title}** som ble lagt til i køen av {_user}, ble fjernet.",
+    "dj_remove_user": "Fjernet alle sanger lagt til i køen av <@{_id}>.",
     "search": "søker",
     "results": "Resultater",
     "time_expired": "Tid utgått",
     "disconnect": {
-      "not_in_voice": "Du er ikke i min stemmekanal!",
+      "not_in_voice": "Du må være koblet til samme talekanal som meg!",
       "disconnected": "Frakoblet"
     },
-    "not_connected": "Ikke koblet til.",
+    "not_connected": "Du er ikke koblet til en talekanal.",
     "volume": {
-      "set_to": "Volume satt til {_volume}",
-      "reset": "Volume og equalizer resatt",
-      "out_of_range": "Du kan bare sette volum mellom 50 og 125"
+      "set_to": "Volum satt til {_volume}",
+      "reset": "Volum og equalizer resatt!",
+      "out_of_range": "Du må sette volumet til et tall mellom 50 og 125"
     },
     "boost": {
-      "on": "Bass boost er på",
-      "off": "'Bass boost er av"
+      "on": "Bassforsterkeren er på",
+      "off": "'Bassforsterkeren er av"
     },
     "scrub": {
       "add": "Legger til kontrollere",
@@ -64,16 +64,16 @@
       "_comment_controls": "scrub.controls read from music_controls.txt"
     },
     "enqueue": {
-      "position": "posisjon",
+      "position": "Køposisjon",
       "playing_in": "Spiller av om",
-      "enqueued": "Song køet",
-      "estimated": "estimert"
+      "enqueued": "Ny sang lagt til i køen",
+      "estimated": "estimert tid"
     },
     "history": {
-      "title": "Sporhistorie",
-      "current": "`Nåværende` **[{_title}]({_uri})** _av <@{_id}>_",
+      "title": "Avspillingshistorikk",
+      "current": "`Spiller nå` **[{_title}]({_uri})** _av <@{_id}>_",
       "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
-      "previous": "**{_len} Tidligere sanger:**"
+      "previous": "**Tidligere sanger ({_len}):**"
     }
   }
 }
