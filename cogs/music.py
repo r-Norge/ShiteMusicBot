@@ -541,18 +541,18 @@ class Music:
     async def _history(self, ctx):
         """ Show the last 10 songs played """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-
+        localizer = self.getLocalizer(ctx.guild.id)
         history = player.get_history()
         track = history[0]
-        description = f'`Current` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n\n'
-        description += f'**{len(history)-1} Previous songs:**\n'
+        description = localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
+        description += localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
         thumb_url = await RoxUtils.ThumbNailer.identify(self,
                                                 track.identifier,
                                                 track.uri)
         for index, track in enumerate(history[1:], start=1):
-            description += f'`{-index}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
+            description += localizer.format_str("{history.track}",_index=-index, _title=track.title, _uri=track.uri, _id=track.requester) + '\n'
 
-        embed = discord.Embed(title='Track history', color=0xEFD26C, description=description)
+        embed = discord.Embed(title=localizer.format_str('{history.title}'), color=0xEFD26C, description=description)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
