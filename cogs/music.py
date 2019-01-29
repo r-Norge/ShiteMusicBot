@@ -55,7 +55,7 @@ class Music:
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
-    @commands.command(name='play', aliases=['p','spill','s'])
+    @commands.command(name='play', aliases=['p','spill','s','spel'])
     async def _play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -173,7 +173,7 @@ class Music:
         await player.stop()
         await ctx.send(localizer.format_str("{stop}"))
 
-    @commands.command(name='now', aliases=['np','current', 'nå', 'nåspilles', 'gjeldende', 'spillernå'])
+    @commands.command(name='now', aliases=['np','current', 'nå', 'nåspilles', 'gjeldende', 'spillernå','spelarno','nospelar'])
     async def _now(self, ctx):
         """ Shows some stats about the currently playing song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -342,7 +342,7 @@ class Music:
             removed = player.remove_user_track(user.id, pos - 1)
             await ctx.send(localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
 
-    @commands.command(name='removeuser', aliases=['fjernbruker'])
+    @commands.command(name='removeuser', aliases=['fjernbruker','fjernbrukar'])
     @checks.DJ_or(alone=True)
     async def _user_queue_remove(self, ctx, user: discord.Member):
         """ Remove a song from either the global queue or a users queue"""
@@ -364,7 +364,7 @@ class Music:
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='search', aliases=['søk'])
+    @commands.command(name='search', aliases=['søk','finn'])
     async def _search(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
@@ -457,7 +457,7 @@ class Music:
                 if not player.is_playing:
                     await player.play()
 
-    @commands.command(name='disconnect', aliases=['dc','kf','koblefra'])
+    @commands.command(name='disconnect', aliases=['dc','kf','koblefra','koblefrå'])
     @checks.DJ_or(alone=True)
     async def _disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
@@ -513,7 +513,7 @@ class Music:
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='boost', aliases=['boo','bassforsterker'])
+    @commands.command(name='boost', aliases=['boo','bassforsterker','bassforsterkar'])
     @checks.DJ_or(alone=True)
     async def _boost(self, ctx, boost: bool=None):
         """ Set the equalizer to bass boost the music """

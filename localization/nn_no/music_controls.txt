@@ -1,0 +1,4 @@
+﻿**Kontrollar**
+Spel/pause: ▶ ⏸
+Hopp 15 sekundar framover/bakover: ⏪ ⏩
+Hopp til byrjinga/slutten av songen: ⏮ ⏭
