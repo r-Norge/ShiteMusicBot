@@ -1,7 +1,7 @@
 import time
 import lavalink
 
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from itertools import cycle, islice, chain
 from random import shuffle
 
@@ -57,6 +57,9 @@ class MixPlayer(DefaultPlayer):
     def global_queue(self):
         return self.queue.get_queue()
 
+    def get_history(self):
+        return self.queue.history
+
     def queue_duration(self, include_current: bool=True):
         duration = 0
         for track in self.queue:
@@ -108,9 +111,19 @@ class MixPlayer(DefaultPlayer):
                 else:
                     self.listeners.add(member)
 
+    def clear_listeners(self):
+        self.listeners.clear()
+
     def add_skipper(self, member):
         if member in self.listeners:
             self.skip_voters.add(member)
+
+    async def handle_event(self, event):
+        """ Handles the given event as necessary. """
+        if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
+                isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
+            self.skip_voters.clear()
+            await self.play()
 
     async def bassboost(self, boost: bool=False):
         if boost:
@@ -148,6 +161,7 @@ class MixQueue:
     def __init__(self):
         self.queues = OrderedDict()
         self.priority_queue = []
+        self._history = deque(maxlen=11) # 10 + current
 
     def __str__(self):
         tmp = ''
@@ -190,11 +204,13 @@ class MixQueue:
     def pop_first(self):
         if self.priority_queue:
             next_track = self.priority_queue.pop(0)
+            self._history.append(next_track)
             return next_track
         try:
             next_track = self.queues[self.first_queue].pop(0)
             self._shuffle()
             self._clear_empty()
+            self._history.append(next_track)
             return next_track
         except KeyError:
             pass
@@ -264,30 +280,34 @@ class MixQueue:
         for i in to_remove:
             self.queues.pop(i)
 
-    # Convert between global and local queue positions
-    # Pretty shit atm, todo: implement algorithm thing I made.
-    def _loc_to_glob(self, requester: int, pos: int):
-        queue = self.queues.get(requester, [])
-        if queue:
-            try:
-                track = queue[pos]
-                for i, t in enumerate(self):
-                    if t == track:
-                        return i
-            except IndexError:
-                pass
+    def _loc_to_glob(self, requester, pos):
+        globpos = len(self.priority_queue)
+        passed = False
+        for key, queue in self.queues.items():
+            if len(queue) <= pos:
+                globpos += len(queue)
+            else:
+                globpos += pos
+                if key == requester:
+                    passed = True
+                if not passed:
+                    globpos += 1
+        return globpos
 
     def _glob_to_loc(self, pos: int):
-        track = None
-        for i, t in enumerate(self):
-            if i == pos:
-                track = t
-        if track is None:
+        try:
+            song = next(islice(self, pos, pos + 1))
+        except (ValueError, StopIteration):
             return None, None
-        for requester, q in self.queues.items():
-            for i, t in enumerate(q):
-                if t == track:
-                    return requester, i
+        user_queue = self.queues.get(song.requester, [])
+
+        # In case song is in the priority queue
+        if not user_queue or song not in user_queue:
+            return None, pos
+
+        for i, s in enumerate(user_queue):
+            if s == song:
+                return song.requester, i
 
     @property
     def first_queue(self):
@@ -299,3 +319,8 @@ class MixQueue:
     @property
     def empty(self):
         return len(self) == 0
+
+    @property
+    def history(self):
+        return list(reversed(self._history))
+    

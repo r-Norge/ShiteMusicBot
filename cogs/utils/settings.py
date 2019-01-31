@@ -1,7 +1,7 @@
 import os
 import json
 import codecs
-
+import locale
 
 class Settings:
     def __init__(self, **default_settings):
@@ -10,13 +10,19 @@ class Settings:
         self.default_prefix = default_settings["default_prefix"]
         self.default_admin = default_settings["default_admin"]
         self.default_mod = default_settings["default_mod"]
+        self.default_locale = default_settings["default_locale"]
+        self.default_lang_path = default_settings["default_lang_path"] or "./localization"
+        if not self.default_locale:
+            locale, codepage = locale.getlocale()
+            default_locale, default_codepage = locale.getdefaultlocale()
+            self.default_locale = locale or default_locale
 
         if not os.path.exists(self.DATA_PATH):
             os.makedirs(self.DATA_PATH)
 
         if not os.path.isfile(self.SETTINGS_PATH):
             with codecs.open(self.SETTINGS_PATH, "w+", encoding='utf8') as f:
-                json.dump({"prefixes": {},
+                json.dump({"locale": {}, "prefixes": {},
                            "roles": {}}, f, indent=4)
 
         with codecs.open(self.SETTINGS_PATH, "r", encoding='utf8') as f:
@@ -60,3 +66,16 @@ class Settings:
 
         with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
             json.dump(self.settings, f, indent=4)
+
+    def set_locale(self, guild_id, locale):
+        guild_id = str(guild_id)
+        self.settings["locale"][guild_id] = locale
+        with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
+            json.dump(self.settings, f, indent=4)
+
+    def get_locale(self, guild_id):
+        guild_id = str(guild_id)
+        return self.settings.get("locale", {}).get(guild_id, self.default_locale).lower()
+
+    def get_language_path(self):
+        return self.settings.get("language_path", self.default_lang_path)

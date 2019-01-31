@@ -1,0 +1,4 @@
+**Controls**
+Play/pause: ▶ ⏸
+skip 15 seconds forward/backward: ⏪ ⏩
+Skip to beginning/end of song: ⏮ ⏭

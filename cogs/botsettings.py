@@ -18,6 +18,13 @@ class BotSettings:
                              ctx.command.qualified_name)
 
     @commands.guild_only()
+    @_set.command(name='serverlocale')
+    async def _set_guild_locale(self, ctx, locale):
+        self.settings.set_locale(ctx.guild.id, locale)
+        locale = self.settings.get_locale(ctx.guild.id)
+        await ctx.send(f'Locale set to {locale}')
+
+    @commands.guild_only()
     @_set.command(name='serverprefix')
     async def _set_guild_prefix(self, ctx, *prefixes):
         prefixes = list(prefixes)

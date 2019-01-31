@@ -3,6 +3,8 @@
   "default_prefix": [""],
   "default_admin": "Admin",
   "default_mod": "Moderator",
+  "default_locale": "en_en",
+  "default_lang_path": "./localization",
   "playing": "",
   "description": ""
 }

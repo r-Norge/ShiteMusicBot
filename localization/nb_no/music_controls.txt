@@ -1,0 +1,4 @@
+**Kontroller**
+Spill/pause: ▶ ⏸
+Hopp 15 sekunder fremover/bakover: ⏪ ⏩
+Hopp til starten/slutten av sangen: ⏮ ⏭

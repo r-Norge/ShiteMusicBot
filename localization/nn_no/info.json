@@ -1,0 +1,18 @@
+{
+  "bot": {
+    "name": "Kva?",
+    "infotext": "Musikkbot skreve til bruk på /r/Norge sine Discord Serverar. Kjeldekoda er ope! Dei kan du finna [HER]({global.vars.repo})",
+    "spectext": "**Python:** [{_python_v}](https://www.python.org/)\n**Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)\n**Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)",
+    "stattext": "**Tenarar:** {_guilds}\n**Brukarar:** {_members}",
+    "what": "Kva?",
+    "how": "Korleis?",
+    "how_many": "Kor mange?",
+    "how_long": "Kor lengje?",
+    "footer_text": "Laga av /r/Norge, for /r/Norge"
+  },
+  "music": {
+    "title": "Musikk informasjon",
+    "players": "Spelarar",
+    "listeners": "Lyttarar"
+  }
+}

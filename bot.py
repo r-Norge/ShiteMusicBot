@@ -8,6 +8,7 @@ import traceback
 from discord.ext import commands
 from cogs.utils.settings import Settings
 
+from cogs.utils.localizer import Localizer
 
 initial_extension = [
     'cogs.cogs',
@@ -35,6 +36,7 @@ class Bot(commands.Bot):
                          description=config["description"])
 
         self.settings = Settings(**config)
+        self.localizer = Localizer(self.settings.get_language_path(), "en_en")
         self.debug = debug
 
         for extension in initial_extension:
@@ -61,7 +63,7 @@ class Bot(commands.Bot):
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                await ctx.send("Denne kommandoen er ikke tilgjengelig i DMs")
+                await ctx.send(self.localizer.format_string("{commands.not_available_dm}", setting.get_locale(ctx.guild.id)))
 
             elif isinstance(err, commands.CheckFailure):
                 pass
@@ -84,6 +86,7 @@ class Bot(commands.Bot):
         print(f'Version: {discord.__version__}\n')
 
         self.load_extension('cogs.music')
+        self.load_extension('cogs.musicevents')
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=config["playing"]),
