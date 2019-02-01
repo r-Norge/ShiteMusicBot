@@ -10,7 +10,7 @@ class BotSettings:
         self.bot = bot
         self.settings = self.bot.settings
 
-    @checks.is_owner()
+    @checks.is_admin()
     @commands.group(name='set', hidden=True)
     async def _set(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -52,6 +52,20 @@ class BotSettings:
     @_set.command(name='setmodrole')    
     async def set_mod_role(self, ctx, modrole: discord.Role):
         await ctx.send(f'{modrole.name} {modrole.id}')
+
+    @commands.guild_only()
+    @_set.command(name='current')
+    async def current_settings(self, ctx):
+        embed = discord.Embed(title='Settings', color=ctx.me.color)
+        embed.description = f'Current settings for {ctx.guild.name}'
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+
+        prefixes = self.bot.settings.get_prefix(ctx.guild.id)
+        locale = f'`{self.bot.settings.get_locale(ctx.guild.id)}`'
+        embed.add_field(name='Locale', value=locale)
+        embed.add_field(name='Prefix', value=self.format_prefixes(prefixes))
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(BotSettings(bot))

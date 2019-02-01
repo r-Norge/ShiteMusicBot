@@ -3,11 +3,13 @@ import discord
 import math
 import lavalink
 
+
 class CantScroll(Exception):
     pass
 
 # Maybe slightly very copied from rdanny
 # Thanks danny <3
+
 
 class EmbedScroller:
     def __init__(self, ctx, pages):
@@ -48,7 +50,7 @@ class EmbedScroller:
                 raise CantScroll('Bot does not have add reactions permission.')
 
             if not self.permissions.read_message_history:
-                raise CantScroll('Bot does not have Read Message History permission.')    
+                raise CantScroll('Bot does not have Read Message History permission.')
 
     async def send(self):
         self.current_page = 0
@@ -63,7 +65,7 @@ class EmbedScroller:
         for (reaction, _) in self.reaction_emojis:
             if len(self.pages) == 2 and reaction in ('\u23ed', '\u23ee'):
                 continue
-                
+
             await self.message.add_reaction(reaction)
 
     async def scroll(self, page):
@@ -135,19 +137,23 @@ class ScrollerFromLines(EmbedScroller):
         page = ''
         for index, line in enumerate(lines):
             page += line + '\n'
-            if index%lines_per_page == lines_per_page - 1:
+            if index % lines_per_page == lines_per_page - 1:
                 embed = discord.Embed(color=0xEFD26C,
-                                title=description,
-                                description=page)
-                embed.set_footer(text=f'Viewing page {index//lines_per_page}/{pagecount}')
+                                      title=description,
+                                      description=page)
+                embed.set_footer(text=localizer.format_str("{queue.pageindicator}",
+                                                           _current=index//lines_per_page + 1,
+                                                           _total=pagecount))
                 pages.append(embed)
                 page = ''
 
         if page != '':
             embed = discord.Embed(color=0xEFD26C,
-                            description=page)
+                                  description=page)
 
-            embed.set_footer(text=f'Viewing page {pagecount}/{pagecount}')
+            embed.set_footer(text=localizer.format_str("{queue.pageindicator}",
+                             _current=pagecount,
+                             _total=pagecount))
             pages.append(embed)
 
         super().__init__(ctx=ctx, pages=pages)
@@ -155,38 +161,53 @@ class ScrollerFromLines(EmbedScroller):
 
 class QueueScroller(EmbedScroller):
     """ Fugly, but works for now """
-    def __init__(self, ctx, queue, lines_per_page=10, user_name: str=None):
+    def __init__(self, ctx, queue, localizer, lines_per_page=10, user_name: str=None):
 
         pagecount = math.ceil(len(queue) / lines_per_page)
         self.queue = queue
 
         if user_name is None:
-            title = f'**Queue** `{len(queue)} songs`'
+            title = localizer.format_str("{queue.length}",
+                                         _length=len(queue))
         else:
-            title = f'**{user_name}\'s queue** `{len(queue)} songs`'
+            title = localizer.format_str("{queue.userqueue}",
+                                         _user=user_name,
+                                         _length=len(queue))
         pages = []
         page = ''
         for index, temp in enumerate(queue):
             if user_name is None:
                 track = temp
-                page += f'`{index + 1}.` **[{track.title}]({track.uri})** _by <@{track.requester}>_\n'
+                page += localizer.format_str("{queue.globaltrack}",
+                                             _index=index+1,
+                                             _title=track.title,
+                                             _uri=track.uri,
+                                             _user_id=track.requester)
             else:
                 track, globpos = temp
-                page += f'`{index + 1}({globpos + 1}).` **[{track.title}]({track.uri})**\n'
+                page += localizer.format_str("{queue.usertrack}",
+                                             _index=index+1,
+                                             _globalindex=globpos+1,
+                                             _title=track.title,
+                                             _uri=track.uri)
 
-            if index%lines_per_page == lines_per_page - 1:
+            if index % lines_per_page == lines_per_page - 1:
                 embed = discord.Embed(color=0xEFD26C,
-                                title=title,
-                                description=page)
-                embed.set_footer(text=f'Viewing page {index//lines_per_page + 1}/{pagecount}')
+                                      title=title,
+                                      description=page)
+                embed.set_footer(text=localizer.format_str("{queue.pageindicator}",
+                                                           _current=index//lines_per_page + 1,
+                                                           _total=pagecount))
                 pages.append(embed)
                 page = ''
 
         if page != '':
             embed = discord.Embed(color=0xEFD26C,
-                            title=title,
-                            description=page)
-            embed.set_footer(text=f'Viewing page {pagecount}/{pagecount}')
+                                  title=title,
+                                  description=page)
+            embed.set_footer(text=localizer.format_str("{queue.pageindicator}",
+                             _current=pagecount,
+                             _total=pagecount))
             pages.append(embed)
 
         super().__init__(ctx=ctx, pages=pages)
