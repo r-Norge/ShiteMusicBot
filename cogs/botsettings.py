@@ -10,7 +10,7 @@ class BotSettings:
         self.bot = bot
         self.settings = self.bot.settings
 
-    @checks.is_owner()
+    @checks.is_admin()
     @commands.group(name='set', hidden=True)
     async def _set(self, ctx):
         if ctx.invoked_subcommand is None:

@@ -215,7 +215,7 @@ class Music:
         
         if user is None:
             queue = player.global_queue()
-            scroller = QueueScroller(ctx, queue, lines_per_page=10)
+            scroller = QueueScroller(ctx, queue, localizer, lines_per_page=10)
             await scroller.start_scrolling()
 
         else:
@@ -223,7 +223,7 @@ class Music:
             if not user_queue:
                 return await ctx.send(localizer.format_str("{queue.empty}", _user=user.name))
             
-            scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=user.name)
+            scroller = QueueScroller(ctx, user_queue, localizer, lines_per_page=10, user_name=user.name)
             await scroller.start_scrolling()
 
     @commands.command(name='myqueue', aliases=['mq','minkø','mk'])
@@ -236,7 +236,7 @@ class Music:
         if not user_queue:
             return await ctx.send(localizer.format_str("{my_queue}"))
 
-        scroller = QueueScroller(ctx, user_queue, lines_per_page=10, user_name=ctx.author.name)
+        scroller = QueueScroller(ctx, user_queue, localizer, lines_per_page=10, user_name=ctx.author.name)
         await scroller.start_scrolling()
 
     @commands.command(name='pause', aliases=['resume','gjenoppta'])

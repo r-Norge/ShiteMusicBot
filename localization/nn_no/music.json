@@ -25,7 +25,11 @@
     "now": "Spelar no",
     "queue": {
       "empty": "Køa er tom",
-      "user_empty": "{_user} sin kø er tom"
+      "user_empty": "{_user} sin kø er tom",
+      "userqueue": "Køen til **{_user}** `{_length}` songar",
+      "globaltrack":"`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_\n",
+      "usertrack":"`{_index}({_globalindex}).` **[{_title}]({_uri})**\n",
+      "pageindicator":"Viser side {_current}/{_total}"
     },
     "my_queue": "Din kø er tom",
     "resume": {

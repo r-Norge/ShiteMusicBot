@@ -25,7 +25,12 @@
     "now": "Spiller nå",
     "queue": {
       "empty": "Køen er tom",
-      "user_empty": "{_user} sin kø er tom"
+      "user_empty": "{_user} sin kø er tom",
+      "length": "**Kø** `{_length} sanger`",
+      "userqueue": "**{_user} sin kø** `{_length}` sanger",
+      "globaltrack":"`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_\n",
+      "usertrack":"`{_index}({_globalindex}).` **[{_title}]({_uri})**\n",
+      "pageindicator":"Viser side {_current}/{_total}"
     },
     "my_queue": "Din kø er tom",
     "resume": {
