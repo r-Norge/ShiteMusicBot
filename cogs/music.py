@@ -487,7 +487,12 @@ class Music:
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
 
-        if int(player.current.requester) == ctx.author.id:
+        # Hacky bs, redo when doing proper DJ role support.
+        user_roles = [role.name for role in ctx.author.roles]
+        DJ_roles = ['DJ','dj','Dj']
+        is_dj = [i for i in DJ_roles if i in user_roles]
+        is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) == True
+        if int(player.current.requester) == ctx.author.id and not is_dj and not is_admin:
             if not 50 <= volume <= 125:
                 return await ctx.send(localizer.format_str("{volume.out_of_range}"))
 
