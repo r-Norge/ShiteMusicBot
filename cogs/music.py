@@ -33,7 +33,7 @@ class Music:
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
     def getLocalizer(self, guild_id):
-        lang = self.bot.settings.get_locale(guild_id)
+        lang = self.bot.settings.get(guild_id, 'locale', 'default_locale')
         return LocalizerWrapper(self.bot.localizer, lang, "music.response")
 
 

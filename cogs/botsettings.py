@@ -20,8 +20,8 @@ class BotSettings:
     @commands.guild_only()
     @_set.command(name='serverlocale')
     async def _set_guild_locale(self, ctx, locale):
-        self.settings.set_locale(ctx.guild.id, locale)
-        locale = self.settings.get_locale(ctx.guild.id)
+        self.settings.set(ctx.guild.id, 'locale', locale)
+        locale = self.settings.get(ctx.guild.id, 'locale', 'default_lang')
         await ctx.send(f'Locale set to {locale}')
 
     @commands.guild_only()
@@ -29,21 +29,21 @@ class BotSettings:
     async def _set_guild_prefix(self, ctx, *prefixes):
         prefixes = list(prefixes)
         if prefixes != []:
-            self.settings.set_prefix(ctx.guild.id, prefixes)
-        prefixes = self.settings.get_prefix(ctx.guild.id)
-        await ctx.send(self.format_prefixes(prefixes))
+            self.settings.set(ctx.guild.id, 'prefixes', prefixes)
+        prefixes = self.settings.get(ctx.guild.id, 'prefixes')
+        await ctx.send(f'Server prefixes: {self.format_prefixes(prefixes)}')
 
     @commands.guild_only()
     @_set.command(name='resetprefix')
     async def _reset_prefix(self, ctx):
-        self.settings.set_prefix(ctx.guild.id, None)
-        prefixes = self.settings.get_prefix(ctx.guild.id)
+        self.settings.set(ctx.guild.id, 'prefixes', None)
+        prefixes = self.settings.get(ctx.guild.id, 'prefixes', 'default_prefix')
         await ctx.send(self.format_prefixes(prefixes))
 
     def format_prefixes(self, prefixes):
         if prefixes is None:
             prefixes = [self.bot.settings.default_prefix]
-        formatted = 'Server prefixes: '
+        formatted = ''
         for prefix in prefixes:
             formatted += f'`{prefix}`, '
         return formatted[:-2]
@@ -60,8 +60,8 @@ class BotSettings:
         embed.description = f'Current settings for {ctx.guild.name}'
         embed.set_thumbnail(url=ctx.guild.icon_url)
 
-        prefixes = self.bot.settings.get_prefix(ctx.guild.id)
-        locale = f'`{self.bot.settings.get_locale(ctx.guild.id)}`'
+        prefixes = self.bot.settings.get(ctx.guild.id, 'prefixes', 'default_prefix')
+        locale = f"{self.bot.settings.get(ctx.guild.id, 'locale', 'default_locale')}"
         embed.add_field(name='Locale', value=locale)
         embed.add_field(name='Prefix', value=self.format_prefixes(prefixes))
         await ctx.send(embed=embed)

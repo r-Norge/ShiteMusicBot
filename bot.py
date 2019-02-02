@@ -26,7 +26,7 @@ default_prefix = config["default_prefix"]
 def _get_prefix(bot, message):
     if not message.guild:
         return default_prefix
-    prefixes = bot.settings.get_prefix(message.guild.id)
+    prefixes = bot.settings.get(message.guild.id, 'prefixes', 'default_prefix')
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
@@ -36,7 +36,7 @@ class Bot(commands.Bot):
                          description=config["description"])
 
         self.settings = Settings(**config)
-        self.localizer = Localizer(self.settings.get_language_path(), "en_en")
+        self.localizer = Localizer(self.settings.default_lang_path, "en_en")
         self.debug = debug
 
         for extension in initial_extension:

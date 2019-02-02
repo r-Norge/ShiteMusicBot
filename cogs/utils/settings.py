@@ -3,79 +3,91 @@ import json
 import codecs
 import locale
 
+
 class Settings:
     def __init__(self, **default_settings):
-        self.DATA_PATH = 'data/settings/'
-        self.SETTINGS_PATH = self.DATA_PATH + 'settings.json'
+        self._DATA_PATH = 'data/bot/'
+        self._SETTINGS_PATH = self._DATA_PATH + 'settings.json'
+
         self.default_prefix = default_settings["default_prefix"]
         self.default_admin = default_settings["default_admin"]
         self.default_mod = default_settings["default_mod"]
         self.default_locale = default_settings["default_locale"]
-        self.default_lang_path = default_settings["default_lang_path"] or "./localization"
+        self.default_lang_path = default_settings["default_lang_path"] or \
+            "./localization"
+
         if not self.default_locale:
             locale, codepage = locale.getlocale()
             default_locale, default_codepage = locale.getdefaultlocale()
             self.default_locale = locale or default_locale
 
-        if not os.path.exists(self.DATA_PATH):
-            os.makedirs(self.DATA_PATH)
+        if not os.path.exists(self._DATA_PATH):
+            os.makedirs(self._DATA_PATH)
 
-        if not os.path.isfile(self.SETTINGS_PATH):
-            with codecs.open(self.SETTINGS_PATH, "w+", encoding='utf8') as f:
-                json.dump({"locale": {}, "prefixes": {},
-                           "roles": {}}, f, indent=4)
+        if not os.path.isfile(self._SETTINGS_PATH):
+            with codecs.open(self._SETTINGS_PATH, "w+", encoding='utf8') as f:
+                json.dump({}, f, indent=4)
 
-        with codecs.open(self.SETTINGS_PATH, "r", encoding='utf8') as f:
+        with codecs.open(self._SETTINGS_PATH, "r", encoding='utf8') as f:
             self.settings = json.load(f)
 
-    def get_prefix(self, guild_id):
-        guild_id = str(guild_id)
-        if guild_id in self.settings["prefixes"].keys():
-            return self.settings["prefixes"][guild_id]
-        return self.default_prefix
-
-    def set_prefix(self, guild_id, prefixes):
-        if prefixes is None:
-            self.settings["prefixes"].pop(str(guild_id), None)
+    def _set(self, d, keys, val):
+        key = keys[0]
+        if len(keys) == 1:
+            if val is None:
+                try:
+                    d.pop(key)
+                except:
+                    pass
+            else:
+                d[key] = val
+            return
+        if key in d.keys():
+            if not isinstance(d[key], dict):
+                d[key] = {}
+            self._set(d[key], keys[1:], val)
         else:
-            self.settings["prefixes"][str(guild_id)] = prefixes
-        with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
-            json.dump(self.settings, f, indent=4)
+            d[key] = {}
+            self._set(d[key], keys[1:], val)
 
-    def get_mod_role(self, guild_id):
-        guild_id = str(guild_id)
-        if guild_id in self.settings["roles"].keys():
-            if 'mod' in self.settings["roles"][guild_id].keys():
-                return self.settings["roles"][guild_id]['mod']
-        return self.default_mod
+    def _get(self, d, keys):
+        key = keys[0]
+        try:
+            if len(keys) > 1 and isinstance(d[key], dict):
+                return self._get(d[key], keys[1:])
+            else:
+                return d[key]
+        except KeyError:
+            return None
 
-    def get_admin_role(self, guild_id):
+    def set(self, guild_id, setting, value):
+        """ Set value in settings, will overwrite any existing values. """
         guild_id = str(guild_id)
-        if guild_id in self.settings["roles"].keys():
-            if 'admin' in self.settings["roles"][guild_id].keys():
-                return self.settings["roles"][guild_id]['admin']
-        return self.default_admin
 
-    def set_mod_admin_role(self, guild_id, admin, mod):
+        if guild_id not in self.settings.keys():
+            self.settings[guild_id] = {}
+
+        self._set(self.settings[guild_id], setting.split('.'), value)
+
+        with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
+            json.dump(self.settings, f, indent=2)
+
+    def get(self, guild_id, setting, default=''):
+        """ Gets a value from the settings if a default return value is specified
+        it will return the default if no setting is found. If that default is a
+        class attribute the value of the attribute will get returned."""
         guild_id = str(guild_id)
-        if admin is None or mod is None:
-            self.settings["role"].pop(guild_id, None)
+
+        if default and hasattr(self, default):
+            default = getattr(self, default)
+        elif not default:
+            default = None
+
+        if guild_id not in self.settings.keys():
+            return default
+
+        value = self._get(self.settings[guild_id], setting.split('.'))
+        if value:
+            return value
         else:
-            self.settings["role"][guild_id]["mod"] = mod
-            self.settings["role"][guild_id]["admin"] = admin
-
-        with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
-            json.dump(self.settings, f, indent=4)
-
-    def set_locale(self, guild_id, locale):
-        guild_id = str(guild_id)
-        self.settings["locale"][guild_id] = locale
-        with codecs.open(self.SETTINGS_PATH, "w", encoding='utf8') as f:
-            json.dump(self.settings, f, indent=4)
-
-    def get_locale(self, guild_id):
-        guild_id = str(guild_id)
-        return self.settings.get("locale", {}).get(guild_id, self.default_locale).lower()
-
-    def get_language_path(self):
-        return self.settings.get("language_path", self.default_lang_path)
+            return default
