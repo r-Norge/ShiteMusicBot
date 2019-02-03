@@ -1,4 +1,4 @@
-# Shite Music Bot
+# WIP - Shite Music Bot
 
 ### Features:
 - Translations, get the bot in your preferred langauge!

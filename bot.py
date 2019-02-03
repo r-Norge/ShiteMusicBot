@@ -24,7 +24,7 @@ with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
 def _get_prefix(bot, message):
     if not message.guild:
         return default_prefix
-    prefixes = bot.settings.get(message.guild.id, 'prefixes', 'default_prefix')
+    prefixes = bot.settings.get(message.guild, 'prefixes', 'default_prefix')
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
@@ -63,7 +63,7 @@ class Bot(commands.Bot):
             elif isinstance(err, commands.NoPrivateMessage):
                 # Todo, fix, use default bot lang.
                 await ctx.send('That command is not available in DMs')
-                #await ctx.send(self.localizer.format_str("{commands.not_available_dm}", self.settings.get(ctx.guild.id, 'locale', 'default_locale')))
+                #await ctx.send(self.localizer.format_str("{commands.not_available_dm}", self.settings.get(ctx.guild, 'locale', 'default_locale')))
 
             elif isinstance(err, commands.CheckFailure):
                 pass

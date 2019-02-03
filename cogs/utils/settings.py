@@ -1,13 +1,12 @@
 import os
-import json
 import codecs
 import locale
-
+import yaml
 
 class Settings:
     def __init__(self, **default_settings):
         self._DATA_PATH = 'data/bot/'
-        self._SETTINGS_PATH = self._DATA_PATH + 'settings.json'
+        self._SETTINGS_PATH = self._DATA_PATH + 'settings.yaml'
 
         self.default_prefix = default_settings["prefix"]
         self.default_mod = default_settings["moderator_role"]
@@ -24,10 +23,10 @@ class Settings:
 
         if not os.path.isfile(self._SETTINGS_PATH):
             with codecs.open(self._SETTINGS_PATH, "w+", encoding='utf8') as f:
-                json.dump({}, f, indent=4)
+                yaml.dump({}, f, indent=4)
 
         with codecs.open(self._SETTINGS_PATH, "r", encoding='utf8') as f:
-            self.settings = json.load(f)
+            self.settings = yaml.load(f)
 
     def _set(self, d, keys, val):
         key = keys[0]
@@ -58,23 +57,23 @@ class Settings:
         except KeyError:
             return None
 
-    def set(self, guild_id, setting, value):
+    def set(self, guild, setting, value):
         """ Set value in settings, will overwrite any existing values. """
-        guild_id = str(guild_id)
+        guild_id = str(guild.id)
 
         if guild_id not in self.settings.keys():
-            self.settings[guild_id] = {}
+            self.settings[guild_id] = {"_servername": guild.name}
 
         self._set(self.settings[guild_id], setting.split('.'), value)
 
         with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
-            json.dump(self.settings, f, indent=2)
+            yaml.dump(self.settings, f, indent=2)
 
-    def get(self, guild_id, setting, default=''):
+    def get(self, guild, setting, default=''):
         """ Gets a value from the settings if a default return value is specified
         it will return the default if no setting is found. If that default is a
         class attribute the value of the attribute will get returned."""
-        guild_id = str(guild_id)
+        guild_id = str(guild.id)
 
         if default and isinstance(default, str) and hasattr(self, default):
             default = getattr(self, default)

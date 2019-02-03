@@ -1,6 +1,5 @@
 import discord
 import os
-import json
 import codecs
 import traceback
 from discord.ext import commands
