@@ -1,7 +1,5 @@
-config.json
-data/
-lavalink/
-lavasettings.py
+data/*
+!data/config.yaml.example
 .tests/
 .idea/
 

@@ -9,12 +9,10 @@ class Settings:
         self._DATA_PATH = 'data/bot/'
         self._SETTINGS_PATH = self._DATA_PATH + 'settings.json'
 
-        self.default_prefix = default_settings["default_prefix"]
-        self.default_admin = default_settings["default_admin"]
-        self.default_mod = default_settings["default_mod"]
-        self.default_locale = default_settings["default_locale"]
-        self.default_lang_path = default_settings["default_lang_path"] or \
-            "./localization"
+        self.default_prefix = default_settings["prefix"]
+        self.default_mod = default_settings["moderator_role"]
+        self.default_locale = default_settings["locale"]
+        self.default_threshold = default_settings["threshold"]
 
         if not self.default_locale:
             locale, codepage = locale.getlocale()

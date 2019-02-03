@@ -129,7 +129,6 @@ class BotSettings:
     @commands.guild_only()
     @_set.command(name='djroles')
     async def set_dj_roles(self, ctx, *roles: discord.Role):
-        print(roles)
         role_ids = [role.id for role in roles]
         if roles:
             self.bot.settings.set(ctx.guild.id, 'roles.dj', role_ids)

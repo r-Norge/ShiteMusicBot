@@ -4,19 +4,18 @@ Music commands
 import math
 import re
 import asyncio
-
-import discord
-import lavalink
-from discord.ext import commands
 import time
+import yaml
+import codecs
+
+import lavalink
+import discord
+from discord.ext import commands
+from typing import Optional
 
 from .utils import checks, RoxUtils
 from .utils.mixplayer import MixPlayer
-from typing import Optional
-
 from .utils.embedscroller import QueueScroller
-from lavasettings import *
-
 from .utils.localizer import LocalizerWrapper
 
 time_rx = re.compile('[0-9]+')
@@ -29,7 +28,11 @@ class Music:
 
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
-            bot.lavalink.add_node(host, port, password, region, 'default-node')  # Host, Port, Password, Region, Name
+
+            with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
+                conf = yaml.safe_load(f)
+
+            bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
     def getLocalizer(self, guild_id):
