@@ -62,8 +62,9 @@ class Settings:
         guild_id = str(guild.id)
 
         if guild_id not in self.settings.keys():
-            self.settings[guild_id] = {"_servername": guild.name}
+            self.settings[guild_id] = {}
 
+        self.settings[guild_id]["_servername"] = guild.name
         self._set(self.settings[guild_id], setting.split('.'), value)
 
         with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
