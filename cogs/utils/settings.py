@@ -78,7 +78,7 @@ class Settings:
         class attribute the value of the attribute will get returned."""
         guild_id = str(guild_id)
 
-        if default and hasattr(self, default):
+        if default and isinstance(default, str) and hasattr(self, default):
             default = getattr(self, default)
         elif not default:
             default = None

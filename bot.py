@@ -36,6 +36,7 @@ class Bot(commands.Bot):
                          description=config["description"])
 
         self.settings = Settings(**config)
+        # Todo, maybe fix. Ability to set default bot lang in settings
         self.localizer = Localizer(self.settings.default_lang_path, "en_en")
         self.debug = debug
 
@@ -63,7 +64,9 @@ class Bot(commands.Bot):
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                await ctx.send(self.localizer.format_string("{commands.not_available_dm}", setting.get_locale(ctx.guild.id)))
+                # Todo, fix, use default bot lang.
+                await ctx.send('That command is not available in DMs')
+                #await ctx.send(self.localizer.format_str("{commands.not_available_dm}", self.settings.get(ctx.guild.id, 'locale', 'default_locale')))
 
             elif isinstance(err, commands.CheckFailure):
                 pass
