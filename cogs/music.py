@@ -39,6 +39,18 @@ class Music:
         lang = self.bot.settings.get(guild, 'locale', 'default_locale')
         return LocalizerWrapper(self.bot.localizer, lang, "music.response")
 
+    async def __local_check(self, ctx):
+        """ Ensures the commands are used in the correct channels """
+        textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
+        if textchannels:
+            if ctx.channel.id not in textchannels:
+                localizer = self.getLocalizer(ctx.guild)
+                response = localizer.format_str('{settings_check.textchannel}')
+                for channel_id in textchannels:
+                    response += f'<#{channel_id}>, '
+                await ctx.send(response[:-2])
+                return False
+        return True
 
     async def __before_invoke(self, ctx):
         # TODO: rewrite this thing. Probably remove ensure_voice.
@@ -134,12 +146,15 @@ class Music:
         player.add_skipper(ctx.author)
         total = len(player.listeners)
         skips = len(player.skip_voters)
-        if skips >= math.ceil(total/2) or player.current.requester == ctx.author.id:
+        threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 'default_threshold')
+
+        if skips/total >= threshold/100 or player.current.requester == ctx.author.id:
             await player.skip()
             await ctx.send(localizer.format_str("{skip.skipped}"))
         else:
             if skips != 0:
-                msg = localizer.format_str("{skip.require_vote}", _skips=skips, _total=math.ceil(total/2))
+                needed = math.ceil(total*threshold/100)
+                msg = localizer.format_str("{skip.require_vote}", _skips=skips, _total=needed)
                 await ctx.send(msg)
 
     @commands.command(name='skipto', aliases=['forceskip','hopptil','tvinghopp'])
@@ -662,10 +677,25 @@ class Music:
             if not should_connect:
                 raise commands.CommandInvokeError('Not connected.')
 
-            permissions = ctx.author.voice.channel.permissions_for(ctx.me)
+            voice_channel = ctx.author.voice.channel
+
+            permissions = voice_channel.permissions_for(ctx.me)
 
             if not permissions.connect or not permissions.speak:  # Check user limit too?
                 raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
+
+            voice_channels = self.bot.settings.get(ctx.guild, 'channels.music', [])
+
+            if voice_channels:
+                if voice_channel.id not in voice_channels:
+                    localizer = self.getLocalizer(ctx.guild)
+                    response = localizer.format_str('{settings_check.voicechannel}')
+                    for channel_id in voice_channels:
+                        channel = ctx.guild.get_channel(channel_id)
+                        if channel is not None:
+                            response += f'{channel.name}, '
+                    await ctx.send(response[:-2])
+                    raise commands.CommandInvokeError('You need to be in the right voice channel')
 
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
@@ -673,15 +703,6 @@ class Music:
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
                 raise commands.CommandInvokeError('You need to be in my voicechannel.')
-
-    def max_track_length(self, guild):
-        player = self.bot.lavalink.players.get(guild.id)
-        if len(player.listeners):
-            listeners = len(player.listeners)
-        else:
-            listeners = 1
-        maxlen = max(60*60/listeners, 60*10)
-        return maxlen
 
     async def enqueue(self, ctx, track, embed):
 
@@ -711,6 +732,15 @@ class Music:
 
         duration = lavalink.utils.format_time(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
+
+    def max_track_length(self, guild):
+        player = self.bot.lavalink.players.get(guild.id)
+        if len(player.listeners):
+            listeners = len(player.listeners)
+        else:
+            listeners = 1
+        maxlen = max(60*60/listeners, 60*10)
+        return maxlen
 
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.CommandInvokeError):

@@ -84,19 +84,19 @@ class BotSettings:
             await ctx.send(embed=embed)
 
     @commands.guild_only()
-    @_set.command(name='voicechannels')
+    @_set.command(name='musicchannels')
     async def set_music_voice(self, ctx, *channels: discord.VoiceChannel):
         if channels:
             channel_ids = [channel.id for channel in channels]
-            self.bot.settings.set(ctx.guild, 'channels.voice', channel_ids)
+            self.bot.settings.set(ctx.guild, 'channels.music', channel_ids)
         else:
-            self.bot.settings.set(ctx.guild, 'channels.voice', None)
+            self.bot.settings.set(ctx.guild, 'channels.music', None)
 
-        voicechannels = self.bot.settings.get(ctx.guild, 'channels.voice')
+        musicchannels = self.bot.settings.get(ctx.guild, 'channels.music')
 
-        if voicechannels:
+        if musicchannels:
             embed = discord.Embed(title='Music channels set', color=ctx.me.color)
-            channels = [ctx.guild.get_channel(channel) for channel in voicechannels]
+            channels = [ctx.guild.get_channel(channel) for channel in musicchannels]
             mentioned = [channel.name for channel in channels if channel is not None]
             embed.description = ', '.join(mentioned)
             await ctx.send(embed=embed)
@@ -168,11 +168,11 @@ class BotSettings:
             mentioned = [channel.mention for channel in channels if channel is not None]
             embed.add_field(name='Text channels', value='\n'.join(mentioned))
 
-        voicechannels = self.bot.settings.get(ctx.guild, 'channels.voice')
+        voicechannels = self.bot.settings.get(ctx.guild, 'channels.music')
         if voicechannels:
             channels = [ctx.guild.get_channel(channel) for channel in voicechannels]
             mentioned = [channel.name for channel in channels if channel is not None]
-            embed.add_field(name='Voice channels', value='\n'.join(mentioned))
+            embed.add_field(name='Music channels', value='\n'.join(mentioned))
 
         listenchannels = self.bot.settings.get(ctx.guild, 'channels.listen_only')
         if listenchannels:

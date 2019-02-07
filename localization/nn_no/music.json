@@ -80,6 +80,10 @@
       "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
       "previous": "**Tidlegare songar ({_len}):**",
       "empty": "Ingen tidlegare spelte songar"
+    },
+    "settings_check": {
+      "textchannel": "Du kan ikkje bruke musikkommandoar i denne kanalen.\nPrøv i: ",
+      "voicechannel": "Eg kan berre spele musikk i: "
     }
   }
 }
