@@ -23,7 +23,7 @@ with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
 
 def _get_prefix(bot, message):
     if not message.guild:
-        return default_prefix
+        return bot.settings.default_prefix
     prefixes = bot.settings.get(message.guild, 'prefixes', 'default_prefix')
     return commands.when_mentioned_or(*prefixes)(bot, message)
 

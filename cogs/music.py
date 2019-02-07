@@ -50,6 +50,8 @@ class Music:
         if guild_check:
             await self.ensure_voice(ctx)
             #  Ensure that the bot and command author share a mutual voicechannel.
+        else:
+            raise commands.NoPrivateMessage
 
         return guild_check
 
