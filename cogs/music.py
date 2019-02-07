@@ -549,6 +549,8 @@ class Music:
         player = self.bot.lavalink.players.get(ctx.guild.id)
         localizer = self.getLocalizer(ctx.guild)
         history = player.get_history()
+        if not history:
+            return await ctx.send(localizer.format_str("{history.empty}"))
         track = history[0]
         description = localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
         description += localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
@@ -647,7 +649,11 @@ class Music:
         player = self.bot.lavalink.players.create(ctx.guild.id, endpoint=ctx.guild.region.value)
         # Create returns a player if one exists, otherwise creates.
 
-        should_connect = ctx.command.name in ('play', "find", 'search')  # Add commands that require joining voice to work.
+        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')  # Add commands that require joining voice to work.
+        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now') # Add commands that don't require the you being in voice.
+
+        if without_connect:
+            return
 
         if not ctx.author.voice or not ctx.author.voice.channel:
             raise commands.CommandInvokeError('Join a voicechannel first.')
@@ -705,6 +711,10 @@ class Music:
 
         duration = lavalink.utils.format_time(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
+
+    async def on_command_error(self, ctx, err):
+        if isinstance(err, commands.CommandInvokeError):
+            pass
 
 def setup(bot):
     bot.add_cog(Music(bot))

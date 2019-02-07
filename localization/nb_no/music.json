@@ -78,7 +78,8 @@
       "title": "Avspillingshistorikk",
       "current": "`Spiller nå` **[{_title}]({_uri})** _av <@{_id}>_",
       "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
-      "previous": "**Tidligere sanger ({_len}):**"
+      "previous": "**Tidligere sanger ({_len}):**",
+      "empty": "Ingen tidligere spilte sanger"
     }
   }
 }
