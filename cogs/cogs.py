@@ -1,6 +1,5 @@
 import discord
 import os
-import json
 import codecs
 import traceback
 from discord.ext import commands
@@ -55,10 +54,10 @@ class Cogs:
         """Reloads all extensions"""
         try:
             for extension in self.bot.extensions:
-                if extension == 'cogs':
+                if extension == 'cogs.cogs':
                     continue
-                self.bot.unload_extension(f'cogs.{extension}')
-                self.bot.load_extension(f'cogs.{extension}')
+                self.bot.unload_extension(f'{extension}')
+                self.bot.load_extension(f'{extension}')
             await ctx.send('Extensions reloaded')
         except Exception as e:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')

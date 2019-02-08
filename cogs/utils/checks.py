@@ -50,7 +50,7 @@ def is_admin():
 
 def is_mod():
     async def pred(ctx):
-        modrole = ctx.bot.settings.get_mod_role(ctx.guild.id)
+        modrole = ctx.bot.settings.get(ctx.guild, 'roles.moderator', 'default_mod')
         return has_role(ctx, modrole)
     return commands.check(pred)
 

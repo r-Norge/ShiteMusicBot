@@ -3,7 +3,7 @@ A cog to separate events from regular music commands
 """
 
 import asyncio
-
+import yaml
 import discord
 import lavalink
 from discord.ext import commands
@@ -12,8 +12,6 @@ import time
 from .utils.mixplayer import MixPlayer
 from lavalink.events import *
 
-from lavasettings import *
-
 
 class MusicEvents:
     def __init__(self, bot):
@@ -21,7 +19,11 @@ class MusicEvents:
         # TODO: maybe only load when Music loads
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
-            bot.lavalink.add_node(host, port, password, region, 'default-node')  # Host, Port, Password, Region, Name
+
+            with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
+                conf = yaml.safe_load(f)
+
+            bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
         bot.lavalink.add_event_hook(self.track_hook)

@@ -78,7 +78,8 @@
       "title": "Avspelingshistorikk",
       "current": "`Spelar no` **[{_title}]({_uri})** _av <@{_id}>_",
       "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
-      "previous": "**Tidlegare songar ({_len}):**"
+      "previous": "**Tidlegare songar ({_len}):**",
+      "empty": "Ingen tidlegare spelte songar"
     }
   }
 }

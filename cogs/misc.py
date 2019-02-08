@@ -54,7 +54,7 @@ class Misc:
 
         embed.add_field(name='{info.music.players}', value=f'{len(lavalink.players)}')
         embed.add_field(name='{info.music.listeners}', value=f'{listeners}')
-        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
+        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get(ctx.guild, 'locale', 'default_locale'))
         await ctx.send(embed=embed)
 
     
@@ -105,7 +105,7 @@ class Misc:
                         value=uptimetext)
 
         embed = self.bot.localizer.format_embed(embed, 
-            self.bot.settings.get_locale(ctx.guild.id), 
+            self.bot.settings.get(ctx.guild, 'locale', 'default_locale'), 
             _python_v=platform.python_version(),
             _discord_v=discord.__version__,
             _lavalink_v=LavalinkVersion,
