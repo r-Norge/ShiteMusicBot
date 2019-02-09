@@ -72,7 +72,8 @@
       "position": "Køposisjon",
       "playing_in": "Spelar av om",
       "enqueued": "Ny song lagt til i køa",
-      "estimated": "estimert"
+      "estimated": "estimert",
+      "toolong": "Song for lang. `{_length}>{_max}`"
     },
     "history": {
       "title": "Avspelingshistorikk",

@@ -92,11 +92,20 @@ class Music:
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
 
-            for track in tracks:
-                player.add(requester=ctx.author.id, track=track)
+            maxlength = self.max_track_length(ctx.guild, player)
+            if maxlength:
+                numtracks = 0
+                for track in tracks:
+                    if track['info']['length'] <= maxlength:
+                        player.add(requester=ctx.author.id, track=track)
+                        numtracks += 1
+            else:
+                numtracks = len(tracks)
+                for track in tracks:
+                    player.add(requester=ctx.author.id, track=track)
 
             embed.title = '{playlist_enqued}'
-            embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} {{tracks}}'
+            embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
             embed = localizer.format_embed(embed)
             await ctx.send(embed=embed)
         else:
@@ -173,7 +182,6 @@ class Music:
             return await ctx.send(localizer.format_str("{skip_to.exceeds_queue}"))
         await player.skip(pos - 1)
         msg = localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
-        print(msg, player.current.title, pos)
         await ctx.send(msg)
 
     @commands.command(name='stop', aliases=['stopp'])
@@ -519,7 +527,7 @@ class Music:
         embed = localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
 
-    @commands.command(name='nomalize', aliases=['normal','nl','normaliser'])
+    @commands.command(name='normalize', aliases=['normal','nl','normaliser'])
     @checks.DJ_or(alone=True)
     async def _normalize(self, ctx):
         """ Reset the equalizer and  """
@@ -704,8 +712,16 @@ class Music:
     async def enqueue(self, ctx, track, embed):
 
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
         localizer = self.getLocalizer(ctx.guild)
+
+        maxlength = self.max_track_length(ctx.guild, player)
+        if maxlength and track['info']['length'] > maxlength:
+            embed.description = localizer.format_str("{enqueue.toolong}",
+                                                     _length=lavalink.utils.format_time(track['info']['length']),
+                                                     _max=lavalink.utils.format_time(maxlength))
+            return
+
+        track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
 
         if player.current is not None:
             queue_duration = 0
@@ -730,14 +746,19 @@ class Music:
         duration = lavalink.utils.format_time(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
-    def max_track_length(self, guild):
-        player = self.bot.lavalink.players.get(guild.id)
-        if len(player.listeners):
+    def max_track_length(self, guild, player):
+        is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
+        maxlength = self.bot.settings.get(guild, 'duration.max', None)
+        if maxlength is None:
+            return None
+        if len(player.listeners): # Avoid division by 0.
             listeners = len(player.listeners)
         else:
             listeners = 1
-        maxlen = max(60*60/listeners, 60*10)
-        return maxlen
+        if maxlength > 10 and is_dynamic:
+            return max(maxlength*60*1000/listeners, 60*10*1000)
+        else:
+            return maxlength*60*1000
 
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.CommandInvokeError):

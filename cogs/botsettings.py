@@ -147,6 +147,35 @@ class BotSettings:
             await ctx.send(embed=embed)
 
     @commands.guild_only()
+    @_set.command(name='maxduration')
+    async def set_max_track_duration(self, ctx, duration: int=None):
+        self.bot.settings.set(ctx.guild, 'duration.max', duration)
+
+        duration = self.bot.settings.get(ctx.guild, 'duration.max')
+
+        if duration:
+            embed = discord.Embed(title='Max track duration set to', color=ctx.me.color)
+            embed.description = f'{duration} minutes'
+            await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(color=ctx.me.color, description='Max track length removed')
+            await ctx.send(embed=embed)
+
+    @commands.guild_only()
+    @_set.command(name='dynamicmax')
+    async def set_track_duration_type(self, ctx, dynamic: bool=False):
+        self.bot.settings.set(ctx.guild, 'duration.is_dynamic', dynamic)
+
+        is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic')
+
+        embed = discord.Embed(title='Max duration type set to', color=ctx.me.color)
+        if is_dynamic:
+            embed.description = f'Dynamic'
+        else:
+            embed.description = f'Static'
+        await ctx.send(embed=embed)
+
+    @commands.guild_only()
     @_set.command(name='current')
     async def current_settings(self, ctx):
         embed = discord.Embed(title='Settings', color=ctx.me.color)
@@ -161,6 +190,13 @@ class BotSettings:
 
         threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 50)
         embed.add_field(name='Vote threshold', value=f'{threshold}%')
+
+        is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic', 'default_is_dynamic')
+        embed.add_field(name='Dynamic max duration', value=is_dynamic)
+
+        duration = self.bot.settings.get(ctx.guild, 'maxduration')
+        if duration:
+            embed.add_field(name='Max track duration', value=f'{duration} minutes')
 
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text')
         if textchannels:

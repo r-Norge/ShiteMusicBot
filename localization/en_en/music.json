@@ -72,7 +72,8 @@
       "position": "position",
       "playing_in": "Playing in",
       "enqueued": "Song enqueued",
-      "estimated": "estimated"
+      "estimated": "estimated",
+      "toolong": "Track too long. `{_length}>{_max}`"
     },
     "history": {
       "title": "Track history",
