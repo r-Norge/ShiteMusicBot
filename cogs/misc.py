@@ -114,10 +114,10 @@ class Misc:
         )
         await ctx.send(embed=embed)
 
-        @commands.command()
-        @checks.is_even()
-        async def only_me(self, ctx):
-            await ctx.send('Only you!')
+    @commands.command()
+    @checks.is_even()
+    async def only_me(self, ctx):
+        await ctx.send('Only you!')
 
 
 def setup(bot):

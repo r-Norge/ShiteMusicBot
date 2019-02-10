@@ -72,7 +72,8 @@
       "position": "Køposisjon",
       "playing_in": "Spelar av om",
       "enqueued": "Ny song lagt til i køa",
-      "estimated": "estimert"
+      "estimated": "estimert",
+      "toolong": "Song for lang. `{_length}>{_max}`"
     },
     "history": {
       "title": "Avspelingshistorikk",
@@ -80,6 +81,10 @@
       "track": "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_",
       "previous": "**Tidlegare songar ({_len}):**",
       "empty": "Ingen tidlegare spelte songar"
+    },
+    "settings_check": {
+      "textchannel": "Du kan ikkje bruke musikkommandoar i denne kanalen.\nPrøv i: ",
+      "voicechannel": "Eg kan berre spele musikk i: "
     }
   }
 }

@@ -9,9 +9,10 @@ class Settings:
         self._SETTINGS_PATH = self._DATA_PATH + 'settings.yaml'
 
         self.default_prefix = default_settings["prefix"]
-        self.default_mod = default_settings["moderator_role"]
+        self.default_mod = default_settings["moderator role"]
         self.default_locale = default_settings["locale"]
         self.default_threshold = default_settings["threshold"]
+        self.default_is_dynamic = default_settings["dynamic max duration"]
 
         if not self.default_locale:
             locale, codepage = locale.getlocale()
@@ -85,7 +86,7 @@ class Settings:
             return default
 
         value = self._get(self.settings[guild_id], setting.split('.'))
-        if value:
+        if value is not None:
             return value
         else:
             return default

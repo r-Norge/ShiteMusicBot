@@ -54,6 +54,19 @@ def is_mod():
         return has_role(ctx, modrole)
     return commands.check(pred)
 
+def has_role_id(ctx, role_id):
+    if ctx.channel is discord.DMChannel:
+        return False
+
+    role = discord.utils.get(ctx.author.roles, id=role_id)
+    return role is not None
+
+def is_DJ(ctx):
+    dj_role_ids = ctx.bot.settings.get(ctx.guild, 'roles.dj', [])
+    if not dj_role_ids:
+        return any([has_role(ctx, role) for role in ['dj', 'Dj', 'DJ', 'dJ']])
+    else:
+        return any([has_role_id(ctx, role_id) for role_id in dj_role_ids])
 
 def DJ_or(alone: bool=False, current: bool=False):
     async def predicate(ctx):
@@ -63,7 +76,7 @@ def DJ_or(alone: bool=False, current: bool=False):
 
             requester = (player.current.requester == ctx.author.id) and current
 
-            is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
+            is_dj = is_DJ(ctx)
             is_admin = await check_guild_permissions(ctx, {'administrator': True})
 
             return is_dj or is_admin or is_alone or requester

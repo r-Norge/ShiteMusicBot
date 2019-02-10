@@ -10,9 +10,10 @@ locale_path: ./localization
 default server settings:
   prefix:
     - "!"
-  moderator_role: Moderator
+  moderator role: Moderator
   locale: en_en
   threshold: 50
+  dynamic max duration: Yes
 
 lavalink nodes:
   main:  # The preferred lavalink node for your music bot

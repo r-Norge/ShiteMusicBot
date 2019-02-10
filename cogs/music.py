@@ -39,6 +39,18 @@ class Music:
         lang = self.bot.settings.get(guild, 'locale', 'default_locale')
         return LocalizerWrapper(self.bot.localizer, lang, "music.response")
 
+    async def __local_check(self, ctx):
+        """ Ensures the commands are used in the correct channels """
+        textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
+        if textchannels:
+            if ctx.channel.id not in textchannels:
+                localizer = self.getLocalizer(ctx.guild)
+                response = localizer.format_str('{settings_check.textchannel}')
+                for channel_id in textchannels:
+                    response += f'<#{channel_id}>, '
+                await ctx.send(response[:-2])
+                return False
+        return True
 
     async def __before_invoke(self, ctx):
         # TODO: rewrite this thing. Probably remove ensure_voice.
@@ -80,11 +92,20 @@ class Music:
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
 
-            for track in tracks:
-                player.add(requester=ctx.author.id, track=track)
+            maxlength = self.max_track_length(ctx.guild, player)
+            if maxlength:
+                numtracks = 0
+                for track in tracks:
+                    if track['info']['length'] <= maxlength:
+                        player.add(requester=ctx.author.id, track=track)
+                        numtracks += 1
+            else:
+                numtracks = len(tracks)
+                for track in tracks:
+                    player.add(requester=ctx.author.id, track=track)
 
             embed.title = '{playlist_enqued}'
-            embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} {{tracks}}'
+            embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
             embed = localizer.format_embed(embed)
             await ctx.send(embed=embed)
         else:
@@ -134,12 +155,15 @@ class Music:
         player.add_skipper(ctx.author)
         total = len(player.listeners)
         skips = len(player.skip_voters)
-        if skips >= math.ceil(total/2) or player.current.requester == ctx.author.id:
+        threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 'default_threshold')
+
+        if skips/total >= threshold/100 or player.current.requester == ctx.author.id:
             await player.skip()
             await ctx.send(localizer.format_str("{skip.skipped}"))
         else:
             if skips != 0:
-                msg = localizer.format_str("{skip.require_vote}", _skips=skips, _total=math.ceil(total/2))
+                needed = math.ceil(total*threshold/100)
+                msg = localizer.format_str("{skip.require_vote}", _skips=skips, _total=needed)
                 await ctx.send(msg)
 
     @commands.command(name='skipto', aliases=['forceskip','hopptil','tvinghopp'])
@@ -158,7 +182,6 @@ class Music:
             return await ctx.send(localizer.format_str("{skip_to.exceeds_queue}"))
         await player.skip(pos - 1)
         msg = localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
-        print(msg, player.current.title, pos)
         await ctx.send(msg)
 
     @commands.command(name='stop', aliases=['stopp'])
@@ -492,10 +515,7 @@ class Music:
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
 
-        # Hacky bs, redo when doing proper DJ role support.
-        user_roles = [role.name for role in ctx.author.roles]
-        DJ_roles = ['DJ','dj','Dj']
-        is_dj = [i for i in DJ_roles if i in user_roles]
+        is_dj = checks.is_DJ(ctx)
         is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) == True
         if int(player.current.requester) == ctx.author.id and not is_dj and not is_admin:
             if not 50 <= volume <= 125:
@@ -507,7 +527,7 @@ class Music:
         embed = localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
 
-    @commands.command(name='nomalize', aliases=['normal','nl','normaliser'])
+    @commands.command(name='normalize', aliases=['normal','nl','normaliser'])
     @checks.DJ_or(alone=True)
     async def _normalize(self, ctx):
         """ Reset the equalizer and  """
@@ -662,10 +682,25 @@ class Music:
             if not should_connect:
                 raise commands.CommandInvokeError('Not connected.')
 
-            permissions = ctx.author.voice.channel.permissions_for(ctx.me)
+            voice_channel = ctx.author.voice.channel
+
+            permissions = voice_channel.permissions_for(ctx.me)
 
             if not permissions.connect or not permissions.speak:  # Check user limit too?
                 raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
+
+            voice_channels = self.bot.settings.get(ctx.guild, 'channels.music', [])
+
+            if voice_channels:
+                if voice_channel.id not in voice_channels:
+                    localizer = self.getLocalizer(ctx.guild)
+                    response = localizer.format_str('{settings_check.voicechannel}')
+                    for channel_id in voice_channels:
+                        channel = ctx.guild.get_channel(channel_id)
+                        if channel is not None:
+                            response += f'{channel.name}, '
+                    await ctx.send(response[:-2])
+                    raise commands.CommandInvokeError('You need to be in the right voice channel')
 
             player.store('channel', ctx.channel.id)
             await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
@@ -674,20 +709,19 @@ class Music:
             if int(player.channel_id) != ctx.author.voice.channel.id:
                 raise commands.CommandInvokeError('You need to be in my voicechannel.')
 
-    def max_track_length(self, guild):
-        player = self.bot.lavalink.players.get(guild.id)
-        if len(player.listeners):
-            listeners = len(player.listeners)
-        else:
-            listeners = 1
-        maxlen = max(60*60/listeners, 60*10)
-        return maxlen
-
     async def enqueue(self, ctx, track, embed):
 
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
         localizer = self.getLocalizer(ctx.guild)
+
+        maxlength = self.max_track_length(ctx.guild, player)
+        if maxlength and track['info']['length'] > maxlength:
+            embed.description = localizer.format_str("{enqueue.toolong}",
+                                                     _length=lavalink.utils.format_time(track['info']['length']),
+                                                     _max=lavalink.utils.format_time(maxlength))
+            return
+
+        track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
 
         if player.current is not None:
             queue_duration = 0
@@ -711,6 +745,20 @@ class Music:
 
         duration = lavalink.utils.format_time(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
+
+    def max_track_length(self, guild, player):
+        is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
+        maxlength = self.bot.settings.get(guild, 'duration.max', None)
+        if maxlength is None:
+            return None
+        if len(player.listeners): # Avoid division by 0.
+            listeners = len(player.listeners)
+        else:
+            listeners = 1
+        if maxlength > 10 and is_dynamic:
+            return max(maxlength*60*1000/listeners, 60*10*1000)
+        else:
+            return maxlength*60*1000
 
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.CommandInvokeError):
