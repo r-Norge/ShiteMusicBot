@@ -13,7 +13,7 @@ import discord
 from discord.ext import commands
 from typing import Optional
 
-from .utils import checks, RoxUtils
+from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
 from .utils.embedscroller import QueueScroller
 from .utils.localizer import LocalizerWrapper
@@ -140,7 +140,7 @@ class Music:
 
         track_time = player.position + seconds
         await player.seek(track_time)
-        msg = localizer.format_str("{seek.track_moved}",_position=lavalink.utils.format_time(track_time))
+        msg = localizer.format_str("{seek.track_moved}", _position=timeformatter.format(track_time))
         await ctx.send(msg)
 
     @commands.command(name='skip', aliases=['hopp'])
@@ -210,11 +210,11 @@ class Music:
         if not player.current:
             return await ctx.send(localizer.format_str("{not_playing}"))
 
-        position = lavalink.utils.format_time(player.position)
+        position = timeformatter.format(player.position)
         if player.current.stream:
             duration = '{live}'
         else:
-            duration = lavalink.utils.format_time(player.current.duration)
+            duration = timeformatter.format(player.current.duration)
         song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
         member = ctx.guild.get_member(player.current.requester)
@@ -415,7 +415,8 @@ class Music:
         for index, track in enumerate(tracks, start=1):
             track_title = track['info']['title']
             track_uri = track['info']['uri']
-            search_results += f'`{index}.` [{track_title}]({track_uri})\n'
+            duration = timeformatter.format(int(track['info']['length']))
+            search_results += f'`{index}.` [{track_title}]({track_uri}) `{duration}`\n'
             if index == result_count:
                 break
 
@@ -717,8 +718,8 @@ class Music:
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
             embed.description = localizer.format_str("{enqueue.toolong}",
-                                                     _length=lavalink.utils.format_time(track['info']['length']),
-                                                     _max=lavalink.utils.format_time(maxlength))
+                                                     _length=timeformatter.format(track['info']['length']),
+                                                     _max=timeformatter.format(maxlength))
             return
 
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
@@ -731,7 +732,7 @@ class Music:
                 queue_duration += int(track.duration)
 
             until_play = queue_duration + player.current.duration - player.position
-            until_play = lavalink.utils.format_time(until_play)
+            until_play = timeformatter.format(until_play)
             embed.add_field(name="{enqueue.position}", value=f"`{pos_local + 1}({pos_global + 1})`", inline=True)
             embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`", inline=True)
 
@@ -743,7 +744,7 @@ class Music:
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
 
-        duration = lavalink.utils.format_time(int(track.duration))
+        duration = timeformatter.format(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
     def max_track_length(self, guild, player):
@@ -763,6 +764,7 @@ class Music:
     async def on_command_error(self, ctx, err):
         if isinstance(err, commands.CommandInvokeError):
             pass
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
