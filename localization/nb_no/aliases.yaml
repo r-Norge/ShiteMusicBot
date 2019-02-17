@@ -1,0 +1,27 @@
+
+# Music aliases
+play:       [p, spill, s]
+now:        [np, nå]
+queue:      [q, kø, k]
+myqueue:    [mq, minkø, mk]
+seek:       [spol]
+skip:       [hopp]
+skipto:     [forceskip, hopptil, tvinghopp]
+stop:       [stopp]
+pause:      [resume, gjenoppta]
+shuffle:    [stokk]
+move:       [m, flytt, f]
+remvove:    [rem, fjern]
+DJremove:   [DJfjern, djfjern]
+removeuser: [fjernbruker]
+search:     [søk, finn]
+disconnect: [dc, kf, koblefra]
+volume:     [vol, volum, lydstyrke, lyd]
+normalize:  [normal, nl, normaliser]
+boost:      [bassboost, bassforsterker]
+history:    [h, hist, historie]
+scrub:      [kontroller, konsoll]
+
+# Other
+info:       [informasjon]
+musicinfo:  [musikkinfo, musikkinformasjon]

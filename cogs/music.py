@@ -35,17 +35,14 @@ class Music:
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    def getLocalizer(self, guild):
-        lang = self.bot.settings.get(guild, 'locale', 'default_locale')
-        return LocalizerWrapper(self.bot.localizer, lang, "music.response")
-
     async def __local_check(self, ctx):
         """ Ensures the commands are used in the correct channels """
+        if not ctx.guild:
+            raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
         if textchannels:
             if ctx.channel.id not in textchannels:
-                localizer = self.getLocalizer(ctx.guild)
-                response = localizer.format_str('{settings_check.textchannel}')
+                response = ctx.localizer.format_str('{settings_check.textchannel}')
                 for channel_id in textchannels:
                     response += f'<#{channel_id}>, '
                 await ctx.send(response[:-2])
@@ -72,11 +69,10 @@ class Music:
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
-    @commands.command(name='play', aliases=['p','spill','s','spel'])
+    @commands.command(name='play')
     async def _play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
         query = query.strip('<>')
 
         if not url_rx.match(query):
@@ -85,7 +81,7 @@ class Music:
         results = await player.node.get_tracks(query)
 
         if not results or not results['tracks']:
-            return await ctx.send(localizer.format_str("{nothing_found}"))
+            return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
 
         embed = discord.Embed(color=ctx.me.color)
 
@@ -106,33 +102,32 @@ class Music:
 
             embed.title = '{playlist_enqued}'
             embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
-            embed = localizer.format_embed(embed)
+            embed = ctx.localizer.format_embed(embed)
             await ctx.send(embed=embed)
         else:
             track = results['tracks'][0]
             await self.enqueue(ctx, track, embed)
-            embed = localizer.format_embed(embed)
+            embed = ctx.localizer.format_embed(embed)
             await ctx.send(embed=embed)
 
         if not player.is_playing:
             await player.play()
 
-    @commands.command(name='seek', aliases=['spol'])
+    @commands.command(name='seek')
     @checks.DJ_or(alone=True)
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
         
         if not player.is_playing:
-            return await ctx.send(localizer.format_str("{not_playing}"))
+            return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
         if ctx.author not in player.listeners:
-            return await ctx.send(localizer.format_str("{have_to_listen}"))
+            return await ctx.send(ctx.localizer.format_str("{have_to_listen}"))
 
         seconds = time_rx.search(time)
         if not seconds:
-            return await ctx.send(localizer.format_str("{seek.missing_amount}"))
+            return await ctx.send(ctx.localizer.format_str("{seek.missing_amount}"))
 
         seconds = int(seconds.group()) * 1000
         if time.startswith('-'):
@@ -140,17 +135,16 @@ class Music:
 
         track_time = player.position + seconds
         await player.seek(track_time)
-        msg = localizer.format_str("{seek.track_moved}", _position=timeformatter.format(track_time))
+        msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format(track_time))
         await ctx.send(msg)
 
-    @commands.command(name='skip', aliases=['hopp'])
+    @commands.command(name='skip')
     async def _skip(self, ctx):
         """ Skips the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not player.is_playing:
-            return await ctx.send(localizer.format_str("{not_playing}"))
+            return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
         player.add_skipper(ctx.author)
         total = len(player.listeners)
@@ -159,56 +153,53 @@ class Music:
 
         if skips/total >= threshold/100 or player.current.requester == ctx.author.id:
             await player.skip()
-            await ctx.send(localizer.format_str("{skip.skipped}"))
+            await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
         else:
             if skips != 0:
                 needed = math.ceil(total*threshold/100)
-                msg = localizer.format_str("{skip.require_vote}", _skips=skips, _total=needed)
+                msg = ctx.localizer.format_str("{skip.require_vote}", _skips=skips, _total=needed)
                 await ctx.send(msg)
 
-    @commands.command(name='skipto', aliases=['forceskip','hopptil','tvinghopp'])
+    @commands.command(name='skipto')
     @checks.DJ_or(alone=True)
     async def _skip_to(self, ctx, pos: int=1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if ctx.author not in player.listeners:
-            return await ctx.send(localizer.format_str("{have_to_listen}"))
+            return await ctx.send(ctx.localizer.format_str("{have_to_listen}"))
 
         if pos < 1:
-            return await ctx.send(localizer.format_str("{skip_to.invalid_pos}"))
+            return await ctx.send(ctx.localizer.format_str("{skip_to.invalid_pos}"))
         if len(player.queue) < pos:
-            return await ctx.send(localizer.format_str("{skip_to.exceeds_queue}"))
+            return await ctx.send(ctx.localizer.format_str("{skip_to.exceeds_queue}"))
         await player.skip(pos - 1)
-        msg = localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
+        msg = ctx.localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
         await ctx.send(msg)
 
-    @commands.command(name='stop', aliases=['stopp'])
+    @commands.command(name='stop')
     @checks.DJ_or(alone=True)
     async def _stop(self, ctx):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if ctx.author not in player.listeners:
-            return await ctx.send(localizer.format_str("{have_to_listen}"))
+            return await ctx.send(ctx.localizer.format_str("{have_to_listen}"))
 
         if not player.is_playing:
-            return await ctx.send(localizer.format_str("{not_playing}"))
+            return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
         player.queue.clear()
         await player.stop()
-        await ctx.send(localizer.format_str("{stop}"))
+        await ctx.send(ctx.localizer.format_str("{stop}"))
 
-    @commands.command(name='now', aliases=['np','current', 'nå', 'nåspilles', 'gjeldende', 'spillernå','spelarno','nospelar'])
+    @commands.command(name='now')
     async def _now(self, ctx):
         """ Shows some stats about the currently playing song. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not player.current:
-            return await ctx.send(localizer.format_str("{not_playing}"))
+            return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
         position = timeformatter.format(player.position)
         if player.current.stream:
@@ -219,7 +210,7 @@ class Music:
 
         member = ctx.guild.get_member(player.current.requester)
         embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-        thumbnail_url = await RoxUtils.ThumbNailer.identify(self,player.current.identifier, player.current.uri)
+        thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
 
@@ -229,100 +220,94 @@ class Music:
             member_identifier = member.name
         embed.set_footer(text=f'{{requested_by}} {member_identifier}', icon_url=member.avatar_url)
 
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
-    @commands.command(name='queue', aliases=['q', 'kø'])
+    @commands.command(name='queue')
     async def _queue(self, ctx, user: discord.Member=None):
         """ Shows the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if player.queue.empty:
-            return await ctx.send(localizer.format_str("{queue.empty}"))
+            return await ctx.send(ctx.localizer.format_str("{queue.empty}"))
         
         if user is None:
             queue = player.global_queue()
-            scroller = QueueScroller(ctx, queue, localizer, lines_per_page=10)
+            scroller = QueueScroller(ctx, queue, ctx.localizer, lines_per_page=10)
             await scroller.start_scrolling()
 
         else:
             user_queue = player.user_queue(user.id, dual=True)
             if not user_queue:
-                return await ctx.send(localizer.format_str("{queue.empty}", _user=user.name))
+                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
             
-            scroller = QueueScroller(ctx, user_queue, localizer, lines_per_page=10, user_name=user.name)
+            scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=user.name)
             await scroller.start_scrolling()
 
-    @commands.command(name='myqueue', aliases=['mq','minkø','mk'])
+    @commands.command(name='myqueue')
     async def _myqueue(self, ctx):
         """ Shows your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         user_queue = player.user_queue(ctx.author.id, dual=True)
         if not user_queue:
-            return await ctx.send(localizer.format_str("{my_queue}"))
+            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
-        scroller = QueueScroller(ctx, user_queue, localizer, lines_per_page=10, user_name=ctx.author.name)
+        scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=ctx.author.name)
         await scroller.start_scrolling()
 
-    @commands.command(name='pause', aliases=['resume','gjenoppta'])
+    @commands.command(name='pause')
     @checks.DJ_or(alone=True)
     async def _pause(self, ctx):
         """ Pauses/Resumes the current track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not player.is_playing:
-            return await ctx.send(localizer.format_str("{not_playing}"))
+            return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
         if player.paused:
             await player.set_pause(False)
-            await ctx.send(localizer.format_str("{resume.resumed}"))
+            await ctx.send(ctx.localizer.format_str("{resume.resumed}"))
         else:
             await player.set_pause(True)
-            await ctx.send(localizer.format_str("{resume.paused}"))
+            await ctx.send(ctx.localizer.format_str("{resume.paused}"))
 
-    @commands.command(name='shuffle', aliases=['stokk'])
+    @commands.command(name='shuffle')
     async def _shuffle(self, ctx):
         """ Shuffles your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         user_queue = player.user_queue(ctx.author.id)
 
         if not user_queue:
-            return await ctx.send(localizer.format_str("{my_queue}"))
+            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
         player.shuffle_user_queue(ctx.author.id)
-        await ctx.send(localizer.format_str("{shuffle}"))
+        await ctx.send(ctx.localizer.format_str("{shuffle}"))
 
-    @commands.command(name='move', aliases=['m', 'flytt','f'])
+    @commands.command(name='move')
     async def _move(self, ctx, from_pos: int, to_pos: int):
         """ Moves a song in your queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         user_queue = player.user_queue(ctx.author.id)
         if not user_queue:
-            return await ctx.send(localizer.format_str("{my_queue}"))
+            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
         if not all(x in range(1,len(user_queue) + 1) for x in [from_pos, to_pos]):
-            return await ctx.send(localizer.format_str("{out_of_range}", _len=len(user_queue)))
+            return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
 
         moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
         if moved is None:
-            return await ctx.send(localizer.format_str("{move.not_in_queue}"))
+            return await ctx.send(ctx.localizer.format_str("{move.not_in_queue}"))
         
-        msg = localizer.format_str("{move.moved_to}", _title=moved.title, _from=from_pos, _to=to_pos)
+        msg = ctx.localizer.format_str("{move.moved_to}", _title=moved.title, _from=from_pos, _to=to_pos)
         await ctx.send(msg)
 
-    @commands.command(name='remove', aliases=['rem', 'fjern'])
+    @commands.command(name='remove')
     async def _remove(self, ctx, pos: int):
         """ Removes an item from the player's queue with the given pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if player.queue.empty:
             return
@@ -332,29 +317,28 @@ class Music:
             return
 
         if pos > len(user_queue) or pos < 1:
-            return await ctx.send(localizer.format_str("{out_of_range}", _len=len(user_queue)))
+            return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
 
         removed = player.remove_user_track(ctx.author.id, pos - 1)
 
-        await ctx.send(localizer.format_str("{remove}", _title=removed.title))
+        await ctx.send(ctx.localizer.format_str("{remove}", _title=removed.title))
 
-    @commands.command(name="DJremove", aliases=['DJfjern','djfjern'])
+    @commands.command(name="DJremove")
     @checks.DJ_or()
     async def _djremove(self, ctx, pos: int, user: discord.Member=None):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if user is None:
             if player.queue.empty:
                 return
 
             if pos > len(player.queue) or pos < 1:
-                return await ctx.send(localizer.format_str("{out_of_range}", _len=len(player.queue)))
+                return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(player.queue)))
 
             removed = player.remove_global_track(pos - 1)
             requester = self.bot.get_user(removed.requester)
-            await ctx.send(localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
+            await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
 
         else:
             if player.queue.empty:
@@ -365,17 +349,16 @@ class Music:
                 return
 
             if pos > len(user_queue) or pos < 1:
-                return await ctx.send(localizer.format_str("{out_of_range}", _len=len(user_queue)))
+                return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
 
             removed = player.remove_user_track(user.id, pos - 1)
-            await ctx.send(localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
+            await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
 
-    @commands.command(name='removeuser', aliases=['fjernbruker','fjernbrukar'])
+    @commands.command(name='removeuser')
     @checks.DJ_or(alone=True)
     async def _user_queue_remove(self, ctx, user: discord.Member):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if player.queue.empty:
             return
@@ -388,15 +371,14 @@ class Music:
 
         embed = discord.Embed(color=ctx.me.color)
         embed.description = "{dj_remove_user}"
-        embed = localizer.format_embed(embed, _id=user.id)
+        embed = ctx.localizer.format_embed(embed, _id=user.id)
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='search', aliases=['søk','finn'])
+    @commands.command(name='search')
     async def _search(self, ctx, *, query):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
             query = 'ytsearch:' + query
@@ -405,7 +387,7 @@ class Music:
 
         embed = discord.Embed(description='{nothing_found}', color=0x36393F)
         if not results or not results['tracks']:
-            embed = localizer.format_embed(embed)
+            embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
         tracks = results['tracks']
@@ -447,7 +429,7 @@ class Music:
             return False
 
         embed.description = '{search}'
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         result_msg = await ctx.send(embed=embed)
 
         for emoji, index in choices[:result_count]:
@@ -458,7 +440,7 @@ class Music:
 
         embed.title = '{results}'
         embed.color = ctx.me.color
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
 
         await result_msg.edit(embed=embed)
 
@@ -470,7 +452,7 @@ class Music:
             await result_msg.clear_reactions()
             embed.title = ''
             embed.description='{time_expired}'
-            embed = localizer.format_embed(embed)
+            embed = ctx.localizer.format_embed(embed)
             await result_msg.edit(embed=embed)
             await asyncio.sleep(5)
             await result_msg.delete()
@@ -481,37 +463,35 @@ class Music:
                 await result_msg.clear_reactions()
                 track = tracks[choice - 1]
                 await self.enqueue(ctx, track, embed)
-                embed = localizer.format_embed(embed)
+                embed = ctx.localizer.format_embed(embed)
                 await result_msg.edit(embed=embed)
                 if not player.is_playing:
                     await player.play()
 
-    @commands.command(name='disconnect', aliases=['dc','kf','koblefra','koblefrå'])
+    @commands.command(name='disconnect')
     @checks.DJ_or(alone=True)
     async def _disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not player.is_connected:
-            return await ctx.send(localizer.format_str("{not_connected}"))
+            return await ctx.send(ctx.localizer.format_str("{not_connected}"))
 
         if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
-            return await ctx.send(localizer.format_str("{disconnect.not_in_voice}"))
+            return await ctx.send(ctx.localizer.format_str("{disconnect.not_in_voice}"))
 
         player.queue.clear()
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
         embed = discord.Embed(description='{disconnect.disconnected}', color=ctx.me.color)
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
-    @commands.command(name='volume', aliases=['vol', 'volum', 'lydstyrke'])
+    @commands.command(name='volume')
     @checks.DJ_or(alone=True, current=True)
     async def _volume(self, ctx, volume: int = None):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
@@ -520,36 +500,34 @@ class Music:
         is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) == True
         if int(player.current.requester) == ctx.author.id and not is_dj and not is_admin:
             if not 50 <= volume <= 125:
-                return await ctx.send(localizer.format_str("{volume.out_of_range}"))
+                return await ctx.send(ctx.localizer.format_str("{volume.out_of_range}"))
 
         await player.set_volume(volume)
         embed = discord.Embed(color=ctx.me.color)
         embed.description = "{volume.set_to}"
-        embed = localizer.format_embed(embed, _volume=player.volume)
+        embed = ctx.localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
 
-    @commands.command(name='normalize', aliases=['normal','nl','normaliser'])
+    @commands.command(name='normalize')
     @checks.DJ_or(alone=True)
     async def _normalize(self, ctx):
         """ Reset the equalizer and  """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         await player.set_volume(100)
         await player.bassboost(False)
 
         embed = discord.Embed(color=ctx.me.color)
         embed.description = '{volume.reset}'
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='boost', aliases=['boo','bassforsterker','bassforsterkar'])
+    @commands.command(name='boost')
     @checks.DJ_or(alone=True)
     async def _boost(self, ctx, boost: bool=None):
         """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         if boost is not None:
             await player.bassboost(boost)
@@ -561,43 +539,41 @@ class Music:
         else:
             embed.description = '{boost.off}'
         
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
-    @commands.command(name='history', aliases=['h','hist','historie'])
+    @commands.command(name='history')
     async def _history(self, ctx):
         """ Show the last 10 songs played """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
         history = player.get_history()
         if not history:
-            return await ctx.send(localizer.format_str("{history.empty}"))
+            return await ctx.send(ctx.localizer.format_str("{history.empty}"))
         track = history[0]
-        description = localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
-        description += localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
+        description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
+        description += ctx.localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
         thumb_url = await RoxUtils.ThumbNailer.identify(self,
                                                 track.identifier,
                                                 track.uri)
         for index, track in enumerate(history[1:], start=1):
-            description += localizer.format_str("{history.track}",_index=-index, _title=track.title, _uri=track.uri, _id=track.requester) + '\n'
+            description += ctx.localizer.format_str("{history.track}",_index=-index, _title=track.title, _uri=track.uri, _id=track.requester) + '\n'
 
-        embed = discord.Embed(title=localizer.format_str('{history.title}'), color=ctx.me.color, description=description)
+        embed = discord.Embed(title=ctx.localizer.format_str('{history.title}'), color=ctx.me.color, description=description)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
         await ctx.send(embed=embed)
 
 
-    @commands.command(name='scrub', aliases=['kontrol','konsoll'])
+    @commands.command(name='scrub')
     @checks.DJ_or(alone=True)
     async def _scrub(self, ctx):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         controls = '{scrub.controls}'
         embed = discord.Embed(description='{nothing_playing}', color=ctx.me.color)
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
 
         if player.current is None:
             return await ctx.send(embed=embed)
@@ -631,14 +607,14 @@ class Music:
             return False
 
         embed.description = '{scrub.add}'
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         msg = await ctx.send(embed=embed)
 
         for (emoji, _, _) in scrubber:
             await msg.add_reaction(emoji)
 
         embed.description = controls
-        embed = localizer.format_embed(embed)
+        embed = ctx.localizer.format_embed(embed)
         await msg.edit(embed=embed)
         scrubbing = True
         while scrubbing:
@@ -694,8 +670,8 @@ class Music:
 
             if voice_channels:
                 if voice_channel.id not in voice_channels:
-                    localizer = self.getLocalizer(ctx.guild)
-                    response = localizer.format_str('{settings_check.voicechannel}')
+                    ctx.localizer = self.getLocalizer(ctx.guild)
+                    response = ctx.localizer.format_str('{settings_check.voicechannel}')
                     for channel_id in voice_channels:
                         channel = ctx.guild.get_channel(channel_id)
                         if channel is not None:
@@ -713,11 +689,10 @@ class Music:
     async def enqueue(self, ctx, track, embed):
 
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        localizer = self.getLocalizer(ctx.guild)
 
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
-            embed.description = localizer.format_str("{enqueue.toolong}",
+            embed.description = ctx.localizer.format_str("{enqueue.toolong}",
                                                      _length=timeformatter.format(track['info']['length']),
                                                      _max=timeformatter.format(maxlength))
             return
