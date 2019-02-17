@@ -8,6 +8,9 @@ import yaml
 from discord.ext import commands
 from cogs.utils.settings import Settings
 from cogs.utils.localizer import Localizer
+from cogs.utils.localizer import LocalizerWrapper
+from cogs.utils.alias import Aliaser
+from cogs.utils.context import Context
 
 
 initial_extensions = [
@@ -35,6 +38,7 @@ class Bot(commands.Bot):
 
         self.settings = Settings(**conf['default server settings'])
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+        self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.debug = debug
 
         for extension in initial_extensions:
@@ -61,9 +65,7 @@ class Bot(commands.Bot):
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                # Todo, fix, use default bot lang.
                 await ctx.send('That command is not available in DMs')
-                #await ctx.send(self.localizer.format_str("{commands.not_available_dm}", self.settings.get(ctx.guild, 'locale', 'default_locale')))
 
             elif isinstance(err, commands.CheckFailure):
                 pass
@@ -74,6 +76,26 @@ class Bot(commands.Bot):
             tb = err.__traceback__
             traceback.print_tb(tb)
             print(err)
+
+
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        await self.process_commands(message)
+
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=Context)
+        if not ctx.command:
+            command = self.aliaser.get_command(ctx.locale, ctx.invoked_with)
+            if command is not None:
+                ctx.command = self.get_command(command)
+
+        if ctx.command and ctx.command.cog_name:
+            ctx.localizer = LocalizerWrapper(self.localizer, ctx.locale, ctx.command.cog_name.lower())
+        else:
+            ctx.localizer = LocalizerWrapper(self.localizer, ctx.locale, None)
+
+        await self.invoke(ctx)
 
     async def on_ready(self):
         if not hasattr(self, 'uptime'):

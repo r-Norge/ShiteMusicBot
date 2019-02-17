@@ -1,0 +1,27 @@
+
+# Music aliases
+play:       [p]
+now:        [np, nowplaying]
+queue:      [q]
+myqueue:    [mq]
+seek:       []
+skip:       []
+skipto:     [forceskip]
+stop:       []
+pause:      [resume]
+shuffle:    []
+move:       [m]
+remvove:    [rem]
+DJremove:   [djremove]
+removeuser: []
+search:     [s]
+disconnect: [dc]
+volume:     [v, vol]
+normalize:  [normal]
+boost:      [bassboost]
+history:    [h]
+scrub:      []
+
+# Other
+info:       []
+musicinfo:  []
