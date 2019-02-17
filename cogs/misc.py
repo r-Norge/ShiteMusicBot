@@ -118,12 +118,6 @@ class Misc:
         )
         await ctx.send(embed=embed)
 
-    @commands.command()
-    @checks.is_even()
-    async def only_me(self, ctx):
-        print(ctx.localizer.format_str("{nothing_found}"))
-        await ctx.send('Only you!')
-
 
 def setup(bot):
     bot.add_cog(Misc(bot))

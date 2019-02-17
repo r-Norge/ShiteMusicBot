@@ -13,6 +13,10 @@ from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
 
 
+with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
+    conf = yaml.safe_load(f)
+
+
 initial_extensions = [
     'cogs.cogs',
     'cogs.botsettings',
@@ -20,8 +24,10 @@ initial_extensions = [
 ]
 
 
-with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-    conf = yaml.safe_load(f)
+on_ready_extensions = [
+    'cogs.music',
+    'cogs.musicevents'
+]
 
 
 def _get_prefix(bot, message):
@@ -77,7 +83,6 @@ class Bot(commands.Bot):
             traceback.print_tb(tb)
             print(err)
 
-
     async def on_message(self, message):
         if message.author.bot:
             return
@@ -103,12 +108,15 @@ class Bot(commands.Bot):
             if self.debug:
                 print('\n\nDebug mode')
 
+        for extension in on_ready_extensions:
+            try:
+                self.load_extension(extension)
+            except Exception as e:
+                print(e)
+
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
         print(f'Version: {discord.__version__}\n')
-
-        self.load_extension('cogs.music')
-        self.load_extension('cogs.musicevents')
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=conf["bot"]["playing status"]),
