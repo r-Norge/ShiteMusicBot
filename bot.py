@@ -6,6 +6,7 @@ import traceback
 import yaml
 
 from discord.ext import commands
+from discord.ext.commands.view import StringView
 from cogs.utils.settings import Settings
 from cogs.utils.localizer import Localizer
 from cogs.utils.localizer import LocalizerWrapper
@@ -90,11 +91,13 @@ class Bot(commands.Bot):
 
     async def process_commands(self, message):
         ctx = await self.get_context(message, cls=Context)
-        if not ctx.command:
-            command = self.aliaser.get_command(ctx.locale, ctx.invoked_with)
-            if command is not None:
-                ctx.command = self.get_command(command)
 
+        # Replace aliases with commands
+        ctx = self.aliaser.get_command(ctx)
+        if ctx.command and isinstance(ctx.command, commands.GroupMixin):
+            ctx = self.aliaser.subcommand_from_alias(ctx, ctx.command)
+
+        # Add the localizer
         if ctx.command and ctx.command.cog_name:
             ctx.localizer = LocalizerWrapper(self.localizer, ctx.locale, ctx.command.cog_name.lower())
         else:
