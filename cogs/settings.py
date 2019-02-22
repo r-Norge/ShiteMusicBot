@@ -178,50 +178,51 @@ class Settings:
     @commands.guild_only()
     @_set.command(name='current')
     async def current_settings(self, ctx):
-        embed = discord.Embed(title='Settings', color=ctx.me.color)
-        embed.description = f'Current settings for {ctx.guild.name}'
+        embed = discord.Embed(title='{current.title}', color=ctx.me.color)
+        embed.description = '{current.description}'
         embed.set_thumbnail(url=ctx.guild.icon_url)
 
         prefixes = self.bot.settings.get(ctx.guild, 'prefixes', 'default_prefix')
-        embed.add_field(name='Prefix', value=self.format_prefixes(prefixes))
+        embed.add_field(name='{current.prefix}', value=self.format_prefixes(prefixes))
 
         locale = f"{self.bot.settings.get(ctx.guild, 'locale', 'default_locale')}"
-        embed.add_field(name='Locale', value=locale)
+        embed.add_field(name='{current.locale}', value=locale)
 
         threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 50)
-        embed.add_field(name='Vote threshold', value=f'{threshold}%')
+        embed.add_field(name='{current.threshold}', value=f'{threshold}%')
 
         is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic', 'default_is_dynamic')
-        embed.add_field(name='Dynamic max duration', value=is_dynamic)
+        embed.add_field(name='{current.dynamicmax}', value=is_dynamic)
 
         duration = self.bot.settings.get(ctx.guild, 'maxduration')
         if duration:
-            embed.add_field(name='Max track duration', value=f'{duration} minutes')
+            embed.add_field(name='{current.maxduration}', value=f'{duration} minutes')
 
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text')
         if textchannels:
             channels = [ctx.guild.get_channel(channel) for channel in textchannels]
             mentioned = [channel.mention for channel in channels if channel is not None]
-            embed.add_field(name='Text channels', value='\n'.join(mentioned))
+            embed.add_field(name='{current.textchannels}', value='\n'.join(mentioned))
 
         voicechannels = self.bot.settings.get(ctx.guild, 'channels.music')
         if voicechannels:
             channels = [ctx.guild.get_channel(channel) for channel in voicechannels]
             mentioned = [channel.name for channel in channels if channel is not None]
-            embed.add_field(name='Music channels', value='\n'.join(mentioned))
+            embed.add_field(name='{current.musicchannels}', value='\n'.join(mentioned))
 
         listenchannels = self.bot.settings.get(ctx.guild, 'channels.listen_only')
         if listenchannels:
             channels = [ctx.guild.get_channel(channel) for channel in listenchannels]
             mentioned = [channel.name for channel in channels if channel is not None]
-            embed.add_field(name='Listen only channels', value='\n'.join(mentioned))
+            embed.add_field(name='{current.listenchannels}', value='\n'.join(mentioned))
 
         djroles = self.bot.settings.get(ctx.guild, 'roles.dj')
         if djroles:
             roles = [ctx.guild.get_role(role) for role in djroles]
             mentioned = [role.name for role in roles if role is not None]
-            embed.add_field(name='Dj roles', value=', '.join(mentioned))
+            embed.add_field(name='{current.djroles}', value=', '.join(mentioned))
 
+        embed = ctx.localizer.format_embed(embed, _guild=ctx.guild.name)
         msg = await ctx.send(embed=embed)
         return msg
 
