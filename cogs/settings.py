@@ -5,7 +5,7 @@ import codecs
 from discord.ext import commands
 from cogs.utils import checks
 
-class BotSettings:
+class Settings:
     def __init__(self, bot):
         self.bot = bot
         self.settings = self.bot.settings
@@ -19,7 +19,7 @@ class BotSettings:
         return formatted[:-2]
 
     @checks.is_admin()
-    @commands.group(name='set', hidden=True)
+    @commands.group(name='settings', hidden=True)
     async def _set(self, ctx):
         if ctx.invoked_subcommand is None:
             await self.current_settings.invoke(ctx)
@@ -227,4 +227,4 @@ class BotSettings:
 
 
 def setup(bot):
-    bot.add_cog(BotSettings(bot))
+    bot.add_cog(Settings(bot))

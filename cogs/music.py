@@ -16,7 +16,7 @@ from typing import Optional
 from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
 from .utils.embedscroller import QueueScroller
-from .utils.localizer import LocalizerWrapper
+
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
@@ -670,7 +670,6 @@ class Music:
 
             if voice_channels:
                 if voice_channel.id not in voice_channels:
-                    ctx.localizer = self.getLocalizer(ctx.guild)
                     response = ctx.localizer.format_str('{settings_check.voicechannel}')
                     for channel_id in voice_channels:
                         channel = ctx.guild.get_channel(channel_id)

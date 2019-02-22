@@ -7,7 +7,7 @@ import yaml
 
 from discord.ext import commands
 from discord.ext.commands.view import StringView
-from cogs.utils.settings import Settings
+from cogs.utils.settingsmanager import Settings
 from cogs.utils.localizer import Localizer
 from cogs.utils.localizer import LocalizerWrapper
 from cogs.utils.alias import Aliaser
@@ -20,7 +20,7 @@ with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
 
 initial_extensions = [
     'cogs.cogs',
-    'cogs.botsettings',
+    'cogs.settings',
     'cogs.misc'
 ]
 
@@ -95,7 +95,7 @@ class Bot(commands.Bot):
         # Replace aliases with commands
         ctx = self.aliaser.get_command(ctx)
         if ctx.command and isinstance(ctx.command, commands.GroupMixin):
-            ctx = self.aliaser.subcommand_from_alias(ctx, ctx.command)
+            ctx = self.aliaser.get_subcommand(ctx, ctx.command, [str(ctx.command)])
 
         # Add the localizer
         if ctx.command and ctx.command.cog_name:
