@@ -8,5 +8,5 @@ current:
   maxduration: Maks sanglengde
   textchannels: Tekstkanaler
   musicchannels: Musikkanaler
-  listenchannels: Kun lyd-kanaler
+  listenchannels: '"Kun lyd"-kanaler'
   djroles: DJroller
