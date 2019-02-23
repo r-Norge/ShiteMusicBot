@@ -35,8 +35,7 @@ class Music:
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    async def __local_check(self, ctx):
-        """ Ensures the commands are used in the correct channels """
+    async def __before_invoke(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
@@ -45,24 +44,10 @@ class Music:
                 response = ctx.localizer.format_str('{settings_check.textchannel}')
                 for channel_id in textchannels:
                     response += f'<#{channel_id}>, '
-                await ctx.send(response[:-2])
-                return False
+                return await ctx.send(response[:-2])
+
+        await self.ensure_voice(ctx)
         return True
-
-    async def __before_invoke(self, ctx):
-        # TODO: rewrite this thing. Probably remove ensure_voice.
-
-        guild_check = ctx.guild is not None
-        #  This is essentially the same as `@commands.guild_only()`
-        #  except it saves us repeating ourselves (and also a few lines).
-
-        if guild_check:
-            await self.ensure_voice(ctx)
-            #  Ensure that the bot and command author share a mutual voicechannel.
-        else:
-            raise commands.NoPrivateMessage
-
-        return guild_check
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -229,7 +214,9 @@ class Music:
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         if player.queue.empty:
-            return await ctx.send(ctx.localizer.format_str("{queue.empty}"))
+            embed = discord.Embed(description='{queue.empty}', color=ctx.me.color)
+            embed = ctx.localizer.format_embed(embed)
+            return await ctx.send(embed=embed)
         
         if user is None:
             queue = player.global_queue()
@@ -548,7 +535,9 @@ class Music:
         player = self.bot.lavalink.players.get(ctx.guild.id)
         history = player.get_history()
         if not history:
-            return await ctx.send(ctx.localizer.format_str("{history.empty}"))
+            embed = discord.Embed(description='{history.empty}', color=ctx.me.color)
+            embed = ctx.localizer.format_embed(embed)
+            return await ctx.send(embed=embed)
         track = history[0]
         description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
         description += ctx.localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
