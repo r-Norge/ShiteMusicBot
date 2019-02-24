@@ -5,10 +5,9 @@ import re
 
 from cogs.utils.dict_utils import flatten, SafeDict
 
-import json
+import yaml
 
 import copy
-
 from discord import Embed
 
 """
@@ -52,10 +51,12 @@ class Localizer:
         elif localization is False:
             self.localization_table[lang] = {}
             l_table = self.localization_table[lang]
-            for file in glob(path.join(self.localization_folder, lang, "*.json")):
+            for file in glob(path.join(self.localization_folder, lang, "*.yaml")):
+                if 'aliases' in file:
+                    continue
                 file_base = path.basename(file).split(".")[0]
                 with open(file, "r", encoding='utf-8') as f:
-                    data = json.load(f)
+                    data = yaml.load(f)
                 
                 l_table[file_base] = data
 

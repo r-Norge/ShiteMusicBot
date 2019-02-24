@@ -1,0 +1,12 @@
+current:
+  title: Settings
+  description: Current settings for {_guild}
+  prefix: Prefix
+  locale: Locale
+  threshold: Vote threshold
+  dynamicmax: Dynamic max duration
+  maxduration: Max track duration
+  textchannels: Text channels
+  musicchannels: Music channels
+  listenchannels: Listen only channels
+  djroles: DJ roles

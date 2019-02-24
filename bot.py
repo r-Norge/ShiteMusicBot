@@ -6,19 +6,29 @@ import traceback
 import yaml
 
 from discord.ext import commands
-from cogs.utils.settings import Settings
+from discord.ext.commands.view import StringView
+from cogs.utils.settingsmanager import Settings
 from cogs.utils.localizer import Localizer
-
-
-initial_extensions = [
-    'cogs.cogs',
-    'cogs.botsettings',
-    'cogs.misc'
-]
+from cogs.utils.localizer import LocalizerWrapper
+from cogs.utils.alias import Aliaser
+from cogs.utils.context import Context
 
 
 with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
     conf = yaml.safe_load(f)
+
+
+initial_extensions = [
+    'cogs.cogs',
+    'cogs.settings',
+    'cogs.misc'
+]
+
+
+on_ready_extensions = [
+    'cogs.music',
+    'cogs.musicevents'
+]
 
 
 def _get_prefix(bot, message):
@@ -35,6 +45,7 @@ class Bot(commands.Bot):
 
         self.settings = Settings(**conf['default server settings'])
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+        self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.debug = debug
 
         for extension in initial_extensions:
@@ -61,9 +72,7 @@ class Bot(commands.Bot):
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                # Todo, fix, use default bot lang.
                 await ctx.send('That command is not available in DMs')
-                #await ctx.send(self.localizer.format_str("{commands.not_available_dm}", self.settings.get(ctx.guild, 'locale', 'default_locale')))
 
             elif isinstance(err, commands.CheckFailure):
                 pass
@@ -75,18 +84,42 @@ class Bot(commands.Bot):
             traceback.print_tb(tb)
             print(err)
 
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        await self.process_commands(message)
+
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=Context)
+
+        # Replace aliases with commands
+        ctx = self.aliaser.get_command(ctx)
+        if ctx.command and isinstance(ctx.command, commands.GroupMixin):
+            ctx = self.aliaser.get_subcommand(ctx, ctx.command, [str(ctx.command)])
+
+        # Add the localizer
+        if ctx.command and ctx.command.cog_name:
+            ctx.localizer = LocalizerWrapper(self.localizer, ctx.locale, ctx.command.cog_name.lower())
+        else:
+            ctx.localizer = LocalizerWrapper(self.localizer, ctx.locale, None)
+
+        await self.invoke(ctx)
+
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
             if self.debug:
                 print('\n\nDebug mode')
 
+        for extension in on_ready_extensions:
+            try:
+                self.load_extension(extension)
+            except Exception as e:
+                print(e)
+
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
         print(f'Version: {discord.__version__}\n')
-
-        self.load_extension('cogs.music')
-        self.load_extension('cogs.musicevents')
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=conf["bot"]["playing status"]),
