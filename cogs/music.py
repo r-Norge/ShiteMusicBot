@@ -22,7 +22,7 @@ time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 
 
-class Music:
+class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -35,7 +35,7 @@ class Music:
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    async def __before_invoke(self, ctx):
+    async def cog_before_invoke(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
@@ -44,10 +44,10 @@ class Music:
                 response = ctx.localizer.format_str('{settings_check.textchannel}')
                 for channel_id in textchannels:
                     response += f'<#{channel_id}>, '
-                return await ctx.send(response[:-2])
+                await ctx.send(response[:-2])
+                raise commands.CommandInvokeError('Not command channel')
 
         await self.ensure_voice(ctx)
-        return True
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -723,10 +723,6 @@ class Music:
             return max(maxlength*60*1000/listeners, 60*10*1000)
         else:
             return maxlength*60*1000
-
-    async def on_command_error(self, ctx, err):
-        if isinstance(err, commands.CommandInvokeError):
-            pass
 
 
 def setup(bot):

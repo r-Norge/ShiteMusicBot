@@ -9,7 +9,7 @@ from discord.ext import commands
 from cogs.utils import checks
 from lavalink import __version__ as LavalinkVersion
 
-class Misc:
+class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
