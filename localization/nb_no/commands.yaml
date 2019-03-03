@@ -1,0 +1,185 @@
+# Aliases for each of the commands in the the bot(except the forgotten onces.)
+# Aliases without subcommands don't need to have "aliases:", specified.
+# For commands with subcommands you need to have one subcategory called aliases and one called subcommands.
+
+# Help
+help:
+  aliases:        [hjelp]
+  args:           '<kommandoer>'
+  description:    'Viser en hjelp-melding.'
+
+
+# Music
+play:
+  aliases:        [spill, s]
+  args:           '<sang>'   # This is just a cosmetic representation of the arguments.
+  description:    'Søker opp og spiller av en sang.'
+now:
+  aliases:        [nå, spillernå]
+  description:    'Viser hvilken sang som spilles.'
+queue:
+  aliases:        [kø, k]
+  args:           '[bruker]'
+  description:    'Viser køen. Viser en brukerkø om bruker er spesifisert.'
+myqueue:
+  aliases:        [minkø, mk]
+  description:    'Viser din personlige kø.'
+seek:
+  aliases:        [spol]
+  args:           '<sekunder>'
+  description:    'Spol frem eller tilbake i sangen.'
+skip:
+  aliases:        [hopp]
+  description:    'Stem for å hoppe over sangen som spilles.'
+skipto:
+  aliases:        [hopptil, tvinghopp]
+  args:           '<køposisjon>'
+  description:    'Hopper over til sangen i den spesifiserte køposisjonen.'
+stop:
+  aliases:        [stopp]
+  description:    'Stopper avspillingen og tømmer køen.'
+pause:
+  aliases:        [pause, fortsett]
+  description:    'Pauser/fortsetter den nåværende sangen.'
+shuffle:
+  aliases:        [omstokk, stokkom, bland]
+  description:    'Stokker om rekkefølgen til den personlige køen din.'
+move:
+  aliases:        [flytt, f]
+  args:           '<fra_posisjon> <til_posisjon>'
+  description:    'Flytter en sang i den personlige køen din.'
+remove:
+  aliases:        [fjern]
+  args:           '<posisjon>'
+  description:    'Fjerner en sang fra personlige køen din.'
+DJremove:
+  aliases:        [DJfjern, djfjern]
+  args:           '<posisjon>'
+  description:    'Fjerner en sang fra køen.'
+removeuser:
+  aliases:        [fjernbruker]
+  args:           '<bruker>'
+  description:    'Fjerner alle sangene i køen som er lagt til av en spesifisert bruker.'
+search:
+  aliases:        [søk, finn]
+  args:           '<sang>'
+  description:    'Søker opp og viser en liste med mulige sanger.'
+disconnect:
+  aliases:        [koblefra, kf]
+  description:    'Tømmer køen, stopper avspillingen og forlater talekanalen.'
+volume:
+  aliases:        [volum, v, vol, lydnivå]
+  args:           '<vol>'
+  description:    'Setter volumet på musikken.'
+normalize:
+  aliases:        [normaliser, normal]
+  description:    'Tilbakestiller volumet og equalizer til standardinnstillinger.'
+boost:
+  aliases:        [bassforsterker, forsterkbass]
+  args:           ''
+  description:    'Skrur av/på bassforsterkeren'
+history:
+  aliases:        [historikk, avspillingshistorikk, h]
+  description:    'Viser en liste over de 10 siste avspilte sangene.'
+scrub:
+  aliases:        [kontroller]
+  description:    'Gir deg en kontroller som du kan styre musikken med.'
+
+# Misc
+info:
+  aliases:        [info, botinfo, båttinfo]
+  description:    'Gir deg informasjon om båtten.'
+musicinfo:
+  aliases:      [musikkinfo]
+  description:    'Gir deg informasjon om musikkspilleren til båtten.'
+uptime:
+  aliases:        [oppetid]
+  description:     'Viser hvor lenge båtten har kjørt.'
+ping:
+  aliases:        [ping]
+  description:    'Sjekker responstiden til båtten.'        
+guilds:
+  aliases:        [tenarar]
+  description:    'Sender en liste over tenarane som båtten er medlem av'
+reloadlocale:
+  aliases:        [reloadlocale]
+  description:    'Laser inn alle oversetningsfilene på nytt'
+reloadalias:
+  aliases:        [reloadalias]
+  description:    'Laster inn aliaser og hjelp på nytt.'
+
+# Settings
+settings:
+  aliases:            [innstillinger, oppsett]
+  description:        'Behandle serverinnstillinger.'
+  sub_commands:
+    current:
+      aliases:          [vis, gjeldende]
+      description:      'Viser gjeldende innstillinger.'
+    serverlocale:
+      aliases:          [språk]
+      args:             '<språk>'
+      description:      'Endrer serverspråket.'
+    djroles:
+      aliases:          [djroller, DJroller]
+      args:             '[roller...]'
+      description:      'Setter DJ-rollene på serveren.'
+    dynamicmax:
+      aliases:          [dynamiskmaks]
+      args:             '<True/false>'
+      description:      'Velg om maks sanglengde skal være dynamisk eller ikke.'
+    musicchannels:
+      aliases:          [musikk-kanal]
+      args:             '[talekanaler...]'
+      description:      'Setter kanalene som båtten kan spille musikk i.'
+    listenchannels:
+      aliases:          [lyttekanaler, lk]
+      args:             '[talekanaler...]'
+      description:       'Setter kanalene hvor båtten vil automatisk dempe alle som kobler seg til den.'
+    textchannels:
+      aliases:          [tekstkanaler, tk]
+      args:             '[tekstkanaler...]'
+      description:      'Setter kanalene hvor man kan bruke musikk-kommandoer.'
+    maxduration:
+      aliases:          [makslengde]
+      args:             '<lengde_i_minutter>'
+      description:      'Setter makslengden på sanger som kan bli lagt til i køen.'
+    modrole:
+      aliases:          [modrolle]
+      args:             '[roller...]'
+      description:      'Setter serverens modrolle.'
+    resetprefix:
+      aliases:          [resetprefiks]
+      description:      'Tilbakestiller serverprefiksen til båtten sin standardprefiks.'
+    serverprefix:
+      aliases:          [serverprefiks]
+      args:             '[prefikser...]'
+      description:      'Setter serverprefiksen. Om ingen prefiks blir gitt, vil den vise serverens foreløpige satte prefikser.'
+    threshold:
+      aliases:          [stemmegrense]
+      args:             '<grense>'
+      description:      'Setter grensen for hvor mange prosent som må stemme for å hoppe over en sang.'
+
+# Cogs
+cogs:
+  aliases:              [cogs]
+  description:          'behandle cogs'
+  sub_commands:
+    load:
+      aliases:          [load]
+      args:             '<cog>'
+      description:      'Laster inn en cog'
+    unload:
+      aliases:          [unload]
+      args:             '<cog>'
+      description:      'Unloads a cog'
+    reload:
+      aliases:          [reload]
+      args:             '<cog>'
+      description:      'Laster en cog inn på nytt.'
+    reloadall:
+      aliases:          [reloadall]
+      description:      'Laser inn alle cogs på nytt.'
+    shutdown:
+      aliases:          [shutdown]
+      description:      'Stopper båtten.'

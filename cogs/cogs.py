@@ -10,7 +10,7 @@ class Cogs(commands.Cog):
         self.bot = bot
         self.settings = self.bot.settings
 
-    @commands.group(name='cogs')
+    @commands.group(name='cogs', hidden=True)
     @checks.is_owner()
     async def _cogs(self, ctx):
         if ctx.invoked_subcommand is None:

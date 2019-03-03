@@ -23,8 +23,8 @@ queue:
   user_empty: "{_user} sin kø er tom"
   length: "**Kø** `{_length} songar`"
   userqueue: Køen til **{_user}** `{_length}` songar
-  globaltrack: "`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_\n"
-  usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**\n"
+  globaltrack: "`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_"
+  usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**"
   pageindicator: Viser side {_current}/{_total}
 my_queue: Din kø er tom
 resume:

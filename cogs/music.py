@@ -15,7 +15,7 @@ from typing import Optional
 
 from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
-from .utils.embedscroller import QueueScroller
+from .utils.paginator import QueuePaginator, Scroller
 
 
 time_rx = re.compile('[0-9]+')
@@ -220,7 +220,8 @@ class Music(commands.Cog):
         
         if user is None:
             queue = player.global_queue()
-            scroller = QueueScroller(ctx, queue, ctx.localizer, lines_per_page=10)
+            pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
+            scroller = Scroller(ctx, pagified_queue)
             await scroller.start_scrolling()
 
         else:
@@ -228,7 +229,8 @@ class Music(commands.Cog):
             if not user_queue:
                 return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
             
-            scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=user.name)
+            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=ctx.author.name)
+            scroller = Scroller(ctx, pagified_queue)            
             await scroller.start_scrolling()
 
     @commands.command(name='myqueue')
@@ -240,7 +242,8 @@ class Music(commands.Cog):
         if not user_queue:
             return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
-        scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=ctx.author.name)
+        pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=ctx.author.name)
+        scroller = Scroller(ctx, pagified_queue)
         await scroller.start_scrolling()
 
     @commands.command(name='pause')

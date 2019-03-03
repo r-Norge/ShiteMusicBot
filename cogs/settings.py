@@ -105,7 +105,7 @@ class Settings(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.guild_only()
-    @_set.command(name='listenchannels')
+    @_set.command(name='listenchannels', hidden=True)
     async def set_listen_voice(self, ctx, *channels: discord.VoiceChannel):
         if channels:
             channel_ids = [channel.id for channel in channels]
