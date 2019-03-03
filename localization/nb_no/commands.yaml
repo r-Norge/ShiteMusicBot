@@ -42,7 +42,7 @@ pause:
   aliases:        [pause, fortsett]
   description:    'Pauser/fortsetter den nåværende sangen.'
 shuffle:
-  aliases:        [omstokk, stokkom]
+  aliases:        [omstokk, stokkom, bland]
   description:    'Stokker om rekkefølgen til den personlige køen din.'
 move:
   aliases:        [flytt, f]
