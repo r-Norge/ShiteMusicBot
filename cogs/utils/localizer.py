@@ -52,7 +52,7 @@ class Localizer:
             self.localization_table[lang] = {}
             l_table = self.localization_table[lang]
             for file in glob(path.join(self.localization_folder, lang, "*.yaml")):
-                if 'aliases' in file:
+                if 'aliases' in file or 'commands' in file:
                     continue
                 file_base = path.basename(file).split(".")[0]
                 with open(file, "r", encoding='utf-8') as f:

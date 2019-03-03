@@ -1,0 +1,185 @@
+# Aliases for each of the commands in the the bot(except the forgotten onces.)
+# Aliases without subcommands don't need to have "aliases:", specified.
+# For commands with subcommands you need to have one subcategory called aliases and one called subcommands.
+
+# Help
+help:
+  aliases:        [hjelp]
+  args:           '<kommandoer>'
+  description:    'Viser en hjelp-melding.'
+
+
+# Music
+play:
+  aliases:        [spill, s]
+  args:           '<sang>'   # This is just a cosmetic representation of the arguments.
+  description:    'Søker opp og spiller en sang.'
+now:
+  aliases:        [nå, spillernå]
+  description:    'Viser hvilken sang som spilles.'
+queue:
+  aliases:        [kø, k]
+  args:           '[bruker]'
+  description:    'Viser køen. Viser en brukerkø hvis bruker er spesifisert.'
+myqueue:
+  aliases:        [myqueue, mq]
+  description:    'Shows your queue.'
+seek:
+  aliases:        [seek]
+  args:           '<seconds>'
+  description:    'Seek forward or backwards in the song.'
+skip:
+  aliases:        [skip]
+  description:    'Vote to skip the current song.'
+skipto:
+  aliases:        [skipto, forceskip]
+  args:           '<queue position>'
+  description:    'Skips to the specified position in the queue.'
+stop:
+  aliases:        [stop]
+  description:    'Stops playing and clears the queue.'
+pause:
+  aliases:        [pause, resume]
+  description:    'Pause/resume the current song.'
+shuffle:
+  aliases:        [shuffle]
+  description:    'Shuffles your queue'
+move:
+  aliases:        [move, m]
+  args:           '<start_pos> <end_pos>'
+  description:    'Moves a track in your queue.'
+remove:
+  aliases:        [rem]
+  args:           '<pos>'
+  description:    'Removes a song from your queue.'
+DJremove:
+  aliases:        [DJremove, djremove]
+  args:           '<pos>'
+  description:    'Removes a song from the global queue.'
+removeuser:
+  aliases:        [removeuser]
+  args:           '<user>'
+  description:    'Removes all songs queued by <user>.'
+search:
+  aliases:        [søk, finn]
+  args:           '<sang>'
+  description:    'Viser en liste med mulige sanger.'
+disconnect:
+  aliases:        [disconnect, dc]
+  description:    'Clears the queue, stops playing and leaves the current voice channel.'
+volume:
+  aliases:        [volume, v, vol]
+  args:           '<vol>'
+  description:    'Sets the volume of the music.'
+normalize:
+  aliases:        [nomralize, normal]
+  description:    'Resets the volume and the equalizer.'
+boost:
+  aliases:        [boost, bassboost]
+  args:           <True/False>
+  description:    'Turns on or off bass boost'
+history:
+  aliases:        [history, h]
+  description:    'Shows the last 10 songs played.'
+scrub:
+  aliases:        [scrub]
+  description:    'Shows a temporary controller/scrubber.'
+
+# Misc
+info:
+  aliases:        [info]
+  description:    'Shows info about the bot.'
+musicinfo:
+  aliases:      [musicinfo]
+  description:    'Shows music related info about the bot.'
+uptime:
+  aliases:        [uptime]
+  description:     'Shows how long the bot has been running.'
+ping:
+  aliases:        [ping]
+  description:    'Get the current latency of the bot.'        
+guilds:
+  aliases:        [guilds]
+  description:    'Show the guilds the bot is in'
+reloadlocale:
+  aliases:        [reloadlocale]
+  description:    'Reload all response translations'
+reloadalias:
+  aliases:        [reloadalias]
+  description:    'Reload all aliases and help information.'
+
+# Settings
+settings:
+  aliases:            [innstillinger, oppsett]
+  description:        'Behandle serverinnstillinger.'
+  sub_commands:
+    current:
+      aliases:          [vis, gjeldende]
+      description:      'Viser gjeldende innstillinger.'
+    serverlocale:
+      aliases:          [språk]
+      args:             '<språk>'
+      description:      'Endrer serverspråket.'
+    djroles:
+      aliases:          [djroller, DJroller]
+      args:             '[roller...]'
+      description:      'Setter DJ-rollene på serveren.'
+    dynamicmax:
+      aliases:          [dynamicmax]
+      args:             '<True/false>'
+      description:      'Choose if the max song duration is dynamic.'
+    musicchannels:
+      aliases:          [musicchannels, vc]
+      args:             '[voicechannels...]'
+      description:      'Set the channels where the bot will play music.'
+    listenchannels:
+      aliases:          [listenchannels]
+      args:             '[voicechannels...]'
+      description:       'Set the channels where the bot will mute people who join.'
+    textchannels:
+      aliases:          [textchannels, tc]
+      args:             '[textchannels...]'
+      description:      'Set the channels where the bot will accept music commands.'
+    maxduration:
+      aliases:          [maxduration]
+      args:             '<duration>'
+      description:      'Max song length that can be queued in minutes.'
+    modrole:
+      aliases:          [modrole]
+      args:             '[roles...]'
+      description:      'Set the modroles for the server.'
+    resetprefix:
+      aliases:          [resetprefix]
+      description:      'reset the prefixes on the server to the bots default.'
+    serverprefix:
+      aliases:          [serverprefix]
+      args:             '[prefixes...]'
+      description:      'Set serverprefixes. Not listing any prefixes will show the current ones.'
+    threshold:
+      aliases:          [threshold]
+      args:             '<threshold>'
+      description:      'Set the vote threshold required to skip a song.'
+
+# Cogs
+cogs:
+  aliases:              [cogs]
+  description:          'cog management'
+  sub_commands:
+    load:
+      aliases:          [load]
+      args:             '<cog>'
+      description:      'Loads a cog'
+    unload:
+      aliases:          [unload]
+      args:             '<cog>'
+      description:      'Unloads a cog'
+    reload:
+      aliases:          [reload]
+      args:             '<cog>'
+      description:      'Reloads a cog'
+    reloadall:
+      aliases:          [reloadall]
+      description:      'Reload all cogs'
+    shutdown:
+      aliases:          [shutdown]
+      description:      'Shuts down the bot'
