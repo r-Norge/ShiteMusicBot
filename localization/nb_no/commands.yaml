@@ -13,100 +13,100 @@ help:
 play:
   aliases:        [spill, s]
   args:           '<sang>'   # This is just a cosmetic representation of the arguments.
-  description:    'Søker opp og spiller en sang.'
+  description:    'Søker opp og spiller av en sang.'
 now:
   aliases:        [nå, spillernå]
   description:    'Viser hvilken sang som spilles.'
 queue:
   aliases:        [kø, k]
   args:           '[bruker]'
-  description:    'Viser køen. Viser en brukerkø hvis bruker er spesifisert.'
+  description:    'Viser køen. Viser en brukerkø om bruker er spesifisert.'
 myqueue:
-  aliases:        [myqueue, mq]
-  description:    'Shows your queue.'
+  aliases:        [minkø, mk]
+  description:    'Viser din personlige kø.'
 seek:
-  aliases:        [seek]
-  args:           '<seconds>'
-  description:    'Seek forward or backwards in the song.'
+  aliases:        [spol]
+  args:           '<sekunder>'
+  description:    'Spol frem eller tilbake i sangen.'
 skip:
-  aliases:        [skip]
-  description:    'Vote to skip the current song.'
+  aliases:        [hopp]
+  description:    'Stem for å hoppe over sangen som spilles.'
 skipto:
-  aliases:        [skipto, forceskip]
-  args:           '<queue position>'
-  description:    'Skips to the specified position in the queue.'
+  aliases:        [hopptil, tvinghopp]
+  args:           '<køposisjon>'
+  description:    'Hopper over til sangen i den spesifiserte køposisjonen.'
 stop:
-  aliases:        [stop]
-  description:    'Stops playing and clears the queue.'
+  aliases:        [stopp]
+  description:    'Stopper avspillingen og tømmer køen.'
 pause:
-  aliases:        [pause, resume]
-  description:    'Pause/resume the current song.'
+  aliases:        [pause, fortsett]
+  description:    'Pauser/fortsetter den nåværende sangen.'
 shuffle:
-  aliases:        [shuffle]
-  description:    'Shuffles your queue'
+  aliases:        [omstokk, stokkom]
+  description:    'Stokker om rekkefølgen til den personlige køen din.'
 move:
-  aliases:        [move, m]
-  args:           '<start_pos> <end_pos>'
-  description:    'Moves a track in your queue.'
+  aliases:        [flytt, f]
+  args:           '<fra_posisjon> <til_posisjon>'
+  description:    'Flytter en sang i den personlige køen din.'
 remove:
-  aliases:        [rem]
-  args:           '<pos>'
-  description:    'Removes a song from your queue.'
+  aliases:        [fjern]
+  args:           '<posisjon>'
+  description:    'Fjerner en sang fra personlige køen din.'
 DJremove:
-  aliases:        [DJremove, djremove]
-  args:           '<pos>'
-  description:    'Removes a song from the global queue.'
+  aliases:        [DJfjern, djfjern]
+  args:           '<posisjon>'
+  description:    'Fjerner en sang fra køen.'
 removeuser:
-  aliases:        [removeuser]
-  args:           '<user>'
-  description:    'Removes all songs queued by <user>.'
+  aliases:        [fjernbruker]
+  args:           '<bruker>'
+  description:    'Fjerner alle sangene i køen som er lagt til av en spesifisert bruker.'
 search:
   aliases:        [søk, finn]
   args:           '<sang>'
-  description:    'Viser en liste med mulige sanger.'
+  description:    'Søker opp og viser en liste med mulige sanger.'
 disconnect:
-  aliases:        [disconnect, dc]
-  description:    'Clears the queue, stops playing and leaves the current voice channel.'
+  aliases:        [koblefra, kf]
+  description:    'Tømmer køen, stopper avspillingen og forlater talekanalen.'
 volume:
-  aliases:        [volume, v, vol]
+  aliases:        [volum, v, vol, lydnivå]
   args:           '<vol>'
-  description:    'Sets the volume of the music.'
+  description:    'Setter volumet på musikken.'
 normalize:
-  aliases:        [nomralize, normal]
-  description:    'Resets the volume and the equalizer.'
+  aliases:        [normaliser, normal]
+  description:    'Tilbakestiller volumet og equalizer til standardinnstillinger.'
 boost:
-  aliases:        [boost, bassboost]
-  args:           <True/False>
-  description:    'Turns on or off bass boost'
+  aliases:        [bassforsterker, forsterkbass]
+  args:           ''
+  description:    'Skrur av/på bassforsterkeren'
 history:
-  aliases:        [history, h]
-  description:    'Shows the last 10 songs played.'
+  aliases:        [historikk, avspillingshistorikk, h]
+  description:    'Viser en liste over de 10 siste avspilte sangene.'
 scrub:
-  aliases:        [scrub]
-  description:    'Shows a temporary controller/scrubber.'
+  aliases:        [kontroller]
+  description:    'Gir deg en kontroller som du kan styre musikken med.'
 
 # Misc
 info:
-  aliases:        [info]
-  description:    'Shows info about the bot.'
+  aliases:        [info, botinfo, båttinfo]
+  description:    'Gir deg informasjon om båtten.'
 musicinfo:
-  aliases:      [musicinfo]
-  description:    'Shows music related info about the bot.'
+  aliases:      [musikkinfo]
+  description:    'Gir deg informasjon om musikkspilleren til båtten.'
 uptime:
-  aliases:        [uptime]
-  description:     'Shows how long the bot has been running.'
+  aliases:        [oppetid]
+  description:     'Viser hvor lenge båtten har kjørt.'
 ping:
   aliases:        [ping]
-  description:    'Get the current latency of the bot.'        
+  description:    'Sjekker responstiden til båtten.'        
 guilds:
-  aliases:        [guilds]
-  description:    'Show the guilds the bot is in'
+  aliases:        [tenarar]
+  description:    'Sender en liste over tenarane som båtten er medlem av'
 reloadlocale:
   aliases:        [reloadlocale]
-  description:    'Reload all response translations'
+  description:    'Laser inn alle oversetningsfilene på nytt'
 reloadalias:
   aliases:        [reloadalias]
-  description:    'Reload all aliases and help information.'
+  description:    'Laster inn aliaser og hjelp på nytt.'
 
 # Settings
 settings:
@@ -125,50 +125,50 @@ settings:
       args:             '[roller...]'
       description:      'Setter DJ-rollene på serveren.'
     dynamicmax:
-      aliases:          [dynamicmax]
+      aliases:          [dynamiskmaks]
       args:             '<True/false>'
-      description:      'Choose if the max song duration is dynamic.'
+      description:      'Velg om maks sanglengde skal være dynamisk eller ikke.'
     musicchannels:
-      aliases:          [musicchannels, vc]
-      args:             '[voicechannels...]'
-      description:      'Set the channels where the bot will play music.'
+      aliases:          [musikk-kanal]
+      args:             '[talekanaler...]'
+      description:      'Setter kanalene som båtten kan spille musikk i.'
     listenchannels:
-      aliases:          [listenchannels]
-      args:             '[voicechannels...]'
-      description:       'Set the channels where the bot will mute people who join.'
+      aliases:          [lyttekanaler, lk]
+      args:             '[talekanaler...]'
+      description:       'Setter kanalene hvor båtten vil automatisk dempe alle som kobler seg til den.'
     textchannels:
-      aliases:          [textchannels, tc]
-      args:             '[textchannels...]'
-      description:      'Set the channels where the bot will accept music commands.'
+      aliases:          [tekstkanaler, tk]
+      args:             '[tekstkanaler...]'
+      description:      'Setter kanalene hvor man kan bruke musikk-kommandoer.'
     maxduration:
-      aliases:          [maxduration]
-      args:             '<duration>'
-      description:      'Max song length that can be queued in minutes.'
+      aliases:          [makslengde]
+      args:             '<lengde_i_minutter>'
+      description:      'Setter makslengden på sanger som kan bli lagt til i køen.'
     modrole:
-      aliases:          [modrole]
-      args:             '[roles...]'
-      description:      'Set the modroles for the server.'
+      aliases:          [modrolle]
+      args:             '[roller...]'
+      description:      'Setter serverens modrolle.'
     resetprefix:
-      aliases:          [resetprefix]
-      description:      'reset the prefixes on the server to the bots default.'
+      aliases:          [resetprefiks]
+      description:      'Tilbakestiller serverprefiksen til båtten sin standardprefiks.'
     serverprefix:
-      aliases:          [serverprefix]
-      args:             '[prefixes...]'
-      description:      'Set serverprefixes. Not listing any prefixes will show the current ones.'
+      aliases:          [serverprefiks]
+      args:             '[prefikser...]'
+      description:      'Setter serverprefiksen. Om ingen prefiks blir gitt, vil den vise serverens foreløpige satte prefikser.'
     threshold:
-      aliases:          [threshold]
-      args:             '<threshold>'
-      description:      'Set the vote threshold required to skip a song.'
+      aliases:          [stemmegrense]
+      args:             '<grense>'
+      description:      'Setter grensen for hvor mange prosent som må stemme for å hoppe over en sang.'
 
 # Cogs
 cogs:
   aliases:              [cogs]
-  description:          'cog management'
+  description:          'behandle cogs'
   sub_commands:
     load:
       aliases:          [load]
       args:             '<cog>'
-      description:      'Loads a cog'
+      description:      'Laster inn en cog'
     unload:
       aliases:          [unload]
       args:             '<cog>'
@@ -176,10 +176,10 @@ cogs:
     reload:
       aliases:          [reload]
       args:             '<cog>'
-      description:      'Reloads a cog'
+      description:      'Laster en cog inn på nytt.'
     reloadall:
       aliases:          [reloadall]
-      description:      'Reload all cogs'
+      description:      'Laser inn alle cogs på nytt.'
     shutdown:
       aliases:          [shutdown]
-      description:      'Shuts down the bot'
+      description:      'Stopper båtten.'
