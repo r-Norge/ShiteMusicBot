@@ -17,14 +17,14 @@ class BasePaginator:
     def close_page(self):
         pass
 
-    def add_page_indicator(self, localizer, localizer_str=None, prefix=None):
+    def add_page_indicator(self, localizer, localizer_str=None, **kvpairs):
         self.close_page()
         if localizer_str:
             for i, page in enumerate(self._pages, start=1):
                 page.set_footer(text=localizer.format_str(localizer_str,
                                                           _current=i,
                                                           _total=len(self._pages),
-                                                          _prefix=prefix))
+                                                          **kvpairs))
         else:
             for i, page in enumerate(self._pages, start=1):
                 page.set_footer(text=f"{i}/{len(self._pages)}")

@@ -5,62 +5,6 @@
 
 # Music
 play:
-  aliases:        [play, p]
-  args:           <query>
-  description:    Searches and plays a song from a given query.
-now:        [now, np, nowplaying]
-queue:      [queue, q]
-myqueue:    [myqueue, mq]
-seek:       [seek]
-skip:       [skip]
-skipto:     [skipto, forceskip]
-stop:       [stop]
-pause:      [pause, resume]
-shuffle:    [shuffle]
-move:       [move, m]
-remove:     [rem]
-DJremove:   [DJremove, djremove]
-removeuser: [removeuser]
-search:     [search, s]
-disconnect: [disconnect, dc]
-volume:     [volume, v, vol]
-normalize:  [nomralize, normal]
-boost:      [boost, bassboost]
-history:    [history, h]
-scrub:      [scrub]
-
-# Misc
-info:         [info]
-musicinfo:    [musicinfo]
-uptime:       [uptime]
-ping:         [ping]
-guilds:       [guilds]
-reloadlocale: [reloadlocale]
-reloadalias:  [reloadalias]
-
-# Settings
-settings:
-  aliases:            [settings, set]
-  sub_commands:
-    current:          [current, show]
-    serverlocale:     [serverlocale, lang]
-    djroles:          [djroles]
-    dynamicmax:       [dynamicmax]
-    musicchannels:    [musicchannels, vc]
-    listenchannels:   [listenchannels]
-    textchannels:     [textchannels, tc]
-    maxduration:      [maxduration]
-    modrole:          [modrole]
-    resetprefix:      [resetprefix]
-    serverprefix:     [serverprefix]
-    threshold:        [threshold]
-
-# Cogs
-cogs:
-  aliases:            [cogs]
-  sub_commands:
-    load:             [load]
-    unload:           [unload]
-    reload:           [reload]
-    reloadall:        [reloadall]
-    shutdown:         [shutdown]
+  aliases:        [spel, s]
+  args:           <sang>
+  description:    Søkjar opp og spelar av ein song.

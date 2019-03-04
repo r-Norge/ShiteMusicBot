@@ -36,7 +36,8 @@ on_ready_extensions = [
 
 def _get_prefix(bot, message):
     if not message.guild:
-        return bot.settings.default_prefix
+        prefix = bot.settings.default_prefix
+        return commands.when_mentioned_or(prefix)(bot, message)
     prefixes = bot.settings.get(message.guild, 'prefixes', 'default_prefix')
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
@@ -61,7 +62,7 @@ class Bot(commands.Bot):
         if not self.debug:
             if (isinstance(err, commands.MissingRequiredArgument) or
                     isinstance(err, commands.BadArgument)):
-                paginator = commandhelper(ctx, ctx.command, ctx.invoker)
+                paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
                 scroller = Scroller(ctx, paginator)
                 await scroller.start_scrolling()
 

@@ -1,18 +1,22 @@
-# NOTICE: Before you copy this example, be sure you understand what all this does. Remember: This is a gist, not a github file meaning
-# you can't pip install this, you would need to put this into a new file and add it to your cog list.
-
-import pprint
-
 import discord
-import asyncio
 from discord.ext import commands
+import asyncio
+import re
 
 from cogs.utils.paginator import HelpPaginator, Scroller
+
+
+usermention = r"<@!?\d{17,19}>"
 
 
 def get_cmd_dict(ctx, qualified_name):
     split = qualified_name.split()
     cmd_dict = ctx.bot.aliaser.get_cmd_help(ctx.locale, split[-1], split[:-1])
+
+    # Fallback for new commands and missing translations
+    if not cmd_dict:
+        cmd_dict = ctx.bot.aliaser.get_cmd_help("en_en", split[-1], split[:-1])
+        cmd_dict["aliases"] = [split[-1]]
     return cmd_dict
 
 
@@ -28,7 +32,7 @@ def helper(ctx):
         cogpaignator = coghelper(ctx, cog)
         paginator.append_paginator(cogpaignator)
 
-    paginator.add_page_indicator(ctx.localizer, "{pageindicator}", ctx.prefix)
+    paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
 
@@ -42,15 +46,17 @@ def coghelper(ctx, cog, ignore_subcommands=True):
             continue
         cmd_dict = get_cmd_dict(ctx, cmd.qualified_name)
         paginator.add_command_field(cmd_dict)
-    paginator.add_page_indicator(ctx.localizer, "{paginator}", ctx.prefix)
+    paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
 
 def commandhelper(ctx, command, invoker, include_subcmd=True):
     cmd_dict = get_cmd_dict(ctx, command.qualified_name)
+    command_depth = len(command.qualified_name.split()) - 1
+
     prefix = ctx.prefix
-    if invoker.split()[:-1]:
-        prefix += ' '.join(invoker.split()[:-1]) + ' '
+    if invoker.split()[:command_depth]:
+        prefix += ' '.join(invoker.split()[:command_depth]) + ' '
 
     aliases = cmd_dict.get('aliases', [])
     args = cmd_dict.get('args', '')
@@ -63,7 +69,7 @@ def commandhelper(ctx, command, invoker, include_subcmd=True):
         cmd = prefix + '|'.join([str(a) for a in aliases]) + ' '
 
     cmd += args
-    if not sub_commands:
+    if not sub_commands or not include_subcmd:
         paginator = HelpPaginator(max_size=5000, max_fields=5, color=ctx.me.color, title=cmd, description=description)
         paginator.force_close_page()
         return paginator
@@ -73,9 +79,23 @@ def commandhelper(ctx, command, invoker, include_subcmd=True):
 
     for sub_command, sub_cmd_dict in sub_commands.items():
         paginator.add_command_field(sub_cmd_dict)
-    paginator.add_page_indicator(ctx.localizer, "{pageindicator}", ctx.prefix)
+    paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
+
+def prefix_cleaner(ctx):
+    """ Changes mentions to prefixes when commands are invoked with mentions."""
+    bot = ctx.bot
+    prefix = ctx.prefix
+    if re.match(usermention, prefix):
+        if not ctx.guild:
+            pref = bot.settings.default_prefix
+        else:
+            pref = bot.settings.get(ctx.guild, 'prefixes', 'default_prefix')
+        if isinstance(pref, list):
+            pref = pref[0]
+        ctx.prefix = pref
+    return ctx
 
 class Help(commands.Cog):
     """Help command"""
@@ -90,6 +110,8 @@ class Help(commands.Cog):
         ctx = self.bot.aliaser.get_subcommand(ctx, group=None, parents=[])
         command = v.buffer[v.index:v.end]
 
+        ctx = prefix_cleaner(ctx)
+
         if not command:
             scroller = Scroller(ctx, helper(ctx))
             await scroller.start_scrolling()
@@ -97,7 +119,7 @@ class Help(commands.Cog):
         if command:
             thing = ctx.bot.get_cog(command) or ctx.bot.get_command(command)
             if not thing:
-                return await ctx.send(f'Looks like "{command}" is not a command or category.')
+                return await ctx.send(ctx.localizer.format_str("{notcommand}", _command=command))
             if isinstance(thing, commands.Command):
                 paginator = commandhelper(ctx, thing, invoker)
                 scroller = Scroller(ctx, paginator)

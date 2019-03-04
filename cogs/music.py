@@ -229,7 +229,7 @@ class Music(commands.Cog):
             if not user_queue:
                 return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
             
-            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=ctx.author.name)
+            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
             scroller = Scroller(ctx, pagified_queue)            
             await scroller.start_scrolling()
 
