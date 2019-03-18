@@ -12,6 +12,7 @@ from cogs.utils.localizer import Localizer
 from cogs.utils.localizer import LocalizerWrapper
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
+from cogs.utils.logger import BotLogger
 
 
 with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
@@ -47,6 +48,9 @@ class Bot(commands.Bot):
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.debug = debug
+        self.main_logger = logger
+        self.logger = self.main_logger.bot_logger.getChild("Bot")
+        self.logger.debug("Debug: %s" % debug)
 
         for extension in initial_extensions:
             try:
@@ -69,12 +73,18 @@ class Bot(commands.Bot):
                     await ctx.send(message)
 
             if isinstance(err, commands.CommandInvokeError):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 await ctx.send('That command is not available in DMs')
 
             elif isinstance(err, commands.CheckFailure):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 pass
 
             elif isinstance(err, commands.CommandNotFound):
@@ -108,13 +118,15 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
-            if self.debug:
-                print('\n\nDebug mode')
+            #if self.debug:
+            #    print('\n\nDebug mode')
 
         for extension in on_ready_extensions:
             try:
+                self.logger.debug("Loading extension %s" % extension)
                 self.load_extension(extension)
             except Exception as e:
+                self.logger.exception("Loading extension %s" % extension)
                 print(e)
 
         print(f'\nLogged in as: {self.user.name}' +
@@ -138,8 +150,11 @@ def run_bot(debug: bool=False):
     bot = Bot(debug=debug)
     bot.run()
 
+
 if __name__ == '__main__':
+    state = False
     if 'debug' in sys.argv:
-        run_bot(debug=True)
-    else:
-        run_bot(debug=False)
+        state = True
+    # TODO: add logging dir in settings
+    logger = BotLogger(state, "data")
+    run_bot(debug=state)
