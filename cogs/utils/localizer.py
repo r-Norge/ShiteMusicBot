@@ -149,7 +149,7 @@ class Localizer:
     # inserts translations into a values of a embed
     def format_embed(self, embed, lang=None, prefix=None, **kvpairs):
         raw = embed.to_dict()
-        return Embed.from_data(self.format_dict(raw, lang, prefix, **kvpairs))
+        return Embed.from_dict(self.format_dict(raw, lang, prefix, **kvpairs))
 
 
 class LocalizerWrapper:
