@@ -5,12 +5,12 @@ import traceback
 from discord.ext import commands
 from cogs.utils import checks
 
-class Cogs:
+class Cogs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = self.bot.settings
 
-    @commands.group(name='cogs')
+    @commands.group(name='cogs', hidden=True)
     @checks.is_owner()
     async def _cogs(self, ctx):
         if ctx.invoked_subcommand is None:

@@ -13,7 +13,7 @@ from .utils.mixplayer import MixPlayer
 from lavalink.events import *
 
 
-class MusicEvents:
+class MusicEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # TODO: maybe only load when Music loads
@@ -28,7 +28,7 @@ class MusicEvents:
 
         bot.lavalink.add_event_hook(self.track_hook)
 
-    def __unload(self):
+    def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
@@ -53,6 +53,7 @@ class MusicEvents:
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
+    @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         """ Updates listeners when the bot or a user changes voice state """
         if member.id == self.bot.user.id and after.channel is not None:

@@ -13,6 +13,8 @@ from cogs.utils.localizer import LocalizerWrapper
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
 from cogs.utils.logger import BotLogger
+from cogs.helpformatter import commandhelper
+from cogs.utils.paginator import Scroller
 
 
 with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
@@ -22,7 +24,8 @@ with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
 initial_extensions = [
     'cogs.cogs',
     'cogs.settings',
-    'cogs.misc'
+    'cogs.misc',
+    'cogs.helpformatter'
 ]
 
 
@@ -34,7 +37,8 @@ on_ready_extensions = [
 
 def _get_prefix(bot, message):
     if not message.guild:
-        return bot.settings.default_prefix
+        prefix = bot.settings.default_prefix
+        return commands.when_mentioned_or(prefix)(bot, message)
     prefixes = bot.settings.get(message.guild, 'prefixes', 'default_prefix')
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
@@ -62,15 +66,9 @@ class Bot(commands.Bot):
         if not self.debug:
             if (isinstance(err, commands.MissingRequiredArgument) or
                     isinstance(err, commands.BadArgument)):
-                formatter = ctx.bot.formatter
-                if ctx.invoked_subcommand is None:
-                    _help = await formatter.format_help_for(ctx, ctx.command)
-                else:
-                    _help = await formatter.format_help_for(ctx,
-                                                            ctx.invoked_subcommand)
-
-                for message in _help:
-                    await ctx.send(message)
+                paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
+                scroller = Scroller(ctx, paginator)
+                await scroller.start_scrolling()
 
             if isinstance(err, commands.CommandInvokeError):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
@@ -104,8 +102,6 @@ class Bot(commands.Bot):
 
         # Replace aliases with commands
         ctx = self.aliaser.get_command(ctx)
-        if ctx.command and isinstance(ctx.command, commands.GroupMixin):
-            ctx = self.aliaser.get_subcommand(ctx, ctx.command, [str(ctx.command)])
 
         # Add the localizer
         if ctx.command and ctx.command.cog_name:

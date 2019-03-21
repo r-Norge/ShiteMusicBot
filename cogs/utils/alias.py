@@ -6,6 +6,12 @@ from os import path
 
 from discord.ext import commands
 
+"""
+Not the prettiest this, works by replacing any found aliases in a command string with the actual command names.
+Allows per guild aliases of subcommands without doing anything to discord.py itself. Suggestions of better/correct
+ways of doing this appreciated.
+"""
+
 class Aliaser:
     def __init__(self, localization_folder, default_lang):
         self.localization_folder = path.realpath(localization_folder)
@@ -39,7 +45,7 @@ class Aliaser:
 
     def load_localizations(self):
         for lang in self.localization_table.keys():
-            with open(path.join(self.localization_folder, lang, "aliases.yaml"), "r", encoding='utf-8') as f:
+            with open(path.join(self.localization_folder, lang, "commands.yaml"), "r", encoding='utf-8') as f:
                 data = yaml.load(f)
             self.localization_table[lang] = {'aliases': data, 'commands': self._gen_alias_dict(data)}
 
@@ -66,9 +72,27 @@ class Aliaser:
             return command
         return default
 
-    def get_alias(self, locale, command):
+    def get_cmd_help(self, locale, command=None, parents=[]):
+        """ Fetches the command info dictionary """
         locale = self.localization_table[locale]
-        return locale['aliases'].get(command, [])
+
+        def traverse(command_tree, parents, command):
+            # Return the command when no more parents exist
+            if not parents:
+                return command_tree.get(command, [])
+
+            parent = command_tree.get(parents.pop(0), None)
+            if not parent:
+                return []
+            command_tree = parent.get('sub_commands', [])
+            if not command_tree:
+                return None
+            return traverse(command_tree, parents, command)
+
+        command_tree = locale['aliases']
+        if command:
+            return traverse(command_tree, parents, command)
+        return command_tree
 
     def get_command(self, ctx):
         """ Get a top level command. """
@@ -76,13 +100,22 @@ class Aliaser:
             ctx.command = None
             return ctx
         ctx.view.undo()
+        ctx.invoker = invoker = ctx.view.buffer[ctx.view.index:ctx.view.end]
         alias = ctx.view.get_word()
         command = self.convert_alias(ctx.locale, alias, alias)
         ctx.invoked_with = command
         ctx.command = ctx.bot.all_commands.get(command)
+        if ctx.command and isinstance(ctx.command, commands.GroupMixin):
+            ctx = self.get_subcommand(ctx, ctx.command, [str(ctx.command)])
         return ctx
 
-    def get_subcommand(self, ctx, group, parents=[]):
+    def _replace_command(self, view, index, alias, command):
+        buf = view.buffer
+        changed = buf[index:]
+        view.buffer = buf[:index] + changed.replace(alias, command, 1)
+        return view
+
+    def get_subcommand(self, ctx, group=None, parents=[]):
         """ Recursicely replaces all subcommand aliases with subcommands."""
         view = ctx.view
         prev = view.previous
@@ -96,7 +129,7 @@ class Aliaser:
         parents.append(subcmd)
 
         # Replace the alias in the command
-        view.buffer = view.buffer.replace(alias, subcmd)
+        self._replace_command(view, idx, alias, subcmd)
 
         # Update the view to account for difference in length
         strdiff = len(subcmd) - len(alias)
@@ -104,7 +137,10 @@ class Aliaser:
         view.index += strdiff
 
         # Get the subcommand
-        sub = group.all_commands.get(subcmd, None)
+        if group:
+            sub = group.all_commands.get(subcmd, None)
+        else:
+            sub = ctx.bot.all_commands.get(subcmd, None)
 
         # Translate any subsubcommands 
         if sub and isinstance(sub, commands.GroupMixin):

@@ -5,7 +5,7 @@ import codecs
 from discord.ext import commands
 from cogs.utils import checks
 
-class Settings:
+class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = self.bot.settings
@@ -105,7 +105,7 @@ class Settings:
             await ctx.send(embed=embed)
 
     @commands.guild_only()
-    @_set.command(name='listenchannels')
+    @_set.command(name='listenchannels', hidden=True)
     async def set_listen_voice(self, ctx, *channels: discord.VoiceChannel):
         if channels:
             channel_ids = [channel.id for channel in channels]

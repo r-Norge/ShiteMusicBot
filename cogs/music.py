@@ -15,14 +15,14 @@ from typing import Optional
 
 from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
-from .utils.embedscroller import QueueScroller
+from .utils.paginator import QueuePaginator, Scroller
 
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 
 
-class Music:
+class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.logger = self.bot.main_logger.bot_logger.getChild("Music")
@@ -36,7 +36,7 @@ class Music:
             self.logger.debug("Adding Lavalink node")
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    async def __before_invoke(self, ctx):
+    async def cog_before_invoke(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
@@ -45,10 +45,10 @@ class Music:
                 response = ctx.localizer.format_str('{settings_check.textchannel}')
                 for channel_id in textchannels:
                     response += f'<#{channel_id}>, '
-                return await ctx.send(response[:-2])
+                await ctx.send(response[:-2])
+                raise commands.CommandInvokeError('Not command channel')
 
         await self.ensure_voice(ctx)
-        return True
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -221,7 +221,8 @@ class Music:
         
         if user is None:
             queue = player.global_queue()
-            scroller = QueueScroller(ctx, queue, ctx.localizer, lines_per_page=10)
+            pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
+            scroller = Scroller(ctx, pagified_queue)
             await scroller.start_scrolling()
 
         else:
@@ -229,7 +230,8 @@ class Music:
             if not user_queue:
                 return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
             
-            scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=user.name)
+            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
+            scroller = Scroller(ctx, pagified_queue)            
             await scroller.start_scrolling()
 
     @commands.command(name='myqueue')
@@ -241,7 +243,8 @@ class Music:
         if not user_queue:
             return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
-        scroller = QueueScroller(ctx, user_queue, ctx.localizer, lines_per_page=10, user_name=ctx.author.name)
+        pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=ctx.author.name)
+        scroller = Scroller(ctx, pagified_queue)
         await scroller.start_scrolling()
 
     @commands.command(name='pause')
@@ -724,10 +727,6 @@ class Music:
             return max(maxlength*60*1000/listeners, 60*10*1000)
         else:
             return maxlength*60*1000
-
-    async def on_command_error(self, ctx, err):
-        if isinstance(err, commands.CommandInvokeError):
-            pass
 
 
 def setup(bot):
