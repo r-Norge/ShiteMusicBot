@@ -60,12 +60,14 @@ class Misc(commands.Cog):
     
 
     @commands.command(name="reloadlocale")
+    @checks.is_owner()
     async def reload_locale(self, ctx):
         self.bot.localizer.index_localizations()
         self.bot.localizer.load_localizations()
         await ctx.send("Localizations reloaded.")
 
     @commands.command(name="reloadalias")
+    @checks.is_owner()
     async def reload_alias(self, ctx):
         self.bot.aliaser.index_localizations()
         self.bot.aliaser.load_localizations()

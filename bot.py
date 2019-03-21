@@ -73,6 +73,7 @@ class Bot(commands.Bot):
                 await ctx.send('That command is not available in DMs')
 
             elif isinstance(err, commands.CheckFailure):
+                print('check failure')
                 pass
 
             elif isinstance(err, commands.CommandNotFound):

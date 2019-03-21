@@ -30,23 +30,21 @@ class Music(commands.Cog):
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
 
             with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-                conf = yaml.safe_load(f)
+                conf = yaml.load(f, Loader=yaml.SafeLoader)
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    async def cog_before_invoke(self, ctx):
+    async def cog_check(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
         if textchannels:
             if ctx.channel.id not in textchannels:
-                response = ctx.localizer.format_str('{settings_check.textchannel}')
-                for channel_id in textchannels:
-                    response += f'<#{channel_id}>, '
-                await ctx.send(response[:-2])
-                raise commands.CommandInvokeError('Not command channel')
+                return False
+        return True
 
+    async def cog_before_invoke(self, ctx):
         await self.ensure_voice(ctx)
 
     async def connect_to(self, guild_id: int, channel_id: str):
@@ -221,17 +219,15 @@ class Music(commands.Cog):
         if user is None:
             queue = player.global_queue()
             pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
-            scroller = Scroller(ctx, pagified_queue)
-            await scroller.start_scrolling()
 
         else:
             user_queue = player.user_queue(user.id, dual=True)
             if not user_queue:
-                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
-            
+                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))            
             pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
-            scroller = Scroller(ctx, pagified_queue)            
-            await scroller.start_scrolling()
+
+        scroller = Scroller(ctx, pagified_queue)
+        await scroller.start_scrolling()
 
     @commands.command(name='myqueue')
     async def _myqueue(self, ctx):
@@ -726,6 +722,17 @@ class Music(commands.Cog):
             return max(maxlength*60*1000/listeners, 60*10*1000)
         else:
             return maxlength*60*1000
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, err):
+        if isinstance(err, commands.CheckFailure):
+            textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
+            if textchannels:
+                if ctx.channel.id not in textchannels:
+                    response = ctx.localizer.format_str('{settings_check.textchannel}')
+                    for channel_id in textchannels:
+                        response += f'<#{channel_id}>, '
+                    await ctx.send(response[:-2])
 
 
 def setup(bot):

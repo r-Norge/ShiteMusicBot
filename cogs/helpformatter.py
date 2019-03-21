@@ -16,27 +16,29 @@ def get_cmd_dict(ctx, qualified_name):
     # Fallback for new commands and missing translations
     if not cmd_dict:
         cmd_dict = ctx.bot.aliaser.get_cmd_help("en_en", split[-1], split[:-1])
-        cmd_dict["aliases"] = [split[-1]]
+        try:
+            cmd_dict["aliases"] = [split[-1]]
+        except:
+            cmd_dict = None
     return cmd_dict
 
-
-def helper(ctx):
+async def helper(ctx):
     bot = ctx.bot
     # Display music commands first
     music = bot.get_cog('Music')
-    paginator = coghelper(ctx, music)
+    paginator = await coghelper(ctx, music)
 
     for cog in bot.cogs.copy().values():
         if cog.__cog_name__ is 'Music':
             continue
-        cogpaignator = coghelper(ctx, cog)
+        cogpaignator = await coghelper(ctx, cog)
         paginator.append_paginator(cogpaignator)
 
     paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
 
-def coghelper(ctx, cog, ignore_subcommands=True):
+async def coghelper(ctx, cog, ignore_subcommands=True):
     paginator = HelpPaginator(max_size=5000, max_fields=5, color=ctx.me.color, title=cog.__cog_name__)
     for cmd in cog.walk_commands():
         if ignore_subcommands:
@@ -44,8 +46,16 @@ def coghelper(ctx, cog, ignore_subcommands=True):
                 continue
         if cmd.hidden:
             continue
+        try:
+            can_run = await cmd.can_run(ctx)
+        except CommandError:
+            can_run = False
+        if not can_run:
+            continue
         cmd_dict = get_cmd_dict(ctx, cmd.qualified_name)
-        paginator.add_command_field(cmd_dict)
+        if cmd_dict:
+            paginator.add_command_field(cmd_dict)
+
     paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
@@ -113,8 +123,7 @@ class Help(commands.Cog):
         ctx = prefix_cleaner(ctx)
 
         if not command:
-            scroller = Scroller(ctx, helper(ctx))
-            await scroller.start_scrolling()
+            paginator = await helper(ctx)
 
         if command:
             thing = ctx.bot.get_cog(command) or ctx.bot.get_command(command)
@@ -122,11 +131,12 @@ class Help(commands.Cog):
                 return await ctx.send(ctx.localizer.format_str("{notcommand}", _command=command))
             if isinstance(thing, commands.Command):
                 paginator = commandhelper(ctx, thing, invoker)
-                scroller = Scroller(ctx, paginator)
-                await scroller.start_scrolling()
             else:
-                scroller = Scroller(ctx, coghelper(ctx, thing))
-                await scroller.start_scrolling()
+                paginator = await coghelper(ctx, thing)
+
+        scroller = Scroller(ctx, paginator)
+        await scroller.start_scrolling()
+
 
 def setup(bot):
     bot.remove_command("help")
