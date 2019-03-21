@@ -31,6 +31,10 @@ class Music(commands.Cog):
 
             with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
                 conf = yaml.safe_load(f)
+                try:
+                    self.youtube = conf["api keys"]["Youtube"]
+                except:
+                    self.youtube = None
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
@@ -53,6 +57,62 @@ class Music(commands.Cog):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
+
+    @commands.command(name='recommend')
+    async def _recommend(self, ctx, *, query: str):
+        """ Searches and plays a song, and its related videos from a given query. """
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+        query = query.strip('<>')
+
+        if not url_rx.match(query):
+            query = f'ytsearch:{query}'
+
+        results = await player.node.get_tracks(query)
+
+        if self.youtube is None:
+            return await ctx.send(ctx.localizer.format_str("{api_missing}"))
+
+        if not results or not results['tracks']:
+            return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
+
+        embed = discord.Embed(color=ctx.me.color)
+
+        if results['loadType'] == 'PLAYLIST_LOADED':
+            embed.title = '{playlist_not_supported}'
+            embed.description = f'yeet'
+            embed = ctx.localizer.format_embed(embed)
+            return await ctx.send(embed=embed)
+        else:
+            tracks = results['tracks'][0]
+            ids = await RoxUtils.Youtube.realated_videos(self, tracks["info"]["identifier"])
+            maxlength = self.max_track_length(ctx.guild, player)
+            player.add(requester=ctx.author.id, track=tracks)
+            info = f"`1.` [{tracks['info']['title']} - **{tracks['info']['author']}**]({tracks['info']['uri']})\n"
+            numcount = 1
+            for num in ids:
+                results_num = await player.node.get_tracks(num)
+                trk = results_num['tracks'][0]
+                if maxlength:
+                    if trk['info']['length'] <= maxlength:
+                        numcount += 1
+                        info += f"`{numcount}.` [{trk['info']['title']} - **{trk['info']['author']}**]({trk['info']['uri']})\n"
+                        player.add(requester=ctx.author.id, track=trk)
+                else:
+                    numcount += 1
+                    info += f"`{numcount}.` [{trk['info']['title']} - **{trk['info']['author']}**]({trk['info']['uri']})\n"
+                    player.add(requester=ctx.author.id, track=trk)
+
+            thumbnail_url = await RoxUtils.ThumbNailer.identify(self, tracks["info"]["identifier"], tracks["info"]["uri"])
+            if thumbnail_url:
+                embed.set_thumbnail(url=thumbnail_url)
+            embed.description = info
+            lang_title = ctx.localizer.format_str("{recommended_enqued}", _title=tracks['info']['title'])
+            embed.title = lang_title
+            embed = ctx.localizer.format_embed(embed)
+            await ctx.send(embed=embed)
+
+        if not player.is_playing:
+            await player.play()
 
     @commands.command(name='play')
     async def _play(self, ctx, *, query: str):
@@ -638,8 +698,8 @@ class Music(commands.Cog):
         player = self.bot.lavalink.players.create(ctx.guild.id, endpoint=ctx.guild.region.value)
         # Create returns a player if one exists, otherwise creates.
 
-        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')  # Add commands that require joining voice to work.
-        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now') # Add commands that don't require the you being in voice.
+        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search', "_recommend")  # Add commands that require joining voice to work.
+        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', "_test") # Add commands that don't require the you being in voice.
 
         if without_connect:
             return

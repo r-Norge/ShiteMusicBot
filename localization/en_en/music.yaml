@@ -1,8 +1,10 @@
 nothing_found: Nothing found!
 not_playing: Not playing.
 nothing_playing: Nothing playing
+api_missing: This feature requires a youtube api key to work, this is not present.
 have_to_listen: You have to be listening to the bot
 playlist_enqued: Playlist Enqueued!
+recommended_enqued: Recommended based on **{_title}** Enqueued!
 requested_by: Requested by
 tracks: tracks
 seek:
