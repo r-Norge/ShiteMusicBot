@@ -77,6 +77,9 @@ class Bot(commands.Bot):
 
             elif isinstance(err, commands.NoPrivateMessage):
                 await ctx.send('That command is not available in DMs')
+            
+            elif isinstance(err, commands.CommandOnCooldown):
+                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, commands.CheckFailure):
                 print('check failure')
