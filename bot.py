@@ -4,6 +4,7 @@ import time
 import sys
 import traceback
 import yaml
+import aiohttp
 
 from discord.ext import commands
 from discord.ext.commands.view import StringView
@@ -17,7 +18,7 @@ from cogs.utils.paginator import Scroller
 
 
 with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-    conf = yaml.safe_load(f)
+    conf = yaml.load(f, Loader=yaml.SafeLoader)
 
 
 initial_extensions = [
@@ -48,8 +49,13 @@ class Bot(commands.Bot):
                          description=conf["bot"]["description"])
 
         self.settings = Settings(**conf['default server settings'])
+        self.APIkeys = conf.get('APIkeys', {})
+
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
         self.debug = debug
 
         for extension in initial_extensions:
