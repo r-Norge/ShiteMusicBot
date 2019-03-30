@@ -502,7 +502,7 @@ class Music:
         embed = localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
 
-    @commands.command(name='nomalize', aliases=['normal','nl','normaliser'])
+    @commands.command(name='normalize', aliases=['normal','nl','normaliser'])
     @checks.DJ_or(alone=True)
     async def _normalize(self, ctx):
         """ Reset the equalizer and  """
