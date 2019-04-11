@@ -13,9 +13,13 @@ import discord
 from discord.ext import commands
 from typing import Optional
 
+import urllib
+import json
+from bs4 import BeautifulSoup
+
 from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
-from .utils.paginator import QueuePaginator, Scroller
+from .utils.paginator import QueuePaginator, TextPaginator, Scroller
 
 
 time_rx = re.compile('[0-9]+')
@@ -30,24 +34,22 @@ class Music(commands.Cog):
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
 
             with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-                conf = yaml.safe_load(f)
+                conf = yaml.load(f, Loader=yaml.SafeLoader)
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             self.logger.debug("Adding Lavalink node")
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-    async def cog_before_invoke(self, ctx):
+    async def cog_check(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage
         textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
         if textchannels:
             if ctx.channel.id not in textchannels:
-                response = ctx.localizer.format_str('{settings_check.textchannel}')
-                for channel_id in textchannels:
-                    response += f'<#{channel_id}>, '
-                await ctx.send(response[:-2])
-                raise commands.CommandInvokeError('Not command channel')
+                return False
+        return True
 
+    async def cog_before_invoke(self, ctx):
         await self.ensure_voice(ctx)
 
     async def connect_to(self, guild_id: int, channel_id: str):
@@ -222,17 +224,15 @@ class Music(commands.Cog):
         if user is None:
             queue = player.global_queue()
             pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
-            scroller = Scroller(ctx, pagified_queue)
-            await scroller.start_scrolling()
 
         else:
             user_queue = player.user_queue(user.id, dual=True)
             if not user_queue:
-                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
-            
+                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))            
             pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
-            scroller = Scroller(ctx, pagified_queue)            
-            await scroller.start_scrolling()
+
+        scroller = Scroller(ctx, pagified_queue)
+        await scroller.start_scrolling()
 
     @commands.command(name='myqueue')
     async def _myqueue(self, ctx):
@@ -557,6 +557,71 @@ class Music(commands.Cog):
             embed.set_thumbnail(url=thumb_url)
         await ctx.send(embed=embed)
 
+    
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.command(name='lyrics')
+    async def _lyrics(self, ctx, *query: str):
+        
+        player = self.bot.lavalink.players.get(ctx.guild.id)
+
+        genius_access_token = self.bot.APIkeys.get('genius', None)
+
+        if genius_access_token is None:
+            return await ctx.send('Missing API key')
+
+        excluded_words = ["music", "video", "version", "original", "lyrics",
+            "official", "live","instrumental", "audio", "hd"]
+
+        query = ' '.join(query)
+
+        if not query and player.is_playing:
+            query = player.current.title
+            query = re.sub('[-()_]', '', query)
+            filtered_words = [word for word in query.split() if word.lower() not in excluded_words]
+            query = ' '.join(filtered_words)
+
+        async def get_site_content(url):
+            async with self.bot.session.get(url) as resp:
+                response = await resp.read()
+            return response.decode('utf-8')
+
+        embed = discord.Embed(description=":mag_right:")
+        status_msg = await ctx.send(embed=embed)
+
+        try:
+            url = "https://api.genius.com/search?" + urllib.parse.urlencode({"access_token": genius_access_token, "q": query})
+            result = await get_site_content(url)
+            response = json.loads(result)
+            song_id = response["response"]["hits"][0]["result"]["id"]
+        except:
+            embed = discord.Embed(description=":x:", color=0xFF0000)
+            return await status_msg.edit(embed=embed)
+
+        result = await get_site_content(f"https://api.genius.com/songs/{song_id}?access_token={genius_access_token}")
+        song = json.loads(result)["response"]["song"]
+
+        response = await get_site_content(song["url"])
+        scraped_data = BeautifulSoup(response, 'html.parser')
+        lyrics = scraped_data.find(class_='lyrics').get_text()
+
+        paginator = TextPaginator(max_size=2000, max_lines=50, color=0xFFFF64)
+        for line in lyrics.split('\n'):
+            paginator.add_line(line)
+
+        await status_msg.delete()
+
+        paginator.pages[0].url=song["url"]
+        paginator.pages[0].title=song["full_title"]
+        paginator.pages[0].set_thumbnail(url=song["header_image_thumbnail_url"])
+        paginator.pages[0].set_author(name='Genius', icon_url='https://i.imgur.com/NmCTsoF.png')
+
+        if len(paginator.pages) < 4:
+            for page in paginator.pages:
+                await ctx.send(embed=page)
+        else:
+            paginator.add_page_indicator(ctx.localizer)
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling()
 
     @commands.command(name='scrub')
     @checks.DJ_or(alone=True)
@@ -640,7 +705,7 @@ class Music(commands.Cog):
         # Create returns a player if one exists, otherwise creates.
 
         should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')  # Add commands that require joining voice to work.
-        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now') # Add commands that don't require the you being in voice.
+        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', '_lyrics') # Add commands that don't require the you being in voice.
 
         if without_connect:
             return
@@ -727,6 +792,17 @@ class Music(commands.Cog):
             return max(maxlength*60*1000/listeners, 60*10*1000)
         else:
             return maxlength*60*1000
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, err):
+        if isinstance(err, commands.CheckFailure):
+            textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
+            if textchannels:
+                if ctx.channel.id not in textchannels:
+                    response = ctx.localizer.format_str('{settings_check.textchannel}')
+                    for channel_id in textchannels:
+                        response += f'<#{channel_id}>, '
+                    await ctx.send(response[:-2])
 
 
 def setup(bot):

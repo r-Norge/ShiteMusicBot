@@ -4,6 +4,7 @@ import time
 import sys
 import traceback
 import yaml
+import aiohttp
 
 from discord.ext import commands
 from discord.ext.commands.view import StringView
@@ -18,7 +19,7 @@ from cogs.utils.paginator import Scroller
 
 
 with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-    conf = yaml.safe_load(f)
+    conf = yaml.load(f, Loader=yaml.SafeLoader)
 
 
 initial_extensions = [
@@ -49,8 +50,13 @@ class Bot(commands.Bot):
                          description=conf["bot"]["description"])
 
         self.settings = Settings(**conf['default server settings'])
+        self.APIkeys = conf.get('APIkeys', {})
+
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
         self.debug = debug
         self.main_logger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
@@ -79,6 +85,9 @@ class Bot(commands.Bot):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
                                  % (ctx.command, traceback.format_exception(err.__traceback__)))
                 await ctx.send('That command is not available in DMs')
+            
+            elif isinstance(err, commands.CommandOnCooldown):
+                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, commands.CheckFailure):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
