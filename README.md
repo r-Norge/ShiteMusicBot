@@ -5,6 +5,10 @@
 - Round Robin style queue, you won't have to wait forever for your songs to play.
 - Noice per server customization options.
 - Toit embeds.
+- More stuff to come?
+- Lyrics command that sometimes gives the correct lyrics
+- DJ roles
+
 
 #### Setup
 1. Change or copy data/config.yaml.example to config.yaml
