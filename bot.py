@@ -59,8 +59,8 @@ class Bot(commands.Bot):
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
-            except Exception as e:
-                print(e)
+            except Exception:
+                self.logger.exception("Loading of extension %s failed" % extension)
 
     async def on_command_error(self, ctx, err):
         if not self.debug:
@@ -120,8 +120,7 @@ class Bot(commands.Bot):
                 self.logger.debug("Loading extension %s" % extension)
                 self.load_extension(extension)
             except Exception as e:
-                self.logger.exception("Loading extension %s" % extension)
-                print(e)
+                self.logger.exception("Loading of extension %s failed" % extension)
 
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
@@ -149,5 +148,5 @@ if __name__ == '__main__':
     state = False
     if 'debug' in sys.argv:
         state = True
-    logger = BotLogger(state, conf.get('log_path', '/data'))
+    logger = BotLogger(state, conf.get('log_path', '/data/logs'))
     run_bot(debug=state)
