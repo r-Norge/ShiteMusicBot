@@ -29,7 +29,7 @@ url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        self.logger = self.bot.main_logger.bot_logger.getChild("Music")
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
 
@@ -37,6 +37,7 @@ class Music(commands.Cog):
                 conf = yaml.load(f, Loader=yaml.SafeLoader)
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
+            self.logger.debug("Adding Lavalink node")
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
     async def cog_check(self, ctx):

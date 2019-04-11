@@ -13,6 +13,7 @@ from cogs.utils.localizer import Localizer
 from cogs.utils.localizer import LocalizerWrapper
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
+from cogs.utils.logger import BotLogger
 from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
 
@@ -57,12 +58,15 @@ class Bot(commands.Bot):
         self.session = aiohttp.ClientSession(loop=self.loop)
 
         self.debug = debug
+        self.main_logger = logger
+        self.logger = self.main_logger.bot_logger.getChild("Bot")
+        self.logger.debug("Debug: %s" % debug)
 
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
-            except Exception as e:
-                print(e)
+            except Exception:
+                self.logger.exception("Loading of extension %s failed" % extension)
 
     async def on_command_error(self, ctx, err):
         if not self.debug:
@@ -73,16 +77,21 @@ class Bot(commands.Bot):
                 await scroller.start_scrolling()
 
             if isinstance(err, commands.CommandInvokeError):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 await ctx.send('That command is not available in DMs')
             
             elif isinstance(err, commands.CommandOnCooldown):
                 await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, commands.CheckFailure):
-                print('check failure')
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
                 pass
 
             elif isinstance(err, commands.CommandNotFound):
@@ -114,14 +123,13 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
-            if self.debug:
-                print('\n\nDebug mode')
 
         for extension in on_ready_extensions:
             try:
+                self.logger.debug("Loading extension %s" % extension)
                 self.load_extension(extension)
             except Exception as e:
-                print(e)
+                self.logger.exception("Loading of extension %s failed" % extension)
 
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
@@ -144,8 +152,10 @@ def run_bot(debug: bool=False):
     bot = Bot(debug=debug)
     bot.run()
 
+
 if __name__ == '__main__':
+    state = False
     if 'debug' in sys.argv:
-        run_bot(debug=True)
-    else:
-        run_bot(debug=False)
+        state = True
+    logger = BotLogger(state, conf.get('log_path', '/data/logs'))
+    run_bot(debug=state)
