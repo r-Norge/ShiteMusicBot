@@ -1,0 +1,73 @@
+nothing_found: Kunne ikke finne sangen!
+not_playing: Spiller ikke av noe.
+nothing_playing: Ingenting spiller av
+have_to_listen: Du må høre på botten
+playlist_enqued: Spilleliste ble lagt til i køen!
+requested_by: Etterspurt av
+tracks: spor
+seek:
+  missing_amount: Du må spesifisere antall sekunder å spole!
+  track_moved: Flyttet spor til **{_position}**
+skip:
+  skipped: Hoppet over.
+  require_vote: "{_skips} av {_total} hatere må stemme for å hoppe over."
+skip_to:
+  invalid_pos: Ugyldig køposisjon.
+  exceeds_queue: Posisjonen overgår køens lengde.
+  skipped_to: hoppet til `{_title}` i posisjon `{_pos}`
+stop: "⏹ | Stoppet avspillingen."
+live: "\U0001F534 DIREKTE"
+now: Spiller nå
+queue:
+  empty: Køen er tom
+  user_empty: "{_user} sin kø er tom"
+  length: "**Kø** `{_length} sanger`"
+  userqueue: "**{_user} sin kø** `{_length}` sanger"
+  globaltrack: "`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_"
+  usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**"
+  pageindicator: Viser side {_current}/{_total}
+my_queue: Din kø er tom
+resume:
+  resumed: "⏯ | Avspilling gjenopptatt"
+  paused: "⏯ | Pauset avspillingen"
+shuffle: Køen din har blitt omstokket
+out_of_range: Posisjonene må være mellom 1 og {_len}
+move:
+  not_in_queue: Sjekk at posisjonen eksisterer i køen din
+  moved_to: "`{_title}` flyttet fra plass `{_from}` til `{_to}` i køen din"
+remove: "**{_title}** ble fjernet fra køen."
+dj_removed: "**{_title}** som ble lagt til i køen av {_user}, ble fjernet."
+dj_remove_user: Fjernet alle sanger lagt til i køen av <@{_id}>.
+search: søker
+results: Resultater
+time_expired: Tid utgått
+disconnect:
+  not_in_voice: Du må være koblet til samme talekanal som meg!
+  disconnected: Frakoblet
+not_connected: Du er ikke koblet til en talekanal.
+volume:
+  set_to: Volum satt til {_volume}
+  reset: Volum og equalizer resatt!
+  out_of_range: Du må sette volumet til et tall mellom 50 og 125
+boost:
+  'on': Bassforsterkeren er på
+  'off': Bassforsterkeren er av
+scrub:
+  add: Legger til kontrollere
+  controls: "{music_controls}"
+  _comment_controls: scrub.controls read from music_controls.txt
+enqueue:
+  position: Køposisjon
+  playing_in: Spiller av om
+  enqueued: Ny sang lagt til i køen
+  estimated: estimert
+  toolong: Sang for lang. `{_length}>{_max}`
+history:
+  title: Avspillingshistorikk
+  current: "`Spiller nå` **[{_title}]({_uri})** _av <@{_id}>_"
+  track: "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_"
+  previous: "**Tidligere sanger ({_len}):**"
+  empty: Ingen tidligere spilte sanger
+settings_check:
+  textchannel: "Du kan ikke bruke musikkommandoer i denne kanalen.\nPrøv i: "
+  voicechannel: 'Jeg kan bare spille musikk i: '

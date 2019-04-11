@@ -1,5 +1,6 @@
-git+https://github.com/Rapptz/discord.py@rewrite
+discord.py
 git+https://github.com/Devoxin/Lavalink.py@dev
 asyncio
-bs4
+pyyaml
+BeautifulSoup4
 aiohttp<3.5.0,>=3.3.0

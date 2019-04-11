@@ -1,0 +1,12 @@
+current:
+  title: Innstillinger
+  description: Gjeldende innstillinger for {_guild}
+  prefix: Prefiks
+  locale: Språk
+  threshold: Stemmegrense
+  dynamicmax: Dynamisk maksvarighet
+  maxduration: Maks sanglengde
+  textchannels: Tekstkanaler
+  musicchannels: Musikkanaler
+  listenchannels: '"Kun lyd"-kanaler'
+  djroles: DJroller

@@ -3,7 +3,7 @@ A cog to separate events from regular music commands
 """
 
 import asyncio
-
+import yaml
 import discord
 import lavalink
 from discord.ext import commands
@@ -12,21 +12,23 @@ import time
 from .utils.mixplayer import MixPlayer
 from lavalink.events import *
 
-from lavasettings import *
 
-
-class MusicEvents:
+class MusicEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # TODO: maybe only load when Music loads
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
-            bot.lavalink.add_node(host, port, password, region, 'default-node')  # Host, Port, Password, Region, Name
+
+            with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
+                conf = yaml.load(f, Loader=yaml.SafeLoader)
+
+            bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
         bot.lavalink.add_event_hook(self.track_hook)
 
-    def __unload(self):
+    def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
@@ -51,6 +53,7 @@ class MusicEvents:
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
+    @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         """ Updates listeners when the bot or a user changes voice state """
         if member.id == self.bot.user.id and after.channel is not None:

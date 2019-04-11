@@ -1,0 +1,73 @@
+nothing_found: Orsak, kunne ikkje finna songen!
+not_playing: Spelar ikkje noko.
+nothing_playing: Ingenting speles av
+have_to_listen: Dykk må høyra på botten
+playlist_enqued: Spellista vart lagt til i køen!
+requested_by: Etterspurd av
+tracks: spor
+seek:
+  missing_amount: Dykk må klargjera antal sekundar å spola!
+  track_moved: Flytta spor til **{_position}**
+skip:
+  skipped: Hoppa over.
+  require_vote: "{_skips} av {_total} hatarar må stemma for å hoppa over."
+skip_to:
+  invalid_pos: Ugild køposisjon.
+  exceeds_queue: Posisjona overgår køens lengde.
+  skipped_to: hoppa til `{_title}` i posisjon `{_pos}`
+stop: "⏹ | Stoppa avspelinga."
+live: "\U0001F534 DIREKTE"
+now: Spelar no
+queue:
+  empty: Køa er tom
+  user_empty: "{_user} sin kø er tom"
+  length: "**Kø** `{_length} songar`"
+  userqueue: Køen til **{_user}** `{_length}` songar
+  globaltrack: "`{_index}.` **[{_title}]({_uri})** _av <@{_user_id}>_"
+  usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**"
+  pageindicator: Viser side {_current}/{_total}
+my_queue: Din kø er tom
+resume:
+  resumed: "⏯ | Avspeling oppattatt"
+  paused: "⏯ | Pauset avspeling"
+shuffle: Køa di har vorte omstokka
+out_of_range: Posisjonane må væra millom 1 og {_len}
+move:
+  not_in_queue: Kontrollar at posisjona eksisterar i køen din
+  moved_to: "`{_title}` flytta frå plass `{_from}` til `{_to}` i køen din"
+remove: "**{_title}** vart fjerna frå køen."
+dj_removed: "**{_title}** som vart lagt til i køen av {_user}, vart fjerna."
+dj_remove_user: Fjerna alle songar lagt til i køen av <@{_id}>.
+search: søkjar
+results: Resultatar
+time_expired: Tid utgått
+disconnect:
+  not_in_voice: Dykk må være tilkopla same talekanal som meg!
+  disconnected: Fråkopla
+not_connected: Dykk er ikkje kopla til ein talekanal.
+volume:
+  set_to: Volum satt til {_volume}
+  reset: Volum og utjevnar igjensatt!
+  out_of_range: Du må setja volumet til eit tal mellom femti og hundreogtjuefem
+boost:
+  'on': Bassforsterkaren er på
+  'off': Bassforsterkaren er av
+scrub:
+  add: Legjar til kontrollera
+  controls: "{music_controls}"
+  _comment_controls: scrub.controls read from music_controls.txt
+enqueue:
+  position: Køposisjon
+  playing_in: Spelar av om
+  enqueued: Ny song lagt til i køen
+  estimated: estimert
+  toolong: Song for lang. `{_length}>{_max}`
+history:
+  title: Avspelingshistorikk
+  current: "`Spelar no` **[{_title}]({_uri})** _av <@{_id}>_"
+  track: "`{_index}.` **[{_title}]({_uri})** _av <@{_id}>_"
+  previous: "**Tidlegare songar ({_len}):**"
+  empty: Ingen tidlegare spelte songar
+settings_check:
+  textchannel: "Du kan ikkje bruke musikkommandoar i denne kanalen.\nPrøv i: "
+  voicechannel: 'Eg kan berre spele musikk i: '

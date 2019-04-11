@@ -9,7 +9,8 @@ from discord.ext import commands
 from cogs.utils import checks
 from lavalink import __version__ as LavalinkVersion
 
-class Misc:
+
+class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -45,25 +46,32 @@ class Misc:
         """
         Info om musikkspilleren
         """
-        embed = discord.Embed(title='{info.music.title}', color=ctx.me.color)
+        embed = discord.Embed(title='{music.title}', color=ctx.me.color)
         lavalink = self.bot.lavalink
 
         listeners = 0
         for guild, player in lavalink.players:
             listeners += len(player.listeners)
 
-        embed.add_field(name='{info.music.players}', value=f'{len(lavalink.players)}')
-        embed.add_field(name='{info.music.listeners}', value=f'{listeners}')
-        embed = self.bot.localizer.format_embed(embed, self.bot.settings.get_locale(ctx.guild.id))
+        embed.add_field(name='{music.players}', value=f'{len(lavalink.players)}')
+        embed.add_field(name='{music.listeners}', value=f'{listeners}')
+        embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
-
     
 
     @commands.command(name="reloadlocale")
+    @checks.is_owner()
     async def reload_locale(self, ctx):
         self.bot.localizer.index_localizations()
         self.bot.localizer.load_localizations()
         await ctx.send("Localizations reloaded.")
+
+    @commands.command(name="reloadalias")
+    @checks.is_owner()
+    async def reload_alias(self, ctx):
+        self.bot.aliaser.index_localizations()
+        self.bot.aliaser.load_localizations()
+        await ctx.send("Aliases reloaded.")
 
     @commands.command()
     async def info(self, ctx):
@@ -93,19 +101,18 @@ class Misc:
         embed.set_author(name=self.bot.user.name, icon_url=avatar)
         embed.set_thumbnail(url=avatar)
         embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/368118192251469835/vintage1turntable.png')
-        embed.add_field(name="{info.bot.what}",
-                        value='{info.bot.infotext}', inline=False)
+        embed.add_field(name="{bot.what}",
+                        value='{bot.infotext}', inline=False)
         embed.set_footer(icon_url="https://cdn.discordapp.com/icons/532176350019321917/92f43a1f67308a99a30c169db4b671dd.png?size=64",
-                            text="{info.bot.footer_text}")
-        embed.add_field(name="{info.bot.how}",
-                        value='{info.bot.spectext}')
-        embed.add_field(name="{info.bot.how_many}",
-                        value='{info.bot.stattext}')
-        embed.add_field(name="{info.bot.how_long}",
+                            text="{bot.footer_text}")
+        embed.add_field(name="{bot.how}",
+                        value='{bot.spectext}')
+        embed.add_field(name="{bot.how_many}",
+                        value='{bot.stattext}')
+        embed.add_field(name="{bot.how_long}",
                         value=uptimetext)
 
-        embed = self.bot.localizer.format_embed(embed, 
-            self.bot.settings.get_locale(ctx.guild.id), 
+        embed = ctx.localizer.format_embed(embed,
             _python_v=platform.python_version(),
             _discord_v=discord.__version__,
             _lavalink_v=LavalinkVersion,
@@ -113,11 +120,6 @@ class Misc:
             _members=members
         )
         await ctx.send(embed=embed)
-
-        @commands.command()
-        @checks.is_even()
-        async def only_me(self, ctx):
-            await ctx.send('Only you!')
 
 
 def setup(bot):

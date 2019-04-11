@@ -1,0 +1,39 @@
+bot:
+  token:
+  description: Music bot
+  playing status: music
+
+# Where the bot will look for translations
+locale_path: ./localization
+
+# Where the bot will place logs
+log_path: ./data/logs
+
+# Settings used if server settings aren't specified
+default server settings:
+  prefix:
+    - "!"
+  moderator role: Moderator
+  locale: en_en
+  threshold: 50
+  dynamic max duration: Yes
+
+lavalink nodes:
+  main:  # The preferred lavalink node for your music bot
+    host: localhost
+    port: 2333
+    password: youshallnotpass
+    region: eu
+    name: default-node
+
+  # Backup nodes for your music bot
+  backup:
+    - host: localhost
+      port: 2333
+      password: youshallnotpass
+      region: eu
+      name: backup-1
+
+APIkeys:
+  genius: 
+  youtube: 

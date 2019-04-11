@@ -37,7 +37,8 @@ def is_even():
 def is_owner():
     def predicate(ctx):
         is_owner = (ctx.message.author.id == 120970603556503552 or
-            ctx.message.author.id == 142212883512557569 or ctx.message.author.id == 212635519706726410)
+            ctx.message.author.id == 142212883512557569 or ctx.message.author.id == 212635519706726410 or
+            ctx.message.author.id == 170506717140877312)
         return is_owner
     return commands.check(predicate)
 
@@ -50,9 +51,25 @@ def is_admin():
 
 def is_mod():
     async def pred(ctx):
-        modrole = ctx.bot.settings.get_mod_role(ctx.guild.id)
+        modrole = ctx.bot.settings.get(ctx.guild, 'roles.moderator', 'default_mod')
         return has_role(ctx, modrole)
     return commands.check(pred)
+
+
+def has_role_id(ctx, role_id):
+    if ctx.channel is discord.DMChannel:
+        return False
+
+    role = discord.utils.get(ctx.author.roles, id=role_id)
+    return role is not None
+
+
+def is_DJ(ctx):
+    dj_role_ids = ctx.bot.settings.get(ctx.guild, 'roles.dj', [])
+    if not dj_role_ids:
+        return any([has_role(ctx, role) for role in ['dj', 'Dj', 'DJ', 'dJ']])
+    else:
+        return any([has_role_id(ctx, role_id) for role_id in dj_role_ids])
 
 
 def DJ_or(alone: bool=False, current: bool=False):
@@ -60,13 +77,13 @@ def DJ_or(alone: bool=False, current: bool=False):
         try:
             player = ctx.bot.lavalink.players.get(ctx.guild.id)
             is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
-
             requester = (player.current.requester == ctx.author.id) and current
 
-            is_dj = has_role(ctx, 'DJ') or has_role(ctx, 'dj') or has_role(ctx, 'Dj')
-            is_admin = await check_guild_permissions(ctx, {'administrator': True})
-
-            return is_dj or is_admin or is_alone or requester
         except AttributeError:
-            return False
+            requester = False
+            is_alone = False
+
+        is_dj = is_DJ(ctx)
+
+        return is_dj or is_alone or requester
     return commands.check(predicate)
