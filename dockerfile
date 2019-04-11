@@ -1,4 +1,4 @@
-FROM amd64/python:3.6.8-alpine
+FROM amd64/python:3.7.3-alpine
 
 LABEL maintainer="Roxedus"
 
@@ -11,6 +11,6 @@ RUN \
 
 WORKDIR /app
 
-CMD ln -sf /app/data /config && python3 /app/bot.py
+CMD ln -sf /app/data /config && /app/localization /config && python3 /app/bot.py
 
 VOLUME /config
