@@ -20,7 +20,7 @@ class BotLogger(object):
 
         if self.log_location is not None:
             if not os.path.isdir(self.log_location):
-                os.mkdirs(self.log_location)
+                os.makedirs(self.log_location)
                 print(f"Creating logging directory: {self.log_location}")
             if self.log_level:
                 print(os.path.abspath(self.log_location))
