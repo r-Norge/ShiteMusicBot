@@ -24,10 +24,10 @@ class Settings:
 
         if not os.path.isfile(self._SETTINGS_PATH):
             with codecs.open(self._SETTINGS_PATH, "w+", encoding='utf8') as f:
-                yaml.dump({}, f, indent=4)
+                yaml.dump({}, f, indent=2)
 
         with codecs.open(self._SETTINGS_PATH, "r", encoding='utf8') as f:
-            self.settings = yaml.load(f)
+            self.settings = yaml.load(f, Loader=yaml.SafeLoader)
 
     def _set(self, d, keys, val):
         key = keys[0]

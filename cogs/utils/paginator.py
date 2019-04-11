@@ -31,7 +31,7 @@ class BasePaginator:
 
     def append_paginator(self, paginator):
         if not isinstance(paginator, BasePaginator):
-            raise TypeError('Pageinator needs to be a subclass of BasePaginator.')
+            raise TypeError('Paginator needs to be a subclass of BasePaginator.')
         self.close_page()
         for page in paginator.pages:
             self.pages.append(page)
@@ -167,7 +167,10 @@ class HelpPaginator(FieldPaginator):
 # Thanks danny <3
 
 class Scroller:
-    def __init__(self, ctx, paginator):
+    def __init__(self, ctx, paginator, timeout=120.0, clear_on_timeout=False, clear_on_exit=True, clear_command=True):
+
+        if not isinstance(paginator, BasePaginator):
+            raise TypeError('Paginator needs to be a subclass of BasePaginator.')
 
         self.bot = ctx.bot
         self.pages = paginator.pages
@@ -175,6 +178,11 @@ class Scroller:
         self.message = ctx.message
         self.channel = ctx.channel
         self.author = ctx.author
+
+        self.timeout = timeout
+        self.timeout_delete = clear_on_timeout
+        self.exit_delete = clear_on_exit
+        self.clear_command = clear_command
 
         if len(self.pages) > 1:
             self.scrolling = True
@@ -243,8 +251,10 @@ class Scroller:
 
     async def stop_scrolling(self):
         self.scrolling = False
-        await self.message.delete()
-        await self.cmdmsg.delete()
+        if self.exit_delete:
+            await self.message.delete()
+            if self.clear_command:
+                await self.cmdmsg.delete()
 
     def react_check(self, reaction, user):
         if user is None or user.id != self.author.id:
@@ -267,11 +277,15 @@ class Scroller:
 
         while self.scrolling:
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=self.react_check, timeout=120.0)
+                reaction, user = await self.bot.wait_for('reaction_add', check=self.react_check, timeout=self.timeout)
             except asyncio.TimeoutError:
                 self.scrolling = False
                 try:
                     await self.message.clear_reactions()
+                    if self.timeout_delete:
+                        await self.message.delete()
+                        if self.clear_command:
+                            await self.cmdmsg.delete()
                 except:
                     pass
                 finally:

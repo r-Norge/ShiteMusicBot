@@ -33,3 +33,7 @@ lavalink nodes:
       password: youshallnotpass
       region: eu
       name: backup-1
+
+APIkeys:
+  genius: 
+  youtube: 

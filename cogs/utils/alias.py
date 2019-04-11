@@ -46,7 +46,7 @@ class Aliaser:
     def load_localizations(self):
         for lang in self.localization_table.keys():
             with open(path.join(self.localization_folder, lang, "commands.yaml"), "r", encoding='utf-8') as f:
-                data = yaml.load(f)
+                data = yaml.load(f, Loader=yaml.SafeLoader)
             self.localization_table[lang] = {'aliases': data, 'commands': self._gen_alias_dict(data)}
 
     def convert_alias(self, locale, alias, default=None, parents=[]):
@@ -83,7 +83,7 @@ class Aliaser:
 
             parent = command_tree.get(parents.pop(0), None)
             if not parent:
-                return []
+                return None
             command_tree = parent.get('sub_commands', [])
             if not command_tree:
                 return None

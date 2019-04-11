@@ -21,7 +21,7 @@ class MusicEvents(commands.Cog):
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
 
             with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-                conf = yaml.safe_load(f)
+                conf = yaml.load(f, Loader=yaml.SafeLoader)
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')

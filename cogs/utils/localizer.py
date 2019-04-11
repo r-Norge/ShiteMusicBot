@@ -56,7 +56,7 @@ class Localizer:
                     continue
                 file_base = path.basename(file).split(".")[0]
                 with open(file, "r", encoding='utf-8') as f:
-                    data = yaml.load(f)
+                    data = yaml.load(f, Loader=yaml.SafeLoader)
                 
                 l_table[file_base] = data
 
