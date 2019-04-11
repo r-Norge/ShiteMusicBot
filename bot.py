@@ -114,8 +114,6 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
-            #if self.debug:
-            #    print('\n\nDebug mode')
 
         for extension in on_ready_extensions:
             try:
@@ -151,6 +149,5 @@ if __name__ == '__main__':
     state = False
     if 'debug' in sys.argv:
         state = True
-    # TODO: add logging dir in settings
-    logger = BotLogger(state, "data")
+    logger = BotLogger(state, conf.get('log_path', '/data'))
     run_bot(debug=state)
