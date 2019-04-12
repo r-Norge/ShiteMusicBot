@@ -1,16 +1,45 @@
- build:
-   image: docker:stable
-   services:
-     - docker:dind
-   variables:
-     DOCKER_HOST: tcp://docker:2375
-     DOCKER_DRIVER: overlay2
-     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
-   before_script:
-     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-   stage: build
-   script:
-     - docker build -t $IMAGE_TAG .
-     - docker push $IMAGE_TAG
-   only:
-     - master
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  IMAGE_NAME: music_bot
+  IMAGE_DEV_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  IMAGE_RELEASE_NAME: rnorge/music
+
+build:
+  image: docker:stable
+  services:
+    - docker:dind
+  stage: build
+  script:
+    - docker build -t $IMAGE_NAME .
+  only:
+    - master
+    - tags
+
+dev_release:
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  stage: release
+  script:
+    - docker tag $IMAGE_NAME $IMAGE_DEV_TAG
+    - docker push $IMAGE_DEV_TAG
+  only:
+    - master
+
+release:
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $HUB_USER -p $HUB_PASS
+  stage: release
+  script:
+    - docker tag $IMAGE_NAME $IMAGE_RELEASE_NAME:$CI_COMMIT_TAG
+    - docker tag $IMAGE_NAME $IMAGE_RELEASE_NAME:latest
+    - docker push $IMAGE_RELEASE_NAME:$CI_COMMIT_TAG
+    - docker push $IMAGE_RELEASE_NAME:latest
+  only:
+    - tags
