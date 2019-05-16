@@ -83,6 +83,7 @@ history:
   description:    'Viser en liste over de 10 siste avspilte sangene.'
 lyrics:
   aliases:        [sangtekst, tekst]
+  args:           '[sang]'
   description:    'Se teksten til en sang. Om ingen sang blir gitt vil den søke etter sangen som spilles av.'
 scrub:
   aliases:        [kontroller]

@@ -83,6 +83,7 @@ history:
   description:    'Shows the last 10 songs played.'
 lyrics:
   aliases:        [lyrics]
+  args:           '[query]'
   description:    'Look up the lyrics for a song. Looks up the lyrics for the current song if no song is specified.'
 scrub:
   aliases:        [scrub]
