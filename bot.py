@@ -157,5 +157,5 @@ if __name__ == '__main__':
     state = False
     if 'debug' in sys.argv:
         state = True
-    logger = BotLogger(state, conf.get('log_path', '/data/logs'))
+    logger = BotLogger(state, conf.get('log_path', './data/logs'))
     run_bot(debug=state)
