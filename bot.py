@@ -78,20 +78,21 @@ class Bot(commands.Bot):
 
             if isinstance(err, commands.CommandInvokeError):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
+                                 % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
+                                 % (ctx.command, err))
                 await ctx.send('That command is not available in DMs')
             
             elif isinstance(err, commands.CommandOnCooldown):
-                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. Try again in `{err.retry_after:.1f}` seconds.")
+                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
+                               f"Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, commands.CheckFailure):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, traceback.format_exception(err.__traceback__)))
+                                 % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.CommandNotFound):
