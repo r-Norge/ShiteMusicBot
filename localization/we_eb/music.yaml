@@ -1,0 +1,73 @@
+nothing_found: Nyothing founyd!
+not_playing: Nyot pwayinyg.
+nothing_playing: Nothinyg pwayinyg
+have_to_listen: You have to be wistenyinyg to the bot
+playlist_enqued: Pwaywist Enyqueued!
+requested_by: Wequested by
+tracks: twacks
+seek:
+  missing_amount: You nyeed to specify the amounyt of seconyds to skip!
+  track_moved: Moved twack to **{_position}**
+skip:
+  skipped: Skipped.
+  require_vote: "{_skips} out of {_total} wequiwed hatews have voted to skip."
+skip_to:
+  invalid_pos: Inyvalid specified positiony.
+  exceeds_queue: The position exceeds the queue\'s length.
+  skipped_to: skipped to `{_title}` at position `{_pos}`
+stop: "⏹ | Stopped."
+live: "\U0001F534 WIVE"
+now: Nyow Pwayinyg
+queue:
+  empty: The queue is empty
+  user_empty: "{_user}'s queue is empty"
+  length: "**Queue** `{_length} sonygs`"
+  userqueue: "**{_user}\\'s queue** `{_length}`"
+  globaltrack: "`{_index}.` **[{_title}]({_uri})** _by <@{_user_id}>_"
+  usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**"
+  pageindicator: Viewing page {_current}/{_total}
+my_queue: Youw queue is empty
+resume:
+  resumed: "⏯ | Wesumed"
+  paused: "⏯ | Paused"
+shuffle: Youw queue has beeny shuffled
+out_of_range: Positionys must be betweeny 1 anyd {_len}
+move:
+  not_in_queue: Check that the positionys exist in youw queue
+  moved_to: "{_title} moved fwom positiony {_from} to {_to} iny youw queue"
+remove: "**{_title}** wemoved."
+dj_removed: "**{_title}** queued by {_user} wemoved."
+dj_remove_user: Wemoved aw sonygs queued by <@{_id}>.
+search: seawchinyg
+results: Wesuwts
+time_expired: Timew Expiwed
+disconnect:
+  not_in_voice: You\'we nyot iny my voicechannyew!
+  disconnected: Disconneycted
+not_connected: Nyot connyected.
+volume:
+  set_to: Vowume set to {_volume}
+  reset: Vowume anyd equawizer weset
+  out_of_range: you cany onywy set the vowume betweeny 50 anyd 125
+boost:
+  'on': Bass boost is ony
+  'off': Bass boost is off
+scrub:
+  add: Addinyg conytwows
+  controls: "{music_controls}"
+  _comment_controls: scrub.controls wead fwom music_controls.txt
+enqueue:
+  position: positiony
+  playing_in: Pwayinyg iny
+  enqueued: Sonyg enyqueued
+  estimated: estimated
+  toolong: Twack too wonyg. `{_length}>{_max}`
+history:
+  title: Twack histowy
+  current: "`Cuwwent` **[{_title}]({_uri})** _by <@{_id}>_"
+  track: "`{_index}.` **[{_title}]({_uri})** _by <@{_id}>_"
+  previous: "**{_len} Pwevious sonygs:**"
+  empty: Thewe awe nyo twacks iny the histowy
+settings_check:
+  textchannel: "You cany't use music commanyds in this channyew.\nTwy iny: "
+  voicechannel: 'I cany onywy pway music iny: '
