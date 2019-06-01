@@ -1,0 +1,12 @@
+current:
+  title: Settinygs
+  description: Cuwwenyt settinygs fow {_guild}
+  prefix: Pwefix
+  locale: Wocawe
+  threshold: Vote thweshowd
+  dynamicmax: Dynyamic max duwationy
+  maxduration: Max twack duwationy
+  textchannels: Text channyews
+  musicchannels: Music channyews
+  listenchannels: Wisteny onwy channyews
+  djroles: DJ wowes

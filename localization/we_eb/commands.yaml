@@ -1,0 +1,189 @@
+# Aliases and translated versions of help messages and arguments
+# for each of the commands in the the bot(except the forgotten onces.)
+# Currently no fallback so everything has to be translated.
+
+# Help
+help:
+  aliases:        [hewp]
+  args:           '<commanyds>'
+  description:    'Shows a hewp message.'
+
+
+# Music
+play:
+  aliases:        [pway]
+  args:           '<quewy>'   # This is just a cosmetic representation of the arguments.
+  description:    'Seawches anyd pways a sonyg fwom a giveny quewy.'
+now:
+  aliases:        [nyow]
+  description:    'Show the sonyg cuwwently pwayinyg.'
+queue:
+  aliases:        [queue]
+  args:           '[usew]'
+  description:    'Shows the queue. Shows a usew queue if usew is specified.'
+myqueue:
+  aliases:        [myqueue]
+  description:    'Shows youw queue.'
+seek:
+  aliases:        [seek]
+  args:           '<seconyds>'
+  description:    'Seek fowwawd ow backwawds iny the sonyg.'
+skip:
+  aliases:        [skip]
+  description:    'Vote to skip the cuwwenyt sonyg.'
+skipto:
+  aliases:        [skipto, fowceskip]
+  args:           '<queue position>'
+  description:    'Skips to the specified positiony iny the queue.'
+stop:
+  aliases:        [stop, yamete, yamero]
+  description:    'Stops pwayinyg anyd cweaws the queue.'
+pause:
+  aliases:        [pause, wesume]
+  description:    'Pause/wesume the cuwwenyt sonyg.'
+shuffle:
+  aliases:        [shuffwe]
+  description:    'Shuffwes youw queue'
+move:
+  aliases:        [move, m]
+  args:           '<stawt_pos> <enyd_pos>'
+  description:    'Moves a twack iny youw queue.'
+remove:
+  aliases:        [wem]
+  args:           '<pos>'
+  description:    'Wemoves a sonyg fwom youw queue.'
+DJremove:
+  aliases:        [DJwemove, djwemove]
+  args:           '<pos>'
+  description:    'Wemoves a sonyg fwom the gwobaw queue.'
+removeuser:
+  aliases:        [wemoveusew]
+  args:           '<usew>'
+  description:    'Removes all songs queued by <user>.'
+search:
+  aliases:        [seawch, s]
+  args:           '<quewy>'
+  description:    'Wetuwnys a wist of possibwe sonygs.'
+disconnect:
+  aliases:        [disconnyect, dc]
+  description:    'Cweaws the queue, stops pwayinyg anyd weaves the cuwwenyt voice channyel.'
+volume:
+  aliases:        [vowume, v, vow]
+  args:           '<vol>'
+  description:    'Sets the vowume of the music.'
+normalize:
+  aliases:        [nomralize, normal]
+  description:    'Resets the volume and the equalizer.'
+boost:
+  aliases:        [boost, bassboost]
+  args:           <True/False>
+  description:    'Tuwnys ony ow off bass boost'
+history:
+  aliases:        [histowy, h]
+  description:    'Shows the wast 10 sonygs pwayed.'
+lyrics:
+  aliases:        [wywics]
+  args:           '[quewy]'
+  description:    'Wook up the wywics fow a sonyg. Wooks up the wywics fow the cuwwenyt sonyg if nyo sonyg is specified.'
+scrub:
+  aliases:        [scwub]
+  description:    'Shows a tempowawy conytrowwer/scwubber.'
+  
+# Misc
+info:
+  aliases:        [inyfo]
+  description:    'Shows inyfo about the bot.'
+musicinfo:
+  aliases:        [musicinyfo]
+  description:    'Shows music wewated inyfo about the bot.'
+uptime:
+  aliases:        [uptime]
+  description:     'Shows how wonyg the bot has been wunnying.'
+ping:
+  aliases:        [pinyg]
+  description:    'Get the cuwwent watenycy of the bot.'        
+guilds:
+  aliases:        [guiwds]
+  description:    'Show the guiwds the bot is iny'
+reloadlocale:
+  aliases:        [wewoadwocawe]
+  description:    'Wewoad aww wesponyse twanswationys'
+reloadalias:
+  aliases:        [wewoadawias]
+  description:    'Wewoad aww awiases anyd hewp inyfowmation.'
+  
+ # Settings
+settings:
+  aliases:            [settingys, set]
+  description:        'Manyage sewvew settinygs.'
+  sub_commands:
+    current:
+      aliases:          [cuwwenyt, show]
+      description:      'Show cuwwent settings.'
+    serverlocale:
+      aliases:          [sewvewwocawe, wanyg]
+      args:             '<wocawe>'
+      description:      'Set the sewvew wanyguage.'
+    djroles:
+      aliases:          [djwowes]
+      args:             '[wowes...]'
+      description:      'Set the DJ woles for the server.'
+    dynamicmax:
+      aliases:          [dynyamicmax]
+      args:             '<True/false>'
+      description:      'Choose if the max sonyg duwation is dynyamic.'
+    musicchannels:
+      aliases:          [musicchannyews, vc]
+      args:             '[voicechannyews...]'
+      description:      'Set the channyews whewe the bot wiww pway music.'
+    listenchannels:
+      aliases:          [wistenychannyews]
+      args:             '[voicechannels...]'
+      description:       'Set the channels where the bot will mute people who join.'
+    textchannels:
+      aliases:          [textchannyews, tc]
+      args:             '[textchannyews...]'
+      description:      'Set the channyews whewe the bot wiww accept music commanyds.'
+    maxduration:
+      aliases:          [maxduwationy]
+      args:             '<duwationy>'
+      description:      'Max sonyg wength that cany be queued iny minyutes.'
+    modrole:
+      aliases:          [modwowe]
+      args:             '[wowes...]'
+      description:      'Set the modwowes fow the sewvew.'
+    resetprefix:
+      aliases:          [wesetpwefix]
+      description:      'weset the pwefixes ony the sewvew to the bots defauwt.'
+    serverprefix:
+      aliases:          [sewvewpwefix]
+      args:             '[pwefixes...]'
+      description:      'Set sewvewpwefixes. Nyot wisting any pwefixes wiww show the cuwwenyt onyes.'
+    threshold:
+      aliases:          [thweshowd]
+      args:             '<thweshowd>'
+      description:      'Set the vote thweshowd wequiwed to skip a sonyg.'
+      
+# Cogs
+cogs:
+  aliases:              [cogs]
+  description:          'cog management'
+  sub_commands:
+    load:
+      aliases:          [woad]
+      args:             '<cog>'
+      description:      'Woads a cog'
+    unload:
+      aliases:          [unywoad]
+      args:             '<cog>'
+      description:      'Unywoads a cog'
+    reload:
+      aliases:          [wewoad]
+      args:             '<cog>'
+      description:      'Wewoads a cog'
+    reloadall:
+      aliases:          [wewoadaww]
+      description:      'Wewoad aww cogs'
+    shutdown:
+      aliases:          [shutdowny]
+      description:      'Shuts downy the bot'
