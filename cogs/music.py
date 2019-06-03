@@ -568,7 +568,7 @@ class Music(commands.Cog):
         if genius_access_token is None:
             return await ctx.send('Missing API key')
 
-        excluded_words = ['music', 'video', 'version', 'original', 'lyrics',
+        excluded_words = ['music', 'video', 'version', 'original', 'lyrics', 'lyric',
                           'official', 'live', 'instrumental', 'audio', 'hd']
 
         query = ' '.join(query)
