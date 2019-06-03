@@ -90,6 +90,11 @@ class Bot(commands.Bot):
                 await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
                                f"Try again in `{err.retry_after:.1f}` seconds.")
 
+            elif isinstance(err, RuntimeError):
+                self.logger.debug("Error running command: %s\n Traceback: %s"
+                                 % (ctx.command, err))
+                pass
+
             elif isinstance(err, commands.CheckFailure):
                 self.logger.debug("Error running command: %s\n Traceback: %s"
                                  % (ctx.command, err))
@@ -101,6 +106,7 @@ class Bot(commands.Bot):
             tb = err.__traceback__
             traceback.print_tb(tb)
             print(err)
+            self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
 
     async def on_message(self, message):
         if message.author.bot:
@@ -124,7 +130,6 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
-
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
@@ -135,6 +140,7 @@ class Bot(commands.Bot):
         print(f'\nLogged in as: {self.user.name}' +
               f' in {len(self.guilds)} servers.')
         print(f'Version: {discord.__version__}\n')
+        self.logger.debug("Bot Ready\n\n\n")
 
         await self.change_presence(activity=discord.Game(type=0,
                                    name=conf["bot"]["playing status"]),
