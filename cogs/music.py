@@ -557,11 +557,10 @@ class Music(commands.Cog):
             embed.set_thumbnail(url=thumb_url)
         await ctx.send(embed=embed)
 
-    
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.command(name='lyrics')
     async def _lyrics(self, ctx, *query: str):
-        
+
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
         genius_access_token = self.bot.APIkeys.get('genius', None)
@@ -569,14 +568,14 @@ class Music(commands.Cog):
         if genius_access_token is None:
             return await ctx.send('Missing API key')
 
-        excluded_words = ["music", "video", "version", "original", "lyrics",
-            "official", "live","instrumental", "audio", "hd"]
+        excluded_words = ['music', 'video', 'version', 'original', 'lyrics', 'lyric',
+                          'official', 'live', 'instrumental', 'audio', 'hd']
 
         query = ' '.join(query)
 
         if not query and player.is_playing:
             query = player.current.title
-            query = re.sub('[-()_]', '', query)
+            query = re.sub('[-()_\[\]]', '', query)
             filtered_words = [word for word in query.split() if word.lower() not in excluded_words]
             query = ' '.join(filtered_words)
 
@@ -585,22 +584,23 @@ class Music(commands.Cog):
                 response = await resp.read()
             return response.decode('utf-8')
 
-        embed = discord.Embed(description=":mag_right:")
+        embed = discord.Embed(description=':mag_right:')
         status_msg = await ctx.send(embed=embed)
 
         try:
-            url = "https://api.genius.com/search?" + urllib.parse.urlencode({"access_token": genius_access_token, "q": query})
+            url = 'https://api.genius.com/search?' + urllib.parse.urlencode(
+                {'access_token': genius_access_token, 'q': query})
             result = await get_site_content(url)
             response = json.loads(result)
-            song_id = response["response"]["hits"][0]["result"]["id"]
+            song_id = response['response']['hits'][0]['result']['id']
         except:
-            embed = discord.Embed(description=":x:", color=0xFF0000)
+            embed = discord.Embed(description=':x:', color=0xFF0000)
             return await status_msg.edit(embed=embed)
 
-        result = await get_site_content(f"https://api.genius.com/songs/{song_id}?access_token={genius_access_token}")
-        song = json.loads(result)["response"]["song"]
+        result = await get_site_content(f'https://api.genius.com/songs/{song_id}?access_token={genius_access_token}')
+        song = json.loads(result)['response']['song']
 
-        response = await get_site_content(song["url"])
+        response = await get_site_content(song['url'])
         scraped_data = BeautifulSoup(response, 'html.parser')
         lyrics = scraped_data.find(class_='lyrics').get_text()
 
@@ -610,9 +610,9 @@ class Music(commands.Cog):
 
         await status_msg.delete()
 
-        paginator.pages[0].url=song["url"]
-        paginator.pages[0].title=song["full_title"]
-        paginator.pages[0].set_thumbnail(url=song["header_image_thumbnail_url"])
+        paginator.pages[0].url = song['url']
+        paginator.pages[0].title = song['full_title']
+        paginator.pages[0].set_thumbnail(url=song['header_image_thumbnail_url'])
         paginator.pages[0].set_author(name='Genius', icon_url='https://i.imgur.com/NmCTsoF.png')
 
         if len(paginator.pages) < 4:
