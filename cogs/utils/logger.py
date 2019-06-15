@@ -25,7 +25,7 @@ class BotLogger(object):
             if self.log_level:
                 print(os.path.abspath(self.log_location))
             file_logger = logging.handlers.RotatingFileHandler(f'{self.log_location}/bot.log',
-                                          mode='a', maxBytes=50000, encoding=None, delay=0, backupCount=5)
+                                          mode='a', maxBytes=5000, encoding="UTF-8", delay=0, backupCount=5)
             file_logger.setLevel(self.log_level)
             file_logger.setFormatter(log_formatter)
             self.bot_logger.addHandler(file_logger)
