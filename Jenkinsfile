@@ -1,8 +1,8 @@
 pipeline {
     agent none
     environment {
-        GIT_REPO = 'si0972/ShiteMusicBot'
-        DOCKER_REPO = 'si0972/ci_test_musikkbot'
+        GIT_REPO = 'Ev-1/ShiteMusicBot'
+        DOCKER_REPO = 'rnorge/music'
         TAG=""
         FLAKE_FILES = "bot.py cogs/*.py"
     }
