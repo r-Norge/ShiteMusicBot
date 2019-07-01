@@ -6,7 +6,7 @@ import random
 import platform
 
 from discord.ext import commands
-from cogs.utils import checks
+from cogs.utils import checks, bot_version
 from lavalink import __version__ as LavalinkVersion
 
 
@@ -117,7 +117,8 @@ class Misc(commands.Cog):
             _discord_v=discord.__version__,
             _lavalink_v=LavalinkVersion,
             _guilds=guilds,
-            _members=members
+            _members=members,
+            _bot_v=bot_version.bot_version
         )
         await ctx.send(embed=embed)
 
