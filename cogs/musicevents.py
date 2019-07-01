@@ -3,6 +3,7 @@ A cog to separate events from regular music commands
 """
 
 import asyncio
+import codecs
 import yaml
 import discord
 import lavalink
@@ -20,7 +21,7 @@ class MusicEvents(commands.Cog):
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
 
-            with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
+            with codecs.open(f"{self.bot.datafolder}/config.yaml", 'r', encoding='utf8') as f:
                 conf = yaml.load(f, Loader=yaml.SafeLoader)
 
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])

@@ -4,8 +4,8 @@ import locale
 import yaml
 
 class Settings:
-    def __init__(self, **default_settings):
-        self._DATA_PATH = 'data/bot/'
+    def __init__(self, datadir, **default_settings):
+        self._DATA_PATH = f"{datadir}/bot/"
         self._SETTINGS_PATH = self._DATA_PATH + 'settings.yaml'
 
         self.default_prefix = default_settings["prefix"]
