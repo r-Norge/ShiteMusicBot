@@ -2,16 +2,13 @@
 A cog to separate events from regular music commands
 """
 
-import asyncio
 import codecs
 import yaml
-import discord
 import lavalink
 from discord.ext import commands
-import time
 
 from .utils.mixplayer import MixPlayer
-from lavalink.events import *
+import lavalink.events
 
 
 class MusicEvents(commands.Cog):
@@ -33,20 +30,20 @@ class MusicEvents(commands.Cog):
         self.bot.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
-        if isinstance(event, TrackEndEvent):
+        if isinstance(event, lavalink.events.TrackEndEvent):
             pass  # Send track ended message to channel.
-        if isinstance(event, TrackStartEvent):
+        if isinstance(event, lavalink.events.TrackStartEvent):
             pass
-        if isinstance(event, QueueEndEvent):
+        if isinstance(event, lavalink.events.QueueEndEvent):
             channel = self.bot.get_channel(event.player.fetch('channel'))
             await self.check_leave_voice(channel.guild)
-        if isinstance(event, PlayerUpdateEvent):
+        if isinstance(event, lavalink.events.PlayerUpdateEvent):
             pass
-        if isinstance(event, NodeDisconnectedEvent):
+        if isinstance(event, lavalink.events.NodeDisconnectedEvent):
             pass
-        if isinstance(event, NodeConnectedEvent):
+        if isinstance(event, lavalink.events.NodeConnectedEvent):
             pass
-        if isinstance(event, NodeChangedEvent):
+        if isinstance(event, lavalink.events.NodeChangedEvent):
             pass
 
     async def connect_to(self, guild_id: int, channel_id: str):

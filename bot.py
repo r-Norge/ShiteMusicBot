@@ -39,7 +39,7 @@ def _get_prefix(bot, message):
 
 
 class Bot(commands.Bot):
-    def __init__(self, datafolder, debug):
+    def __init__(self, datafolder, debug: bool = False):
         super().__init__(command_prefix=_get_prefix,
                          description=conf["bot"]["description"])
 
@@ -72,27 +72,23 @@ class Bot(commands.Bot):
                 await scroller.start_scrolling()
 
             if isinstance(err, commands.CommandInvokeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 await ctx.send('That command is not available in DMs')
-            
+
             elif isinstance(err, commands.CommandOnCooldown):
                 await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
                                f"Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, RuntimeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.CheckFailure):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.CommandNotFound):
@@ -129,7 +125,7 @@ class Bot(commands.Bot):
             try:
                 self.logger.debug("Loading extension %s" % extension)
                 self.load_extension(extension)
-            except Exception as e:
+            except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 
         print(f'\nLogged in as: {self.user.name}' +
@@ -150,7 +146,7 @@ class Bot(commands.Bot):
             print(e)
 
 
-def run_bot(datafolder, debug: bool=False):
+def run_bot(datafolder, debug: bool = False):
     bot = Bot(datafolder, debug=debug)
     bot.run()
 

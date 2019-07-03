@@ -1,9 +1,7 @@
-import discord
-import os
-import codecs
 import traceback
 from discord.ext import commands
 from cogs.utils import checks
+
 
 class Cogs(commands.Cog):
     def __init__(self, bot):
@@ -34,7 +32,7 @@ class Cogs(commands.Cog):
         try:
             self.bot.unload_extension(f'cogs.{module}')
             await ctx.send(f'{module} unloaded')
-        except Exception as e:
+        except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='reload')
@@ -45,7 +43,7 @@ class Cogs(commands.Cog):
             self.bot.unload_extension(f'cogs.{module}')
             self.bot.load_extension(f'cogs.{module}')
             await ctx.send(f'{module} reloaded')
-        except Exception as e:
+        except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='reloadall')
@@ -59,7 +57,7 @@ class Cogs(commands.Cog):
                 self.bot.unload_extension(f'{extension}')
                 self.bot.load_extension(f'{extension}')
             await ctx.send('Extensions reloaded')
-        except Exception as e:
+        except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='shutdown')

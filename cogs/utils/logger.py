@@ -2,6 +2,7 @@ import logging.handlers
 import logging
 import os
 
+
 class BotLogger(object):
     def __init__(self, debug=None, data_location=None):
         self.log_location = data_location
@@ -24,8 +25,8 @@ class BotLogger(object):
                 print(f"Creating logging directory: {self.log_location}")
             if self.log_level:
                 print(f"Logging folder: {self.log_location}")
-            file_logger = logging.handlers.RotatingFileHandler(f'{self.log_location}/bot.log',
-                                          mode='a', maxBytes=5000, encoding="UTF-8", delay=0, backupCount=5)
+            file_logger = logging.handlers.RotatingFileHandler(f'{self.log_location}/bot.log', mode='a',
+                                                               maxBytes=5000, encoding="UTF-8", delay=0, backupCount=5)
             file_logger.setLevel(self.log_level)
             file_logger.setFormatter(log_formatter)
             self.bot_logger.addHandler(file_logger)
@@ -35,4 +36,3 @@ class BotLogger(object):
         console_handler.setFormatter(log_formatter)
 
         self.bot_logger.addHandler(console_handler)
-

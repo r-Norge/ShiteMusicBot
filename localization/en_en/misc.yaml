@@ -6,6 +6,7 @@ bot:
     **Python:** [{_python_v}](https://www.python.org/)
     **Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)
     **Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)
+    **ShiteMusicBot:** {_bot_v}
   stattext: |-
     **Guilds:** {_guilds}
     **Users:** {_members}
