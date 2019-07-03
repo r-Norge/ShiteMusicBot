@@ -4,7 +4,6 @@ Music commands
 import math
 import re
 import asyncio
-import time
 import yaml
 import codecs
 
@@ -106,7 +105,7 @@ class Music(commands.Cog):
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
-        
+
         if not player.is_playing:
             return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
@@ -150,7 +149,7 @@ class Music(commands.Cog):
 
     @commands.command(name='skipto')
     @checks.DJ_or(alone=True)
-    async def _skip_to(self, ctx, pos: int=1):
+    async def _skip_to(self, ctx, pos: int = 1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
@@ -212,7 +211,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='queue')
-    async def _queue(self, ctx, user: discord.Member=None):
+    async def _queue(self, ctx, user: discord.Member = None):
         """ Shows the player's queue. """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
@@ -220,7 +219,7 @@ class Music(commands.Cog):
             embed = discord.Embed(description='{queue.empty}', color=ctx.me.color)
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
-        
+
         if user is None:
             queue = player.global_queue()
             pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
@@ -228,7 +227,7 @@ class Music(commands.Cog):
         else:
             user_queue = player.user_queue(user.id, dual=True)
             if not user_queue:
-                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))            
+                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
             pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
 
         scroller = Scroller(ctx, pagified_queue)
@@ -285,13 +284,13 @@ class Music(commands.Cog):
         if not user_queue:
             return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
-        if not all(x in range(1,len(user_queue) + 1) for x in [from_pos, to_pos]):
+        if not all(x in range(1, len(user_queue) + 1) for x in [from_pos, to_pos]):
             return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
 
         moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
         if moved is None:
             return await ctx.send(ctx.localizer.format_str("{move.not_in_queue}"))
-        
+
         msg = ctx.localizer.format_str("{move.moved_to}", _title=moved.title, _from=from_pos, _to=to_pos)
         await ctx.send(msg)
 
@@ -316,7 +315,7 @@ class Music(commands.Cog):
 
     @commands.command(name="DJremove")
     @checks.DJ_or()
-    async def _djremove(self, ctx, pos: int, user: discord.Member=None):
+    async def _djremove(self, ctx, pos: int, user: discord.Member = None):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
@@ -436,13 +435,11 @@ class Music(commands.Cog):
         await result_msg.edit(embed=embed)
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add',
-                                                     timeout=15.0,
-                                                     check=check)
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
         except asyncio.TimeoutError:
             await result_msg.clear_reactions()
             embed.title = ''
-            embed.description='{time_expired}'
+            embed.description = '{time_expired}'
             embed = ctx.localizer.format_embed(embed)
             await result_msg.edit(embed=embed)
             await asyncio.sleep(5)
@@ -488,7 +485,7 @@ class Music(commands.Cog):
             return await ctx.send(f'🔈 | {player.volume}%')
 
         is_dj = checks.is_DJ(ctx)
-        is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) == True
+        is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) is True
         if int(player.current.requester) == ctx.author.id and not is_dj and not is_admin:
             if not 50 <= volume <= 125:
                 return await ctx.send(ctx.localizer.format_str("{volume.out_of_range}"))
@@ -516,7 +513,7 @@ class Music(commands.Cog):
 
     @commands.command(name='boost')
     @checks.DJ_or(alone=True)
-    async def _boost(self, ctx, boost: bool=None):
+    async def _boost(self, ctx, boost: bool = None):
         """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.players.get(ctx.guild.id)
 
@@ -529,7 +526,7 @@ class Music(commands.Cog):
             embed.description = '{boost.on}'
         else:
             embed.description = '{boost.off}'
-        
+
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
@@ -543,15 +540,16 @@ class Music(commands.Cog):
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
         track = history[0]
-        description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,_id=track.requester) + '\n\n'
+        description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,
+                                               _id=track.requester) + '\n\n'
         description += ctx.localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
-        thumb_url = await RoxUtils.ThumbNailer.identify(self,
-                                                track.identifier,
-                                                track.uri)
+        thumb_url = await RoxUtils.ThumbNailer.identify(self, track.identifier, track.uri)
         for index, track in enumerate(history[1:], start=1):
-            description += ctx.localizer.format_str("{history.track}",_index=-index, _title=track.title, _uri=track.uri, _id=track.requester) + '\n'
+            description += ctx.localizer.format_str("{history.track}", _index=-index, _title=track.title,
+                                                    _uri=track.uri, _id=track.requester) + '\n'
 
-        embed = discord.Embed(title=ctx.localizer.format_str('{history.title}'), color=ctx.me.color, description=description)
+        embed = discord.Embed(title=ctx.localizer.format_str('{history.title}'), color=ctx.me.color,
+                              description=description)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
@@ -575,7 +573,7 @@ class Music(commands.Cog):
 
         if not query and player.is_playing:
             query = player.current.title
-            query = re.sub('[-()_\[\]]', '', query)
+            query = re.sub(r'[-()_\[\]]', '', query)
             filtered_words = [word for word in query.split() if word.lower() not in excluded_words]
             query = ' '.join(filtered_words)
 
@@ -593,7 +591,7 @@ class Music(commands.Cog):
             result = await get_site_content(url)
             response = json.loads(result)
             song_id = response['response']['hits'][0]['result']['id']
-        except:
+        except Exception:
             embed = discord.Embed(description=':x:', color=0xFF0000)
             return await status_msg.edit(embed=embed)
 
@@ -620,8 +618,7 @@ class Music(commands.Cog):
                 await ctx.send(embed=page)
         else:
             paginator.add_page_indicator(ctx.localizer)
-            scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await Scroller(ctx, paginator).start_scrolling()
 
     @commands.command(name='scrub')
     @checks.DJ_or(alone=True)
@@ -677,22 +674,22 @@ class Music(commands.Cog):
         scrubbing = True
         while scrubbing:
             try:
-                reaction, user = await self.bot.wait_for('reaction_add',
-                                                         timeout=15.0,
-                                                         check=check)
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
             except asyncio.TimeoutError:
-                scrolling = False
+                # PEP8EDIT scrolling = False
                 try:
                     await msg.delete()
                     await ctx.message.delete()
-                except:
+                except discord.Forbidden:
+                    pass
+                except discord.HTTPException:
                     pass
                 finally:
                     break
 
             try:
                 await msg.remove_reaction(reaction, user)
-            except:
+            except discord.Forbidden:
                 pass
             if selection is not None:
                 if not isinstance(arg, bool):
@@ -704,8 +701,11 @@ class Music(commands.Cog):
         player = self.bot.lavalink.players.create(ctx.guild.id, endpoint=ctx.guild.region.value)
         # Create returns a player if one exists, otherwise creates.
 
-        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')  # Add commands that require joining voice to work.
-        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', '_lyrics') # Add commands that don't require the you being in voice.
+        # Add commands that require joining voice to work.
+        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')
+
+        # Add commands that don't require the you being in voice.
+        without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', '_lyrics')
 
         if without_connect:
             return
@@ -750,8 +750,8 @@ class Music(commands.Cog):
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
             embed.description = ctx.localizer.format_str("{enqueue.toolong}",
-                                                     _length=timeformatter.format(track['info']['length']),
-                                                     _max=timeformatter.format(maxlength))
+                                                         _length=timeformatter.format(track['info']['length']),
+                                                         _max=timeformatter.format(maxlength))
             return
 
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
@@ -769,9 +769,7 @@ class Music(commands.Cog):
             embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`", inline=True)
 
         embed.title = '{enqueue.enqueued}'
-        thumb_url = await RoxUtils.ThumbNailer.identify(self,
-                                                        track.identifier,
-                                                        track.uri)
+        thumb_url = await RoxUtils.ThumbNailer.identify(self, track.identifier, track.uri)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
@@ -784,7 +782,7 @@ class Music(commands.Cog):
         maxlength = self.bot.settings.get(guild, 'duration.max', None)
         if maxlength is None:
             return None
-        if len(player.listeners): # Avoid division by 0.
+        if len(player.listeners):  # Avoid division by 0.
             listeners = len(player.listeners)
         else:
             listeners = 1

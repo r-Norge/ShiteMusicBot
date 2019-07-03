@@ -1,6 +1,4 @@
-import discord
 from discord.ext import commands
-import asyncio
 import re
 
 from cogs.utils.paginator import HelpPaginator, Scroller
@@ -18,9 +16,10 @@ def get_cmd_dict(ctx, qualified_name):
         cmd_dict = ctx.bot.aliaser.get_cmd_help("en_en", split[-1], split[:-1])
         try:
             cmd_dict["aliases"] = [split[-1]]
-        except:
+        except KeyError:
             cmd_dict = None
     return cmd_dict
+
 
 async def helper(ctx):
     bot = ctx.bot
@@ -29,7 +28,7 @@ async def helper(ctx):
     paginator = await coghelper(ctx, music)
 
     for cog in bot.cogs.copy().values():
-        if cog.__cog_name__ is 'Music':
+        if cog.__cog_name__ == 'Music':
             continue
         cogpaignator = await coghelper(ctx, cog)
         paginator.append_paginator(cogpaignator)
@@ -48,7 +47,7 @@ async def coghelper(ctx, cog, ignore_subcommands=True):
             continue
         try:
             can_run = await cmd.can_run(ctx)
-        except CommandError:
+        except commands.CommandError:  # Was 'CommandError' guessed it was supposed to be what it is now
             can_run = False
         if not can_run:
             continue
@@ -107,13 +106,14 @@ def prefix_cleaner(ctx):
         ctx.prefix = pref
     return ctx
 
+
 class Help(commands.Cog):
     """Help command"""
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(hidden=True)
-    async def help(self, ctx): # Takes no args because reasons(using the view directly)
+    async def help(self, ctx):  # Takes no args because reasons(using the view directly)
         ctx.view.skip_ws()
         v = ctx.view
         invoker = v.buffer[v.index:v.end]

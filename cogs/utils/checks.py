@@ -37,8 +37,9 @@ def is_even():
 def is_owner():
     def predicate(ctx):
         is_owner = (ctx.message.author.id == 120970603556503552 or
-            ctx.message.author.id == 142212883512557569 or ctx.message.author.id == 212635519706726410 or
-            ctx.message.author.id == 170506717140877312)
+                    ctx.message.author.id == 142212883512557569 or
+                    ctx.message.author.id == 212635519706726410 or
+                    ctx.message.author.id == 170506717140877312)
         return is_owner
     return commands.check(predicate)
 
@@ -72,7 +73,7 @@ def is_DJ(ctx):
         return any([has_role_id(ctx, role_id) for role_id in dj_role_ids])
 
 
-def DJ_or(alone: bool=False, current: bool=False):
+def DJ_or(alone: bool = False, current: bool = False):
     async def predicate(ctx):
         try:
             player = ctx.bot.lavalink.players.get(ctx.guild.id)

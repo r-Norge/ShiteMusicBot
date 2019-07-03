@@ -1,9 +1,8 @@
 import discord
-import os
-import codecs
 
 from discord.ext import commands
 from cogs.utils import checks
+
 
 class Settings(commands.Cog):
     def __init__(self, bot):
@@ -54,7 +53,7 @@ class Settings(commands.Cog):
 
     @commands.guild_only()
     @_set.command(name='threshold')
-    async def set_vote_threshold(self, ctx, threshold: int=50):
+    async def set_vote_threshold(self, ctx, threshold: int = 50):
         if not 0 <= threshold <= 100:
             return await ctx.send('Must be between 0 and 100')
 
@@ -148,7 +147,7 @@ class Settings(commands.Cog):
 
     @commands.guild_only()
     @_set.command(name='maxduration')
-    async def set_max_track_duration(self, ctx, duration: int=None):
+    async def set_max_track_duration(self, ctx, duration: int = None):
         self.bot.settings.set(ctx.guild, 'duration.max', duration)
 
         duration = self.bot.settings.get(ctx.guild, 'duration.max')
@@ -163,7 +162,7 @@ class Settings(commands.Cog):
 
     @commands.guild_only()
     @_set.command(name='dynamicmax')
-    async def set_track_duration_type(self, ctx, dynamic: bool=False):
+    async def set_track_duration_type(self, ctx, dynamic: bool = False):
         self.bot.settings.set(ctx.guild, 'duration.is_dynamic', dynamic)
 
         is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic')

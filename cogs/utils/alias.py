@@ -1,4 +1,3 @@
-import discord
 import yaml
 
 from glob import glob
@@ -11,6 +10,7 @@ Not the prettiest this, works by replacing any found aliases in a command string
 Allows per guild aliases of subcommands without doing anything to discord.py itself. Suggestions of better/correct
 ways of doing this appreciated.
 """
+
 
 class Aliaser:
     def __init__(self, localization_folder, default_lang):
@@ -100,7 +100,7 @@ class Aliaser:
             ctx.command = None
             return ctx
         ctx.view.undo()
-        ctx.invoker = invoker = ctx.view.buffer[ctx.view.index:ctx.view.end]
+        ctx.invoker = ctx.view.buffer[ctx.view.index:ctx.view.end]
         alias = ctx.view.get_word()
         command = self.convert_alias(ctx.locale, alias, alias)
         ctx.invoked_with = command
@@ -142,11 +142,11 @@ class Aliaser:
         else:
             sub = ctx.bot.all_commands.get(subcmd, None)
 
-        # Translate any subsubcommands 
+        # Translate any subsubcommands
         if sub and isinstance(sub, commands.GroupMixin):
             self.get_subcommand(ctx, sub, parents)
 
-        # Reset the view indexes 
+        # Reset the view indexes
         view.index = idx
         view.previous = prev
         return ctx

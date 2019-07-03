@@ -4,7 +4,7 @@ pipeline {
         GIT_REPO = 'Ev-1/ShiteMusicBot'
         DOCKER_REPO = 'rnorge/music'
         TAG=""
-        FLAKE_FILES = "bot.py cogs/*.py"
+        FLAKE_FILES = "bot.py cogs/*.py cogs/utils/*.py"
     }
     stages {
         stage('Flake8') {
