@@ -16,6 +16,7 @@ pipeline {
                 """
                 script {
                     TAG = sh(returnStdout: true, script: 'grep -i bot_version cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \\"').trim()
+                    SBranch = sh(returnStdout: true, script: 'echo ${GIT_BRANCH} | sed "s#/#_#"').trim()
                 }
             }
         }
@@ -31,10 +32,10 @@ pipeline {
                     steps {
                         script {
                             if (BRANCH_NAME == 'master') {
-                                def image = docker.build("${DOCKER_REPO}:${TAG}")
+                                def image = docker.build("${DOCKER_REPO}:${TAG}-amd64")
                                 image.push()
                                 }
-                                def image = docker.build("${DOCKER_REPO}:$GIT_BRANCH")
+                                def image = docker.build("${DOCKER_REPO}:${SBranch}-amd64")
                                 image.push()
                             }
                         }
@@ -46,7 +47,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            def image = docker.build("${DOCKER_REPO}:PR_$GIT_BRANCH")
+                            def image = docker.build("${DOCKER_REPO}:PR_$GIT_BRANCH-amd64")
                         }
                     }
                 }
