@@ -157,7 +157,7 @@ if __name__ == '__main__':
                             formatter_class=RawTextHelpFormatter)
 
     parser.add_argument("-D", "--debug", action='store_true', help='Sets debug to true')
-    parser.add_argument("-d", "--data-folder", help='Define an alternate data folder location')
+    parser.add_argument("-d", "--data-directory", help='Define an alternate data directory location')
 
     args = parser.parse_args()
     if args.debug or os.environ.get('debug'):
