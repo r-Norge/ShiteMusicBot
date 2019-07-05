@@ -39,11 +39,11 @@ def _get_prefix(bot, message):
 
 
 class Bot(commands.Bot):
-    def __init__(self, datafolder, debug: bool = False):
+    def __init__(self, datadir, debug: bool = False):
         super().__init__(command_prefix=_get_prefix,
                          description=conf["bot"]["description"])
 
-        self.settings = Settings(datafolder, **conf['default server settings'])
+        self.settings = Settings(datadir, **conf['default server settings'])
         self.APIkeys = conf.get('APIkeys', {})
 
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
@@ -51,7 +51,7 @@ class Bot(commands.Bot):
 
         self.session = aiohttp.ClientSession(loop=self.loop)
 
-        self.datafolder = datafolder
+        self.datadir = datadir
         self.debug = debug
         self.main_logger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
@@ -146,8 +146,8 @@ class Bot(commands.Bot):
             print(e)
 
 
-def run_bot(datafolder, debug: bool = False):
-    bot = Bot(datafolder, debug=debug)
+def run_bot(datadir, debug: bool = False):
+    bot = Bot(datadir, debug=debug)
     bot.run()
 
 
@@ -176,4 +176,4 @@ if __name__ == '__main__':
         conf = yaml.load(f, Loader=yaml.SafeLoader)
 
     logger = BotLogger(is_debug, conf.get('log_path', f'{datadir}/logs'))
-    run_bot(debug=is_debug, datafolder=datadir)
+    run_bot(debug=is_debug, datadir=datadir)
