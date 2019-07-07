@@ -24,7 +24,7 @@ class BotLogger(object):
                 os.makedirs(self.log_location)
                 print(f"Creating logging directory: {self.log_location}")
             if self.log_level:
-                print(os.path.abspath(self.log_location))
+                print(f"Logging directory: {self.log_location}")
             file_logger = logging.handlers.RotatingFileHandler(f'{self.log_location}/bot.log', mode='a',
                                                                maxBytes=5000, encoding="UTF-8", delay=0, backupCount=5)
             file_logger.setLevel(self.log_level)

@@ -11,6 +11,6 @@ RUN \
 
 WORKDIR /app
 
-CMD ln -sf /app/data /config && /app/localization /config && python3 /app/bot.py
+CMD cp -u /app/data/config.yaml.example /config/config.yaml.example && python3 /app/bot.py --data-directory /config
 
 VOLUME /config
