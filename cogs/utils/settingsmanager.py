@@ -1,11 +1,12 @@
 import os
 import codecs
-import locale
+import locale as localee
 import yaml
 
+
 class Settings:
-    def __init__(self, **default_settings):
-        self._DATA_PATH = 'data/bot/'
+    def __init__(self, datadir, **default_settings):
+        self._DATA_PATH = f"{datadir}/bot/"
         self._SETTINGS_PATH = self._DATA_PATH + 'settings.yaml'
 
         self.default_prefix = default_settings["prefix"]
@@ -15,7 +16,7 @@ class Settings:
         self.default_is_dynamic = default_settings["dynamic max duration"]
 
         if not self.default_locale:
-            locale, codepage = locale.getlocale()
+            locale, codepage = localee.getlocale()
             default_locale, default_codepage = locale.getdefaultlocale()
             self.default_locale = locale or default_locale
 
@@ -35,7 +36,7 @@ class Settings:
             if val is None:
                 try:
                     d.pop(key)
-                except:
+                except KeyError:
                     pass
             else:
                 d[key] = val

@@ -21,10 +21,8 @@ class BasePaginator:
         self.close_page()
         if localizer_str:
             for i, page in enumerate(self._pages, start=1):
-                page.set_footer(text=localizer.format_str(localizer_str,
-                                                          _current=i,
-                                                          _total=len(self._pages),
-                                                          **kvpairs))
+                page.set_footer(text=localizer.format_str(localizer_str, _current=i,
+                                                          _total=len(self._pages), **kvpairs))
         else:
             for i, page in enumerate(self._pages, start=1):
                 page.set_footer(text=f"{i}/{len(self._pages)}")
@@ -110,31 +108,26 @@ class FieldPaginator(BasePaginator):
 
 
 class QueuePaginator(TextPaginator):
-    def __init__(self, localizer, queue, color, user_name: str=None):
+    def __init__(self, localizer, queue, color, user_name: str = None):
         self.localizer = localizer
         self.queue = queue
 
         if user_name is None:
-            title = localizer.format_str("{queue.length}",
-                                         _length=len(queue))
+            title = localizer.format_str("{queue.length}", _length=len(queue))
         else:
-            title = localizer.format_str("{queue.userqueue}",
-                                         _user=user_name,
-                                         _length=len(queue))
-        
+            title = localizer.format_str("{queue.userqueue}",  _user=user_name, _length=len(queue))
+
         super().__init__(max_lines=10, **{"color": color, "title": title})
 
         for index, temp in enumerate(queue):
             if user_name is None:
                 track = temp
-                queued_track = localizer.format_str("{queue.globaltrack}", _index=index+1,
-                                                    _title=track.title, _uri=track.uri,
-                                                    _user_id=track.requester)
+                queued_track = localizer.format_str("{queue.globaltrack}", _index=index+1,  _title=track.title,
+                                                    _uri=track.uri, _user_id=track.requester)
             else:
                 track, globpos = temp
-                queued_track = localizer.format_str("{queue.usertrack}", _index=index+1,
-                                                    _globalindex=globpos+1, _title=track.title,
-                                                    _uri=track.uri)
+                queued_track = localizer.format_str("{queue.usertrack}", _index=index+1, _globalindex=globpos+1,
+                                                    _title=track.title, _uri=track.uri)
 
             self.add_line(queued_track)
         self.add_page_indicator(self.localizer, "{queue.pageindicator}")
@@ -286,14 +279,14 @@ class Scroller:
                         await self.message.delete()
                         if self.clear_command:
                             await self.cmdmsg.delete()
-                except:
+                except discord.Forbidden:
                     pass
                 finally:
                     break
 
             try:
                 await self.message.remove_reaction(reaction, user)
-            except:
+            except discord.Forbidden:
                 pass
 
             await self.match()
