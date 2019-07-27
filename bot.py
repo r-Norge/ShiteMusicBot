@@ -165,8 +165,8 @@ if __name__ == '__main__':
     else:
         is_debug = False
 
-    if args.data_folder:
-        datadir = str(args.data_folder)
+    if args.data_directory:
+        datadir = str(args.data_directory)
     else:
         datadir = "data"
 
