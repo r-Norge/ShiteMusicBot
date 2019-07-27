@@ -33,24 +33,38 @@ pipeline {
                         script {
                             if (BRANCH_NAME == 'master') {
                                 def image = docker.build("${DOCKER_REPO}:${TAG}-amd64")
-                                image.push()
-                                }
+                                image.push("${TAG}-amd64")
+                                image.push("latest-amd64")
+                            }
+                            else {
                                 def image = docker.build("${DOCKER_REPO}:${SBranch}-amd64")
                                 image.push()
+                                }
                             }
                         }
                     }
                 stage('pr') {
                     agent { label 'amd64'}
-                    when {
-                        changeRequest()
-                    }
+                    when { changeRequest() }
                     steps {
                         script {
                             def image = docker.build("${DOCKER_REPO}:PR_$GIT_BRANCH-amd64")
                         }
                     }
                 }
+            }
+        }
+        stage('GitHub Release') {
+            when { branch 'master' }
+            agent { label 'amd64'}
+            steps {
+                withCredentials([usernameColonPassword(credentialsId: 'RoxBot-Dev Github', variable: 'GitCred')]) {
+                    sh """
+                        git remote set-url origin "https://${GitCred}@github.com/${GIT_REPO}.git"
+                        git tag ${TAG}
+                        git push --tags
+                    """
+                    }
             }
         }
     }
