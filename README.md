@@ -19,3 +19,33 @@
 > python -m pip install -r requirements.txt
 6. run the bot :)
 
+#### Docker
+#### Compose Example:
+````yaml
+version: '3'
+networks:
+  internal:
+    driver: bridge
+
+services:
+    backbone:
+        hostname: lavalink
+        image: fredboat/lavalink:dev
+        ports:
+        - 2333:2333
+        networks:
+            internal:
+                aliases:
+                  - lavalink
+        volumes:
+          - /compose/BottStack/lavalink/application.yml:/opt/Lavalink/application.yml
+    bot:     
+        container_name: ProdMaster
+        image: rnorge/music
+        networks:
+          - internal
+        command: python3 bot.py
+        volumes:
+          - /compose/BottStack/ProdBetaMaster/script:/diks
+          - /compose/BottStack/ProdBetaMaster/data:/app/data
+````
