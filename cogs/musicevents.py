@@ -24,7 +24,7 @@ class MusicEvents(commands.Cog):
             bot.lavalink.add_node(**conf['lavalink nodes']['main'])
             bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
 
-        bot.lavalink.add_event_hook(self.track_hook)
+        lavalink.add_event_hook(self.track_hook)
 
     def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
@@ -56,14 +56,14 @@ class MusicEvents(commands.Cog):
         """ Updates listeners when the bot or a user changes voice state """
         if member.id == self.bot.user.id and after.channel is not None:
             voice_channel = after.channel
-            player = self.bot.lavalink.players.get(member.guild.id)
+            player = self.bot.lavalink.player_manager.get(member.guild.id)
             player.clear_listeners()
             for member in voice_channel.members:
                 if not member.bot:
                     player.update_listeners(member, member.voice)
 
         if not member.bot:
-            player = self.bot.lavalink.players.get(member.guild.id)
+            player = self.bot.lavalink.player_manager.get(member.guild.id)
             if player is not None:
                 player.update_listeners(member, after)
                 await self.check_leave_voice(member.guild)
@@ -71,7 +71,7 @@ class MusicEvents(commands.Cog):
     async def check_leave_voice(self, guild):
         """ Checks if the bot should leave the voice channel """
         # TODO, disconnect timer?
-        player = self.bot.lavalink.players.get(guild.id)
+        player = self.bot.lavalink.player_manager.get(guild.id)
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
                 await player.stop()
