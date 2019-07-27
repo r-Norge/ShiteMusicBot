@@ -140,7 +140,23 @@ class Music(commands.Cog):
 
         if skips/total >= threshold/100 or player.current.requester == ctx.author.id:
             await player.skip()
-            await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
+            if player.current:
+                song = f'**[{player.current.title}]({player.current.uri})**'
+                embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
+                thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
+                member = ctx.guild.get_member(player.current.requester)
+                if thumbnail_url:
+                    embed.set_thumbnail(url=thumbnail_url)
+                if member.nick:
+                    member_identifier = member.nick
+                else:
+                    member_identifier = member.name
+                embed.set_footer(text=f'{{requested_by}} {member_identifier}', icon_url=member.avatar_url)
+
+                embed = ctx.localizer.format_embed(embed)
+                await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
+            else:
+                await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
         else:
             if skips != 0:
                 needed = math.ceil(total*threshold/100)
