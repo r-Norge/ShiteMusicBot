@@ -47,10 +47,10 @@ class Misc(commands.Cog):
         lavalink = self.bot.lavalink
 
         listeners = 0
-        for guild, player in lavalink.players:
+        for guild, player in lavalink.player_manager.players:
             listeners += len(player.listeners)
 
-        embed.add_field(name='{music.players}', value=f'{len(lavalink.players)}')
+        embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')
         embed.add_field(name='{music.listeners}', value=f'{listeners}')
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
