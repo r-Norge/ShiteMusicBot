@@ -20,6 +20,7 @@ from .utils import checks, RoxUtils, timeformatter
 from .utils.mixplayer import MixPlayer
 from .utils.paginator import QueuePaginator, TextPaginator, Scroller
 
+from .utils.selector import Selector
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
@@ -292,42 +293,91 @@ class Music(commands.Cog):
         await ctx.send(ctx.localizer.format_str("{shuffle}"))
 
     @commands.command(name='move')
-    async def _move(self, ctx, from_pos: int, to_pos: int):
+    async def _move(self, ctx):
         """ Moves a song in your queue. """
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-
-        user_queue = player.user_queue(ctx.author.id)
-        if not user_queue:
-            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
-
-        if not all(x in range(1, len(user_queue) + 1) for x in [from_pos, to_pos]):
-            return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
-
-        moved = player.move_user_track(ctx.author.id, from_pos - 1, to_pos - 1)
-        if moved is None:
-            return await ctx.send(ctx.localizer.format_str("{move.not_in_queue}"))
-
-        msg = ctx.localizer.format_str("{move.moved_to}", _title=moved.title, _from=from_pos, _to=to_pos)
-        await ctx.send(msg)
-
-    @commands.command(name='remove')
-    async def _remove(self, ctx, pos: int):
-        """ Removes an item from the player's queue with the given pos. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if player.queue.empty:
             return
 
-        user_queue = player.user_queue(ctx.author.id)
+        user_queue = player.user_queue(ctx.author.id, dual=True)
         if not user_queue:
+            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
+        # Setup for selector
+        identifiers = []
+        for index, temp in enumerate(user_queue):
+            track, globpos = temp
+            identifiers.append(ctx.localizer.format_str("{queue.usertrack}", _index=index+1,
+                                                        _globalindex=globpos+1, _title=track.title,
+                                                        _uri=track.uri))
+
+        def ret_first_arg(*args):
+            return args[0]
+
+        functions = [ret_first_arg]*len(user_queue)
+        arguments = [(i,) for i in range(len(user_queue))]
+
+        # Set the different titles for the different selections
+        round_titles = ["{moved.choose_song}","{moved.choose_pos}"]
+        round_titles = [ctx.localizer.format_str(i) for i in round_titles]
+
+        selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, round_titles=round_titles,
+                            color=ctx.me.color, title=ctx.localizer.format_str("{moved.choose}"))
+
+        # Get the initial and final position
+        message, page, selections = await selector.start_scrolling()
+        pos_initial, pos_final = selections[0], selections[1]
+
+        # Move the track
+        moved = player.move_user_track(ctx.author.id, pos_initial, pos_final)
+
+        # Create a nice embed explaining what happened
+        song = f'**[{moved.title}]({moved.uri})**'
+        embed = discord.Embed(color=ctx.me.color, description=song, title='{moved.moved}')
+        thumbnail_url = await RoxUtils.ThumbNailer.identify(self, moved.identifier, moved.uri)
+        member = ctx.guild.get_member(moved.requester)
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+        if member.nick:
+            member_identifier = member.nick
+        else:
+            member_identifier = member.name
+
+        embed.add_field(name="{moved.local}", value=f"`{pos_initial + 1} → {pos_final + 1}`", inline=True)
+        embed.add_field(name="{moved.global}", value=f"`{player.queue._loc_to_glob(ctx.author.id, pos_initial) + 1}\
+         → {player.queue._loc_to_glob(ctx.author.id, pos_final) + 1}`", inline=True)
+        embed.set_footer(text=f'{{requested_by}} {member_identifier}', icon_url=member.avatar_url)
+        embed = ctx.localizer.format_embed(embed)
+
+        await message.edit(embed=embed)
+        await message.clear_reactions()
+
+    @commands.command(name='remove')
+    async def _remove(self, ctx):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if player.queue.empty:
             return
 
-        if pos > len(user_queue) or pos < 1:
-            return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
+        user_queue = player.user_queue(ctx.author.id, dual=True)
+        if not user_queue:
+            return await ctx.send(ctx.localizer.format_str("{my_queue}"))
 
-        removed = player.remove_user_track(ctx.author.id, pos - 1)
+        identifiers = []
+        for index, temp in enumerate(user_queue):
+            track, globpos = temp
+            identifiers.append(ctx.localizer.format_str("{queue.usertrack}", _index=index+1,
+                                                        _globalindex=globpos+1, _title=track.title,
+                                                        _uri=track.uri))
 
-        await ctx.send(ctx.localizer.format_str("{remove}", _title=removed.title))
+        functions = [player.remove_user_track]*len(user_queue)
+        arguments = [(ctx.author.id, i) for i in range(len(user_queue))]
+
+        selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, color=0xFF0000,
+                            title='Remove song plz')
+        message, page, removed = await selector.start_scrolling()
+        await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
+        await message.clear_reactions()
 
     @commands.command(name="DJremove")
     @checks.DJ_or()
@@ -382,8 +432,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='search')
-    async def _search(self, ctx, *, query):
-        """ Lists the first 10 search results from a given query. """
+    async def _search(self, ctx, *, query):    
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
@@ -397,80 +446,32 @@ class Music(commands.Cog):
             return await ctx.send(embed=embed)
 
         tracks = results['tracks']
-        result_count = min(len(tracks), 5)
+        result_count = min(len(tracks), 15)
 
-        search_results = ''
+        # Setup for the selector
+        identifiers = []
+        functions = [self.enqueue]*result_count
+        arguments = [(ctx, tracks[i], discord.Embed(color=ctx.me.color)) for i in range(result_count)]
+
         for index, track in enumerate(tracks, start=1):
             track_title = track['info']['title']
             track_uri = track['info']['uri']
             duration = timeformatter.format(int(track['info']['length']))
-            search_results += f'`{index}.` [{track_title}]({track_uri}) `{duration}`\n'
+            identifiers.append(f'`{index}.` [{track_title}]({track_uri}) `{duration}`')
             if index == result_count:
                 break
 
-        choices = [
-            ('1\N{combining enclosing keycap}', 1),
-            ('2\N{combining enclosing keycap}', 2),
-            ('3\N{combining enclosing keycap}', 3),
-            ('4\N{combining enclosing keycap}', 4),
-            ('5\N{combining enclosing keycap}', 5),
-        ]
-        choice = None
+        search_selector = Selector(ctx, identifiers, functions, arguments, num_selections=5,
+                                   color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
+        # Let the user scroll through results
+        message, current_page, result = await search_selector.start_scrolling()
 
-        def check(reaction, user):
-            if user is None or user.id != ctx.author.id:
-                return False
+        result = ctx.localizer.format_embed(result)
+        await message.edit(embed=result)
+        await message.clear_reactions()
 
-            if reaction.message.id != result_msg.id:
-                return False
-
-            if reaction.emoji == '❌':
-                return True
-
-            for (emoji, index) in choices[:result_count]:
-                if emoji == reaction.emoji:
-                    nonlocal choice
-                    choice = index
-                    return True
-            return False
-
-        embed.description = '{search}'
-        embed = ctx.localizer.format_embed(embed)
-        result_msg = await ctx.send(embed=embed)
-
-        for emoji, index in choices[:result_count]:
-            await result_msg.add_reaction(emoji)
-        await result_msg.add_reaction('❌')
-
-        embed.description = search_results
-
-        embed.title = '{results}'
-        embed.color = ctx.me.color
-        embed = ctx.localizer.format_embed(embed)
-
-        await result_msg.edit(embed=embed)
-
-        try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
-        except asyncio.TimeoutError:
-            await result_msg.clear_reactions()
-            embed.title = ''
-            embed.description = '{time_expired}'
-            embed = ctx.localizer.format_embed(embed)
-            await result_msg.edit(embed=embed)
-            await asyncio.sleep(5)
-            await result_msg.delete()
-        else:
-            if choice is None:
-                await result_msg.delete()
-            else:
-                await result_msg.clear_reactions()
-                track = tracks[choice - 1]
-                await self.enqueue(ctx, track, embed)
-                embed = ctx.localizer.format_embed(embed)
-                await result_msg.edit(embed=embed)
-                if not player.is_playing:
-                    await player.play()
+        if not player.is_playing:
+            await player.play()
 
     @commands.command(name='disconnect')
     @checks.DJ_or(alone=True)
@@ -718,7 +719,7 @@ class Music(commands.Cog):
         # Create returns a player if one exists, otherwise creates.
 
         # Add commands that require joining voice to work.
-        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search')
+        should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search', '_sk')
 
         # Add commands that don't require the you being in voice.
         without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', '_lyrics')
@@ -792,6 +793,8 @@ class Music(commands.Cog):
 
         duration = timeformatter.format(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
+
+        return embed
 
     def max_track_length(self, guild, player):
         is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')

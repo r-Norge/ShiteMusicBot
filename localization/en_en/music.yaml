@@ -32,9 +32,12 @@ resume:
   paused: "⏯ | Paused"
 shuffle: Your queue has been shuffled
 out_of_range: Positions must be between 1 and {_len}
-move:
-  not_in_queue: Check that the positions exist in your queue
-  moved_to: "{_title} moved from position {_from} to {_to} in your queue"
+moved:
+  choose_song: "**Select the song to move**"
+  choose_pos: "**Select where to move it**"
+  moved: "**Song moved**"
+  local: "User queue:"
+  global: "Server queue:"
 remove: "**{_title}** removed."
 dj_removed: "**{_title}** queued by {_user} removed."
 dj_remove_user: Removed all songs queued by <@{_id}>.

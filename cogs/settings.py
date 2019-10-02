@@ -184,7 +184,6 @@ class Settings(commands.Cog):
             embed.description = f'Static'
         await ctx.send(embed=embed)
 
-    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='current')
     async def current_settings(self, ctx):

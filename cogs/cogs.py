@@ -9,14 +9,14 @@ class Cogs(commands.Cog):
         self.settings = self.bot.settings
 
     @commands.group(name='cogs', hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def _cogs(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.invoke(self.bot.get_command('help'),
                              ctx.command.qualified_name)
 
     @_cogs.command()
-    @checks.is_owner()
+    @commands.is_owner()
     async def load(self, ctx, *, module):
         """Loads a module."""
         try:
@@ -26,7 +26,7 @@ class Cogs(commands.Cog):
             await ctx.send(f'```py\n{traceback.format_exc(e)}\n```')
 
     @_cogs.command()
-    @checks.is_owner()
+    @commands.is_owner()
     async def unload(self, ctx, *, module):
         """Unloads a module."""
         try:
@@ -36,7 +36,7 @@ class Cogs(commands.Cog):
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='reload')
-    @checks.is_owner()
+    @commands.is_owner()
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
@@ -47,7 +47,7 @@ class Cogs(commands.Cog):
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='reloadall')
-    @checks.is_owner()
+    @commands.is_owner()
     async def _relaod_all(self, ctx):
         """Reloads all extensions"""
         try:
@@ -61,7 +61,7 @@ class Cogs(commands.Cog):
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command(name='shutdown')
-    @checks.is_owner()
+    @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
         self.bot.lavalink.players.clear()

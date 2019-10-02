@@ -31,7 +31,7 @@ class Misc(commands.Cog):
         await ctx.send(f'{days}d {hours}h {minutes}m {seconds}s')
 
     @commands.command(name='guilds')
-    @checks.is_owner()
+    @commands.is_owner()
     async def _guilds(self, ctx):
         guilds = f"{self.bot.user.name} is in:\n"
         for guild in self.bot.guilds:
@@ -41,7 +41,7 @@ class Misc(commands.Cog):
     @commands.command()
     async def musicinfo(self, ctx):
         """
-        Info om musikkspilleren
+        Info about the music player
         """
         embed = discord.Embed(title='{music.title}', color=ctx.me.color)
         lavalink = self.bot.lavalink
@@ -56,14 +56,14 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="reloadlocale")
-    @checks.is_owner()
+    @commands.is_owner()
     async def reload_locale(self, ctx):
         self.bot.localizer.index_localizations()
         self.bot.localizer.load_localizations()
         await ctx.send("Localizations reloaded.")
 
     @commands.command(name="reloadalias")
-    @checks.is_owner()
+    @commands.is_owner()
     async def reload_alias(self, ctx):
         self.bot.aliaser.index_localizations()
         self.bot.aliaser.load_localizations()
@@ -72,7 +72,7 @@ class Misc(commands.Cog):
     @commands.command()
     async def info(self, ctx):
         """
-        Info om Shite Music Bot
+        Info about the bot
         """
         membercount = []
         for guild in self.bot.guilds:
