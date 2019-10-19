@@ -1,14 +1,12 @@
 import discord
 import asyncio
-import itertools
 import inspect
-
-from .paginator import *
+from .paginator import TextPaginator
 
 
 class Selector(TextPaginator):
     def __init__(self, ctx, identifiers, functions, arguments, terminate_on_select=True, num_selections=3,
-                 round_titles=[], max_size=2000, **embed_base):
+                 round_titles=None, max_size=2000, **embed_base):
         """
         Selector, tool for making interactive menus.
         :param ctx: discord.py context
@@ -22,6 +20,8 @@ class Selector(TextPaginator):
         :param max_size: The max amount of characters per page.
         :param embed_base: Arguments that specify the look of the scroller embeds
         """
+        if round_titles is None:
+            round_titles = []
         self.match = None
         self.current_page = 0
         self.ctx = ctx
@@ -120,7 +120,7 @@ class Selector(TextPaginator):
             return
 
         self.message = await self.channel.send(embed=self.pages[0])
-        
+
         for reaction in self.select_emojis[:self.max_selections]:
             if not self.stopped:
                 await self.message.add_reaction(reaction)
@@ -149,14 +149,14 @@ class Selector(TextPaginator):
                 self.scrolling = False
                 try:
                     await self.message.clear_reactions()
-                except:
+                except (discord.Forbidden, discord.HTTPException):
                     pass
                 finally:
                     break
 
             try:
                 await self.message.remove_reaction(reaction, user)
-            except:
+            except (discord.Forbidden, discord.HTTPException, discord.NotFound, discord.InvalidArgument):
                 pass
             if self.match:
                 if inspect.iscoroutinefunction(self.match):
@@ -177,7 +177,10 @@ class Selector(TextPaginator):
                 results.append(result)
                 if not self.round_titles:
                     self.stopped = True
-                    await self.message.clear_reactions()
+                    try:
+                        await self.message.clear_reactions()
+                    except (discord.Forbidden, discord.HTTPException):
+                        pass
                     break
                 if self.round_titles:
                     self.update_embed_title(self.round_titles.pop(0))

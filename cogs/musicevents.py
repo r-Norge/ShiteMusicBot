@@ -68,7 +68,6 @@ class MusicEvents(commands.Cog):
                 player.update_listeners(member, after)
                 await self.check_leave_voice(member.guild)
 
-
     async def check_leave_voice(self, guild):
         """ Checks if the bot should leave the voice channel """
         # TODO, disconnect timer?

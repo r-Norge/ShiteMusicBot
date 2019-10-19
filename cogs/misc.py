@@ -3,13 +3,21 @@ import time
 import platform
 
 from discord.ext import commands
-from cogs.utils import checks, bot_version
+from cogs.utils import bot_version
 from lavalink import __version__ as LavalinkVersion
 
 
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    def get_uptime(self):
+        now = time.time()
+        diff = int(now - self.bot.uptime)
+        days, remainder = divmod(diff, 24 * 60 * 60)
+        hours, remainder = divmod(remainder, 60 * 60)
+        minutes, seconds = divmod(remainder, 60)
+        return days, hours, minutes, seconds
 
     @commands.command(name='ping', hidden=True)
     async def _ping(self, ctx):
@@ -23,11 +31,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='uptime', hidden=True)
     async def _uptime(self, ctx):
-        now = time.time()
-        diff = int(now - self.bot.uptime)
-        days, remainder = divmod(diff, 24 * 60 * 60)
-        hours, remainder = divmod(remainder, 60 * 60)
-        minutes, seconds = divmod(remainder, 60)
+        days, hours, minutes, seconds = self.get_uptime()
         await ctx.send(f'{days}d {hours}h {minutes}m {seconds}s')
 
     @commands.command(name='guilds')
@@ -83,11 +87,7 @@ class Misc(commands.Cog):
                     membercount.append(member.id)
         guilds = len(self.bot.guilds)
         members = len(membercount)
-        now = time.time()
-        diff = int(now - self.bot.uptime)
-        days, remainder = divmod(diff, 24 * 60 * 60)
-        hours, remainder = divmod(remainder, 60 * 60)
-        minutes, seconds = divmod(remainder, 60)
+        days, hours, minutes, seconds = self.get_uptime()
         avatar = self.bot.user.avatar_url_as(format=None, static_format='png', size=1024)
 
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'

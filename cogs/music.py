@@ -102,7 +102,7 @@ class Music(commands.Cog):
             await player.play()
 
     @commands.command(name='seek')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -123,7 +123,7 @@ class Music(commands.Cog):
 
         track_time = player.position + seconds
         await player.seek(track_time)
-        msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format(track_time))
+        msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
         await ctx.send(msg)
 
     @commands.command(name='skip')
@@ -165,7 +165,7 @@ class Music(commands.Cog):
                 await ctx.send(msg)
 
     @commands.command(name='skipto')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _skip_to(self, ctx, pos: int = 1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -182,7 +182,7 @@ class Music(commands.Cog):
         await ctx.send(msg)
 
     @commands.command(name='stop')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _stop(self, ctx):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -205,11 +205,11 @@ class Music(commands.Cog):
         if not player.current:
             return await ctx.send(ctx.localizer.format_str("{not_playing}"))
 
-        position = timeformatter.format(player.position)
+        position = timeformatter.format_ms(player.position)
         if player.current.stream:
             duration = '{live}'
         else:
-            duration = timeformatter.format(player.current.duration)
+            duration = timeformatter.format_ms(player.current.duration)
         song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
 
         member = ctx.guild.get_member(player.current.requester)
@@ -264,7 +264,7 @@ class Music(commands.Cog):
         await scroller.start_scrolling()
 
     @commands.command(name='pause')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _pause(self, ctx):
         """ Pauses/Resumes the current track. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -318,7 +318,7 @@ class Music(commands.Cog):
         arguments = [(i,) for i in range(len(user_queue))]
 
         # Set the different titles for the different selections
-        round_titles = ["{moved.choose_song}","{moved.choose_pos}"]
+        round_titles = ["{moved.choose_song}", "{moved.choose_pos}"]
         round_titles = [ctx.localizer.format_str(i) for i in round_titles]
 
         selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, round_titles=round_titles,
@@ -380,7 +380,7 @@ class Music(commands.Cog):
         await message.clear_reactions()
 
     @commands.command(name="DJremove")
-    @checks.DJ_or()
+    @checks.dj_or()
     async def _djremove(self, ctx, pos: int, user: discord.Member = None):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -408,10 +408,10 @@ class Music(commands.Cog):
                 return await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(user_queue)))
 
             removed = player.remove_user_track(user.id, pos - 1)
-            await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title, _user=requester.name))
+            await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title, _user=removed.requester.name))
 
     @commands.command(name='removeuser')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _user_queue_remove(self, ctx, user: discord.Member):
         """ Remove a song from either the global queue or a users queue"""
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -456,7 +456,7 @@ class Music(commands.Cog):
         for index, track in enumerate(tracks, start=1):
             track_title = track['info']['title']
             track_uri = track['info']['uri']
-            duration = timeformatter.format(int(track['info']['length']))
+            duration = timeformatter.format_ms(int(track['info']['length']))
             identifiers.append(f'`{index}.` [{track_title}]({track_uri}) `{duration}`')
             if index == result_count:
                 break
@@ -474,7 +474,7 @@ class Music(commands.Cog):
             await player.play()
 
     @commands.command(name='disconnect')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -493,7 +493,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='volume')
-    @checks.DJ_or(alone=True, current=True)
+    @checks.dj_or(alone=True, track_requester=True)
     async def _volume(self, ctx, volume: int = None):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -501,7 +501,7 @@ class Music(commands.Cog):
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
 
-        is_dj = checks.is_DJ(ctx)
+        is_dj = checks.is_dj(ctx)
         is_admin = getattr(ctx.author.guild_permissions, 'administrator', None) is True
         if int(player.current.requester) == ctx.author.id and not is_dj and not is_admin:
             if not 50 <= volume <= 125:
@@ -514,7 +514,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='normalize')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _normalize(self, ctx):
         """ Reset the equalizer and  """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -529,7 +529,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='boost')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _boost(self, ctx, boost: bool = None):
         """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -638,7 +638,7 @@ class Music(commands.Cog):
             await Scroller(ctx, paginator).start_scrolling()
 
     @commands.command(name='scrub')
-    @checks.DJ_or(alone=True)
+    @checks.dj_or(alone=True)
     async def _scrub(self, ctx):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -774,8 +774,8 @@ class Music(commands.Cog):
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
             embed.description = ctx.localizer.format_str("{enqueue.toolong}",
-                                                         _length=timeformatter.format(track['info']['length']),
-                                                         _max=timeformatter.format(maxlength))
+                                                         _length=timeformatter.format_ms(track['info']['length']),
+                                                         _max=timeformatter.format_ms(maxlength))
             return
 
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
@@ -788,7 +788,7 @@ class Music(commands.Cog):
                 queue_duration += int(track.duration)
 
             until_play = queue_duration + player.current.duration - player.position
-            until_play = timeformatter.format(until_play)
+            until_play = timeformatter.format_ms(until_play)
             embed.add_field(name="{enqueue.position}", value=f"`{pos_local + 1}({pos_global + 1})`", inline=True)
             embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`", inline=True)
 
@@ -798,7 +798,7 @@ class Music(commands.Cog):
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
 
-        duration = timeformatter.format(int(track.duration))
+        duration = timeformatter.format_ms(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
         return embed

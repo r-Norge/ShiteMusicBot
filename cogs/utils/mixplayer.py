@@ -138,7 +138,7 @@ class MixPlayer(DefaultPlayer):
 
 
 def roundrobin(*iterables):
-    "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
+    """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""
     # Recipe credited to George Sakkis
     num_active = len(iterables)
     nexts = cycle(iter(it).__next__ for it in iterables)
@@ -175,7 +175,7 @@ class MixQueue:
 
     def __len__(self):
         length = 0
-        for i in self:
+        for _ in self:
             length += 1
         return length
 

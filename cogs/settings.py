@@ -35,7 +35,7 @@ class Settings(commands.Cog):
     @_set.command(name='serverprefix')
     async def _set_guild_prefix(self, ctx, *prefixes):
         prefixes = list(prefixes)
-        if prefixes != []:
+        if prefixes:
             self.settings.set(ctx.guild, 'prefixes', prefixes)
         prefixes = self.settings.get(ctx.guild, 'prefixes')
         await ctx.send(f'Server prefixes: {self.format_prefixes(prefixes)}')

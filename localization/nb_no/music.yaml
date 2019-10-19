@@ -32,9 +32,12 @@ resume:
   paused: "⏯ | Pauset avspillingen"
 shuffle: Køen din har blitt omstokket
 out_of_range: Posisjonene må være mellom 1 og {_len}
-move:
-  not_in_queue: Sjekk at posisjonen eksisterer i køen din
-  moved_to: "`{_title}` flyttet fra plass `{_from}` til `{_to}` i køen din"
+moved:
+  choose_song: "**Velg hvilken sang som skal flyttes**"
+  choose_pos: "**Velg hvor den skal flyttes**"
+  moved: "**Sang flyttet**"
+  local: "Brukerkø:"
+  global: "Serverkø:"
 remove: "**{_title}** ble fjernet fra køen."
 dj_removed: "**{_title}** som ble lagt til i køen av {_user}, ble fjernet."
 dj_remove_user: Fjernet alle sanger lagt til i køen av <@{_id}>.
