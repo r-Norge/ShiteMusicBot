@@ -1,5 +1,8 @@
 # WIP - Shite Music Bot
 
+[![Build Status](https://jenkins.roxedus.net/buildStatus/icon?job=MusicBot%2Fdev)](https://jenkins.roxedus.net/job/MusicBot/job/dev/)
+[![](https://images.microbadger.com/badges/image/rnorge/music:dev-amd64.svg)](https://microbadger.com/images/rnorge/music:dev-amd64 "Get your own image badge on microbadger.com")
+
 ### Features:
 - Translations, get the bot in your preferred langauge!
 - Round Robin style queue, you won't have to wait forever for your songs to play.

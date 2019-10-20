@@ -432,7 +432,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='search')
-    async def _search(self, ctx, *, query):    
+    async def _search(self, ctx, *, query):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
