@@ -111,7 +111,7 @@ class Localizer:
 
     # returns translation string from a key
     def get(self, key, lang=None):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
 
@@ -119,7 +119,7 @@ class Localizer:
 
     # inserts translations into a string
     def format_str(self, s, lang=None, prefix=None, **kvpairs):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
 
@@ -129,7 +129,7 @@ class Localizer:
 
     # inserts translations into a values of a dictionary
     def format_dict(self, d, lang=None, prefix=None, **kvpairs):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
 

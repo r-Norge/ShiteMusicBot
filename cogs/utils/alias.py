@@ -52,7 +52,10 @@ class Aliaser:
     def convert_alias(self, locale, default=None, parents=None):
         if parents is None:
             parents = []
-        locale = self.localization_table[locale]
+        try:
+            locale = self.localization_table[locale]
+        except KeyError:
+            locale = self.localization_table[self.default_lang]
 
         # Traverse through the alias tree as dictated by the parents list
         def traverse(alias_tree, parents, alias):

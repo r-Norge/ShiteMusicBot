@@ -26,9 +26,18 @@ class Settings(commands.Cog):
     @commands.guild_only()
     @_set.command(name='serverlocale')
     async def _set_guild_locale(self, ctx, locale):
-        self.settings.set(ctx.guild, 'locale', locale)
-        locale = self.settings.get(ctx.guild, 'locale', 'default_lang')
-        await ctx.send(f'Locale set to {locale}')
+        self.bot.localizer.index_localizations()
+        self.bot.aliaser.index_localizations()
+        self.bot.localizer.load_localizations()
+        self.bot.aliaser.load_localizations()
+
+        if locale in self.bot.aliaser.localization_table.keys():
+
+            self.settings.set(ctx.guild, 'locale', locale)
+            locale = self.settings.get(ctx.guild, 'locale', 'default_lang')
+            await ctx.send(f'Locale set to `{locale}`')
+        else:
+            await ctx.send(f'`{locale}` is not a valid locale.')
 
     @checks.is_admin()
     @commands.guild_only()
