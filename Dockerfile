@@ -5,7 +5,7 @@ LABEL maintainer="Roxedus"
 COPY / /app
 
 RUN \
-    apk add --no-cache git && \
+    apk add --no-cache --update gcc musl-dev python3-dev git && \
     python3 -m pip install -r /app/requirements.txt
 
 
