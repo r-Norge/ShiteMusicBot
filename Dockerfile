@@ -1,6 +1,6 @@
 FROM amd64/python:3.7.3-alpine
 
-LABEL maintainer="Roxedus"
+LABEL maintainer="Roxedus" jekins="dorli"
 
 COPY / /app
 
