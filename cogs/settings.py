@@ -1,9 +1,8 @@
 import discord
-import os
-import codecs
 
 from discord.ext import commands
 from cogs.utils import checks
+
 
 class Settings(commands.Cog):
     def __init__(self, bot):
@@ -18,28 +17,39 @@ class Settings(commands.Cog):
             formatted += f'`{prefix}`, '
         return formatted[:-2]
 
-    @checks.is_admin()
     @commands.group(name='settings', hidden=True)
     async def _set(self, ctx):
         if ctx.invoked_subcommand is None:
             await self.current_settings.invoke(ctx)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='serverlocale')
     async def _set_guild_locale(self, ctx, locale):
-        self.settings.set(ctx.guild, 'locale', locale)
-        locale = self.settings.get(ctx.guild, 'locale', 'default_lang')
-        await ctx.send(f'Locale set to {locale}')
+        self.bot.localizer.index_localizations()
+        self.bot.aliaser.index_localizations()
+        self.bot.localizer.load_localizations()
+        self.bot.aliaser.load_localizations()
 
+        if locale in self.bot.aliaser.localization_table.keys():
+
+            self.settings.set(ctx.guild, 'locale', locale)
+            locale = self.settings.get(ctx.guild, 'locale', 'default_lang')
+            await ctx.send(f'Locale set to `{locale}`')
+        else:
+            await ctx.send(f'`{locale}` is not a valid locale.')
+
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='serverprefix')
     async def _set_guild_prefix(self, ctx, *prefixes):
         prefixes = list(prefixes)
-        if prefixes != []:
+        if prefixes:
             self.settings.set(ctx.guild, 'prefixes', prefixes)
         prefixes = self.settings.get(ctx.guild, 'prefixes')
         await ctx.send(f'Server prefixes: {self.format_prefixes(prefixes)}')
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='resetprefix')
     async def _reset_prefix(self, ctx):
@@ -47,14 +57,16 @@ class Settings(commands.Cog):
         prefixes = self.settings.get(ctx.guild, 'prefixes', 'default_prefix')
         await ctx.send(self.format_prefixes(prefixes))
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='modrole')
     async def set_mod_role(self, ctx, modrole: discord.Role):
         await ctx.send(f'{modrole.name} {modrole.id}')
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='threshold')
-    async def set_vote_threshold(self, ctx, threshold: int=50):
+    async def set_vote_threshold(self, ctx, threshold: int = 50):
         if not 0 <= threshold <= 100:
             return await ctx.send('Must be between 0 and 100')
 
@@ -62,6 +74,7 @@ class Settings(commands.Cog):
         threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 50)
         await ctx.send(f'Vote threshold set to {threshold}%')
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='textchannels')
     async def set_music_text(self, ctx, *channels: discord.TextChannel):
@@ -83,6 +96,7 @@ class Settings(commands.Cog):
             embed = discord.Embed(color=ctx.me.color, description='Music command channels cleared')
             await ctx.send(embed=embed)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='musicchannels')
     async def set_music_voice(self, ctx, *channels: discord.VoiceChannel):
@@ -104,6 +118,7 @@ class Settings(commands.Cog):
             embed = discord.Embed(color=ctx.me.color, description='Music channels cleared')
             await ctx.send(embed=embed)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='listenchannels', hidden=True)
     async def set_listen_voice(self, ctx, *channels: discord.VoiceChannel):
@@ -125,6 +140,7 @@ class Settings(commands.Cog):
             embed = discord.Embed(color=ctx.me.color, description='Listen only channels cleared')
             await ctx.send(embed=embed)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='djroles')
     async def set_dj_roles(self, ctx, *roles: discord.Role):
@@ -146,9 +162,10 @@ class Settings(commands.Cog):
             embed = discord.Embed(color=ctx.me.color, description='DJ roles cleared')
             await ctx.send(embed=embed)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='maxduration')
-    async def set_max_track_duration(self, ctx, duration: int=None):
+    async def set_max_track_duration(self, ctx, duration: int = None):
         self.bot.settings.set(ctx.guild, 'duration.max', duration)
 
         duration = self.bot.settings.get(ctx.guild, 'duration.max')
@@ -161,9 +178,10 @@ class Settings(commands.Cog):
             embed = discord.Embed(color=ctx.me.color, description='Max track length removed')
             await ctx.send(embed=embed)
 
+    @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='dynamicmax')
-    async def set_track_duration_type(self, ctx, dynamic: bool=False):
+    async def set_track_duration_type(self, ctx, dynamic: bool = False):
         self.bot.settings.set(ctx.guild, 'duration.is_dynamic', dynamic)
 
         is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic')

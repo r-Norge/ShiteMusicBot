@@ -28,21 +28,6 @@ def has_guild_permissions(*, check=all, **perms):
     return commands.check(pred)
 
 
-def is_even():
-    def predicate(ctx):
-        return ctx.message.author.id == 142212883512557569
-    return commands.check(predicate)
-
-
-def is_owner():
-    def predicate(ctx):
-        is_owner = (ctx.message.author.id == 120970603556503552 or
-            ctx.message.author.id == 142212883512557569 or ctx.message.author.id == 212635519706726410 or
-            ctx.message.author.id == 170506717140877312)
-        return is_owner
-    return commands.check(predicate)
-
-
 def is_admin():
     async def pred(ctx):
         return await check_guild_permissions(ctx, {'administrator': True})
@@ -64,7 +49,7 @@ def has_role_id(ctx, role_id):
     return role is not None
 
 
-def is_DJ(ctx):
+def is_dj(ctx):
     dj_role_ids = ctx.bot.settings.get(ctx.guild, 'roles.dj', [])
     if not dj_role_ids:
         return any([has_role(ctx, role) for role in ['dj', 'Dj', 'DJ', 'dJ']])
@@ -72,18 +57,18 @@ def is_DJ(ctx):
         return any([has_role_id(ctx, role_id) for role_id in dj_role_ids])
 
 
-def DJ_or(alone: bool=False, current: bool=False):
+def dj_or(alone: bool = False, track_requester: bool = False):
     async def predicate(ctx):
         try:
             player = ctx.bot.lavalink.players.get(ctx.guild.id)
             is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
-            requester = (player.current.requester == ctx.author.id) and current
+            requester = (player.current.requester == ctx.author.id) and track_requester
 
         except AttributeError:
             requester = False
             is_alone = False
 
-        is_dj = is_DJ(ctx)
+        dj = is_dj(ctx)
 
-        return is_dj or is_alone or requester
+        return dj or is_alone or requester
     return commands.check(predicate)

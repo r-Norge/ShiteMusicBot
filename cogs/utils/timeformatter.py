@@ -1,4 +1,4 @@
-def format(milliseconds):
+def format_ms(milliseconds):
     seconds = int(milliseconds)/1000
     formatted = ''
     hours, remainder = divmod(seconds, 60 * 60)
@@ -9,7 +9,7 @@ def format(milliseconds):
     return formatted
 
 
-def unformat(formatted):
+def unformat_ms(formatted):
     hms = list(reversed([int(i) for i in formatted.split(':')]))
     seconds = hms[0]
     if len(hms) >= 2:

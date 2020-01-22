@@ -1,32 +1,57 @@
-import aiohttp
-import asyncio
 from bs4 import BeautifulSoup as bs4
-
-session = aiohttp.ClientSession()
 
 
 class ThumbNailer(object):
+    def __init__(self, bot):
+        self.bot = bot
+        self.logger = self.bot.main_logger.bot_logger.getChild("ThumbNailer")
 
-    async def get_img(self, url):
-            async with session.get(url, timeout=30) as response:
-                assert response.status == 200
-                html = await response.read()
-                return await ThumbNailer.__parse_result(html)
+    async def get_html(self, url):
+        async with self.bot.session.get(url, timeout=30) as response:
+            assert response.status == 200
+            return await response.read()
 
-    async def __parse_result(html):
+    @staticmethod
+    async def _soundcloud(self, url):
+        html = await ThumbNailer.get_html(self, url)
         try:
             soup = bs4(html, 'html.parser')
-            img = soup.find("meta", property="twitter:image")["content"]
+            img = soup.find("meta", property="twitter:image")
+            return img["content"]
+        except Exception as e:
+            self.logger.exception("%s".format(e))
+
+    async def _bandcamp(self, url):
+        html = await ThumbNailer.get_html(self, url)
+        try:
+            soup = bs4(html, 'html.parser')
+            img = soup.find(class_="popupImage").get("href")
             return img
         except Exception as e:
-            raise e
+            self.logger.exception("%s".format(e))
 
+    async def _vimeo(self, url):
+        html = await ThumbNailer.get_html(self, url)
+        try:
+            soup = bs4(html, 'html.parser')
+            img = soup.find("meta", property="og:image")
+            return img["content"]
+        except Exception as e:
+            self.logger.exception("%s".format(e))
+
+    @staticmethod
     async def identify(self, identifier, uri):
         if "youtube" in uri:
             thumbnail_url = f"https://img.youtube.com/vi/{identifier}/0.jpg"
             return thumbnail_url
         elif "soundcloud" in uri:
-            thumbnail_url = await ThumbNailer.get_img(ThumbNailer, url=uri)
+            thumbnail_url = await ThumbNailer._soundcloud(self, url=uri)
+            return thumbnail_url
+        elif "bandcamp" in uri:
+            thumbnail_url = await ThumbNailer._bandcamp(self, url=uri)
+            return thumbnail_url
+        elif "vimeo" in uri:
+            thumbnail_url = await ThumbNailer._vimeo(self, url=uri)
             return thumbnail_url
         else:
             return None

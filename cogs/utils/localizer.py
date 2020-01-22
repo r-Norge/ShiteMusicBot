@@ -16,6 +16,7 @@ Localizer for bot
 
 kmatch = re.compile('({(?!_)([^{}]+)})')
 
+
 class Localizer:
     def __init__(self, localization_folder, default_lang):
         self.localization_folder = path.realpath(localization_folder)
@@ -31,7 +32,6 @@ class Localizer:
         for folder in glob(path.join(self.localization_folder, "*/")):
             folder_base = path.basename(path.dirname(folder))
             self.localization_table[folder_base] = False
-        
 
     # loads all localizations
     def load_localizations(self):
@@ -41,7 +41,8 @@ class Localizer:
 
         self.all_localizations = flatten(self.localization_table)
         for lang, d in self.localization_table.items():
-            self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang], self.all_localizations)
+            self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang],
+                                                                                     self.all_localizations)
 
     # internal function for loading a localization
     def _load_localization(self, lang):
@@ -57,7 +58,7 @@ class Localizer:
                 file_base = path.basename(file).split(".")[0]
                 with open(file, "r", encoding='utf-8') as f:
                     data = yaml.load(f, Loader=yaml.SafeLoader)
-                
+
                 l_table[file_base] = data
 
             for file in glob(path.join(self.localization_folder, lang, "*.txt")):
@@ -66,14 +67,13 @@ class Localizer:
                     content = f.read()
                 l_table[file_base] = content
 
-
             l_table = flatten(l_table)
             # parsing a few times to resolve all values
             for i in range(0, 5):
                 l_table = Localizer._parse_localization_dictionary(l_table, l_table)
-            
+
             self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)
-            
+
     # parses and interpolates translation dictionary
     @staticmethod
     def _parse_localization_dictionary(d, lookup, prefix=None):
@@ -89,7 +89,7 @@ class Localizer:
     def _replace_keys(value, prefix=None):
         for outer, inner in kmatch.findall(value):
             nstr = inner
-            if prefix is not None: 
+            if prefix is not None:
                 nstr = f'{prefix}.{inner}'
             nstr = f'{{{nstr}}}'
             nstr = nstr.replace(".", "/")
@@ -101,38 +101,38 @@ class Localizer:
         d = SafeDict(d)
         value = Localizer._replace_keys(value, prefix)
         return value.format_map(d)
-    
+
     # returns true if localization is currently loaded
     def isLoaded(self, lang):
         return self.localization_table.get(lang, False)
-    
+
     def getAvaliableLocalizations(self):
         return self.localization_table.keys()
 
     # returns translation string from a key
     def get(self, key, lang=None):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
-        
+
         return self.localization_table.get(lang, {}).get(key.replace(".", "/"))
-        
+
     # inserts translations into a string
     def format_str(self, s, lang=None, prefix=None, **kvpairs):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
-        
+
         ns = Localizer._parse_localization_string(s, self.localization_table.get(lang, {}), prefix)
         ns = Localizer._parse_localization_string(ns, self.all_localizations, prefix)
         return ns.format_map(SafeDict(kvpairs))
-        
+
     # inserts translations into a values of a dictionary
     def format_dict(self, d, lang=None, prefix=None, **kvpairs):
-        lang = lang or self.default_lang
+        lang = lang if lang in self.localization_table.keys() else self.default_lang
         if not self.isLoaded(lang):
             self._load_localization(lang)
-        
+
         nd = copy.deepcopy(d)
         cursorQueue = [nd]
         while cursorQueue:
@@ -157,12 +157,12 @@ class LocalizerWrapper:
         self.localizer = localizer
         self.lang = lang
         self.prefix = prefix
-    
+
     def format_str(self, s, **kvpairs):
         return self.localizer.format_str(s, self.lang, self.prefix, **kvpairs)
 
     def format_dict(self, d, **kvpairs):
         return self.localizer.format_dict(d, self.lang, self.prefix, **kvpairs)
-        
+
     def format_embed(self, embed, **kvpairs):
         return self.localizer.format_embed(embed, self.lang, self.prefix, **kvpairs)

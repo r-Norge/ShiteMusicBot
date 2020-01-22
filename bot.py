@@ -1,13 +1,13 @@
 import discord
 import codecs
 import time
-import sys
+import os
 import traceback
 import yaml
 import aiohttp
 
 from discord.ext import commands
-from discord.ext.commands.view import StringView
+from argparse import ArgumentParser, RawTextHelpFormatter
 from cogs.utils.settingsmanager import Settings
 from cogs.utils.localizer import Localizer
 from cogs.utils.localizer import LocalizerWrapper
@@ -17,18 +17,12 @@ from cogs.utils.logger import BotLogger
 from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
 
-
-with codecs.open("data/config.yaml", 'r', encoding='utf8') as f:
-    conf = yaml.load(f, Loader=yaml.SafeLoader)
-
-
 initial_extensions = [
     'cogs.cogs',
     'cogs.settings',
     'cogs.misc',
     'cogs.helpformatter'
 ]
-
 
 on_ready_extensions = [
     'cogs.music',
@@ -45,11 +39,11 @@ def _get_prefix(bot, message):
 
 
 class Bot(commands.Bot):
-    def __init__(self, debug: bool=False):
+    def __init__(self, datadir, debug: bool = False):
         super().__init__(command_prefix=_get_prefix,
                          description=conf["bot"]["description"])
 
-        self.settings = Settings(**conf['default server settings'])
+        self.settings = Settings(datadir, **conf['default server settings'])
         self.APIkeys = conf.get('APIkeys', {})
 
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
@@ -57,6 +51,7 @@ class Bot(commands.Bot):
 
         self.session = aiohttp.ClientSession(loop=self.loop)
 
+        self.datadir = datadir
         self.debug = debug
         self.main_logger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
@@ -77,27 +72,23 @@ class Bot(commands.Bot):
                 await scroller.start_scrolling()
 
             if isinstance(err, commands.CommandInvokeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.NoPrivateMessage):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 await ctx.send('That command is not available in DMs')
-            
+
             elif isinstance(err, commands.CommandOnCooldown):
                 await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
                                f"Try again in `{err.retry_after:.1f}` seconds.")
 
             elif isinstance(err, RuntimeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.CheckFailure):
-                self.logger.debug("Error running command: %s\n Traceback: %s"
-                                 % (ctx.command, err))
+                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
                 pass
 
             elif isinstance(err, commands.CommandNotFound):
@@ -134,7 +125,7 @@ class Bot(commands.Bot):
             try:
                 self.logger.debug("Loading extension %s" % extension)
                 self.load_extension(extension)
-            except Exception as e:
+            except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 
         print(f'\nLogged in as: {self.user.name}' +
@@ -155,14 +146,34 @@ class Bot(commands.Bot):
             print(e)
 
 
-def run_bot(debug: bool=False):
-    bot = Bot(debug=debug)
+def run_bot(datadir, debug: bool = False):
+    bot = Bot(datadir, debug=debug)
     bot.run()
 
 
 if __name__ == '__main__':
-    state = False
-    if 'debug' in sys.argv:
-        state = True
-    logger = BotLogger(state, conf.get('log_path', './data/logs'))
-    run_bot(debug=state)
+    parser = ArgumentParser(prog='Shite Music Bot',
+                            description='Discord music bot utilizing discord.py, lavalink and lavalink.py',
+                            formatter_class=RawTextHelpFormatter)
+
+    parser.add_argument("-D", "--debug", action='store_true', help='Sets debug to true')
+    parser.add_argument("-d", "--data-directory", help='Define an alternate data directory location')
+
+    args = parser.parse_args()
+    if args.debug or os.environ.get('debug'):
+        is_debug = True
+    else:
+        is_debug = False
+
+    if args.data_directory:
+        datadir = str(args.data_directory)
+    else:
+        datadir = "data"
+
+    print(f"Data folder: {datadir}")
+
+    with codecs.open(f"{datadir}/config.yaml", 'r', encoding='utf8') as f:
+        conf = yaml.load(f, Loader=yaml.SafeLoader)
+
+    logger = BotLogger(is_debug, conf.get('log_path', f'{datadir}/logs'))
+    run_bot(debug=is_debug, datadir=datadir)
