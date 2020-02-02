@@ -20,11 +20,11 @@ class MixPlayer(DefaultPlayer):
 
     def add(self, requester: int, track: dict, pos: int = None):
         """ Adds a track to the queue. """
-        return self.queue.add_track(requester, AudioTrack.build(track, requester), pos)
+        return self.queue.add_track(requester, AudioTrack(track, requester), pos)
 
     def add_next(self, requester: int, track: dict):
         """ Adds a track to beginning of the queue """
-        self.queue.add_next_track(AudioTrack.build(track, requester))
+        self.queue.add_next_track(AudioTrack(track, requester))
 
     def move_user_track(self, requester: int, initial: int, final: int):
         """ Moves a track in a users queue"""
