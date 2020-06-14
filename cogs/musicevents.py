@@ -5,8 +5,9 @@ A cog to separate events from regular music commands
 # Discord Packages
 import lavalink
 import lavalink.events
-from discord.ext import commands
+from discord.ext import commands, tasks
 
+import asyncio
 import codecs
 
 import yaml
@@ -17,6 +18,7 @@ from .utils.mixplayer import MixPlayer
 class MusicEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.leave_timer.start()
         # TODO: maybe only load when Music loads
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
@@ -79,6 +81,18 @@ class MusicEvents(commands.Cog):
             if player.queue.empty and player.current is None:
                 await player.stop()
                 await self.connect_to(guild.id, None)
+
+    async def leave_check(self):
+        if len(self.bot.lavalink.player_manager.players) != 0:
+            for player_id in self.bot.lavalink.player_manager.players:
+                await self.check_leave_voice(player_id)
+            return
+        return
+
+    @tasks.loop(seconds=10.0)
+    async def leave_timer(self):
+        await self.leave_check()
+        await asyncio.sleep(10)
 
 
 def setup(bot):
