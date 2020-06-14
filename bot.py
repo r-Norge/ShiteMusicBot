@@ -28,8 +28,7 @@ initial_extensions = [
 ]
 
 on_ready_extensions = [
-    'cogs.music',
-    'cogs.musicevents'
+    'cogs.nodemanager'
 ]
 
 
