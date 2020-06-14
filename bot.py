@@ -52,8 +52,6 @@ class Bot(commands.Bot):
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
         self.datadir = datadir
         self.debug = debug
         self.main_logger = logger
@@ -136,8 +134,9 @@ class Bot(commands.Bot):
         print(f'Version: {discord.__version__}\n')
         self.logger.debug("Bot Ready\n\n\n")
 
+        self.session = aiohttp.ClientSession(loop=self.loop)
         await self.change_presence(activity=discord.Game(type=0,
-                                   name=conf["bot"]["playing status"]),
+                                                         name=conf["bot"]["playing status"]),
                                    status=discord.Status.online)
 
     def run(self):
