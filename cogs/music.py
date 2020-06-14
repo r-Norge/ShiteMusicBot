@@ -17,7 +17,7 @@ from typing import Optional
 import yaml
 from bs4 import BeautifulSoup
 
-from .utils import RoxUtils, checks, timeformatter
+from .utils import checks, thumbnailer, timeformatter
 from .utils.mixplayer import MixPlayer
 from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
@@ -147,7 +147,7 @@ class Music(commands.Cog):
             if player.current:
                 song = f'**[{player.current.title}]({player.current.uri})**'
                 embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-                thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
+                thumbnail_url = await thumbnailer.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
                 member = ctx.guild.get_member(player.current.requester)
                 if thumbnail_url:
                     embed.set_thumbnail(url=thumbnail_url)
@@ -217,7 +217,7 @@ class Music(commands.Cog):
 
         member = ctx.guild.get_member(player.current.requester)
         embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-        thumbnail_url = await RoxUtils.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
+        thumbnail_url = await thumbnailer.ThumbNailer.identify(self, player.current.identifier, player.current.uri)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
 
@@ -337,7 +337,7 @@ class Music(commands.Cog):
         # Create a nice embed explaining what happened
         song = f'**[{moved.title}]({moved.uri})**'
         embed = discord.Embed(color=ctx.me.color, description=song, title='{moved.moved}')
-        thumbnail_url = await RoxUtils.ThumbNailer.identify(self, moved.identifier, moved.uri)
+        thumbnail_url = await thumbnailer.ThumbNailer.identify(self, moved.identifier, moved.uri)
         member = ctx.guild.get_member(moved.requester)
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
@@ -563,7 +563,7 @@ class Music(commands.Cog):
         description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,
                                                _id=track.requester) + '\n\n'
         description += ctx.localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
-        thumb_url = await RoxUtils.ThumbNailer.identify(self, track.identifier, track.uri)
+        thumb_url = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
         for index, track in enumerate(history[1:], start=1):
             description += ctx.localizer.format_str("{history.track}", _index=-index, _title=track.title,
                                                     _uri=track.uri, _id=track.requester) + '\n'
@@ -796,7 +796,7 @@ class Music(commands.Cog):
             embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`", inline=True)
 
         embed.title = '{enqueue.enqueued}'
-        thumb_url = await RoxUtils.ThumbNailer.identify(self, track.identifier, track.uri)
+        thumb_url = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
 
         if thumb_url:
             embed.set_thumbnail(url=thumb_url)
