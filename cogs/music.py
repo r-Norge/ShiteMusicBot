@@ -1,25 +1,25 @@
 """
 Music commands
 """
+# Discord Packages
+import discord
+import lavalink
+from discord.ext import commands
+
+import asyncio
+import codecs
+import json
 import math
 import re
-import asyncio
-import yaml
-import codecs
-
-import lavalink
-import discord
-from discord.ext import commands
+import urllib
 from typing import Optional
 
-import urllib
-import json
+import yaml
 from bs4 import BeautifulSoup
 
-from .utils import checks, RoxUtils, timeformatter
+from .utils import RoxUtils, checks, timeformatter
 from .utils.mixplayer import MixPlayer
-from .utils.paginator import QueuePaginator, TextPaginator, Scroller
-
+from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
 
 time_rx = re.compile('[0-9]+')

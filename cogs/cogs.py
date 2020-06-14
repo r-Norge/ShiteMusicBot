@@ -1,5 +1,7 @@
-import traceback
+# Discord Packages
 from discord.ext import commands
+
+import traceback
 
 
 class Cogs(commands.Cog):

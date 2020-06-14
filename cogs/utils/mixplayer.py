@@ -1,11 +1,11 @@
+# Discord Packages
 import lavalink
+from lavalink import AudioTrack, DefaultPlayer, Node
+from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 
 from collections import OrderedDict, deque
-from itertools import cycle, islice, chain
+from itertools import chain, cycle, islice
 from random import shuffle
-
-from lavalink.events import TrackStartEvent, TrackStuckEvent, TrackExceptionEvent, TrackEndEvent, QueueEndEvent
-from lavalink import Node, DefaultPlayer, AudioTrack
 
 
 class MixPlayer(DefaultPlayer):

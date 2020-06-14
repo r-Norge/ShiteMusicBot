@@ -1,21 +1,24 @@
+# Discord Packages
 import discord
-import codecs
-import time
-import os
-import traceback
-import yaml
-import aiohttp
-
 from discord.ext import commands
+
+import codecs
+import os
+import time
+import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cogs.utils.settingsmanager import Settings
-from cogs.utils.localizer import Localizer
-from cogs.utils.localizer import LocalizerWrapper
+
+import aiohttp
+import yaml
+
+# Bot Utilities
+from cogs.helpformatter import commandhelper
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
+from cogs.utils.localizer import Localizer, LocalizerWrapper
 from cogs.utils.logger import BotLogger
-from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
+from cogs.utils.settingsmanager import Settings
 
 initial_extensions = [
     'cogs.cogs',

@@ -1,6 +1,7 @@
-import os
 import codecs
 import locale as localee
+import os
+
 import yaml
 
 

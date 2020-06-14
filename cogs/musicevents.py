@@ -2,13 +2,16 @@
 A cog to separate events from regular music commands
 """
 
-import codecs
-import yaml
+# Discord Packages
 import lavalink
+import lavalink.events
 from discord.ext import commands
 
+import codecs
+
+import yaml
+
 from .utils.mixplayer import MixPlayer
-import lavalink.events
 
 
 class MusicEvents(commands.Cog):
