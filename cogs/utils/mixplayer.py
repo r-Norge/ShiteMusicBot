@@ -3,6 +3,7 @@ import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 
+import typing
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
@@ -18,13 +19,13 @@ class MixPlayer(DefaultPlayer):
         self.skip_voters = set()
         self.boosted = False
 
-    def add(self, requester: int, track: dict, pos: int = None):
+    def add(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
         """ Adds a track to the queue. """
-        return self.queue.add_track(requester, AudioTrack(track, requester), pos)
+        return self.queue.add_track(requester, track, pos)
 
-    def add_next(self, requester: int, track: dict):
+    def add_next(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
         """ Adds a track to beginning of the queue """
-        self.queue.add_next_track(AudioTrack(track, requester))
+        self.queue.add_next_track(track)
 
     def move_user_track(self, requester: int, initial: int, final: int):
         """ Moves a track in a users queue"""

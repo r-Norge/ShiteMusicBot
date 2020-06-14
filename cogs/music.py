@@ -81,11 +81,13 @@ class Music(commands.Cog):
                 numtracks = 0
                 for track in tracks:
                     if track['info']['length'] <= maxlength:
+                        track = lavalink.models.AudioTrack(track, ctx.author.id)
                         player.add(requester=ctx.author.id, track=track)
                         numtracks += 1
             else:
                 numtracks = len(tracks)
                 for track in tracks:
+                    track = lavalink.models.AudioTrack(track, ctx.author.id)
                     player.add(requester=ctx.author.id, track=track)
 
             embed.title = '{playlist_enqued}'
@@ -94,6 +96,7 @@ class Music(commands.Cog):
             await ctx.send(embed=embed)
         else:
             track = results['tracks'][0]
+            track = lavalink.models.AudioTrack(track, ctx.author.id)
             await self.enqueue(ctx, track, embed)
             embed = ctx.localizer.format_embed(embed)
             await ctx.send(embed=embed)
