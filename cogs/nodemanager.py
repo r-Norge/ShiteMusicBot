@@ -63,7 +63,7 @@ class NodeManager(commands.Cog):
             'eu': ':flag_eu:',
             'singapore': ':flag_sg:',
             'london': ':flag_gb:',
-            'sydeny': ':flag_au:',
+            'sydney': ':flag_au:',
             'amsterdam': ':flag_nl:',
             'frankfurt': ':flag_de:',
             'brazil': ':flag_br:',
