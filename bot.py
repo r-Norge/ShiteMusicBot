@@ -1,21 +1,24 @@
+# Discord Packages
 import discord
-import codecs
-import time
-import os
-import traceback
-import yaml
-import aiohttp
-
 from discord.ext import commands
+
+import codecs
+import os
+import time
+import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cogs.utils.settingsmanager import Settings
-from cogs.utils.localizer import Localizer
-from cogs.utils.localizer import LocalizerWrapper
+
+import aiohttp
+import yaml
+
+# Bot Utilities
+from cogs.helpformatter import commandhelper
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
+from cogs.utils.localizer import Localizer, LocalizerWrapper
 from cogs.utils.logger import BotLogger
-from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
+from cogs.utils.settingsmanager import Settings
 
 initial_extensions = [
     'cogs.cogs',
@@ -134,8 +137,9 @@ class Bot(commands.Bot):
         print(f'Version: {discord.__version__}\n')
         self.logger.debug("Bot Ready\n\n\n")
 
+        self.session = aiohttp.ClientSession(loop=self.loop)
         await self.change_presence(activity=discord.Game(type=0,
-                                   name=conf["bot"]["playing status"]),
+                                                         name=conf["bot"]["playing status"]),
                                    status=discord.Status.online)
 
     def run(self):

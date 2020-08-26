@@ -1,6 +1,8 @@
+# Discord Packages
 import discord
-
 from discord.ext import commands
+
+# Bot Utilities
 from cogs.utils import checks
 
 
@@ -188,9 +190,9 @@ class Settings(commands.Cog):
 
         embed = discord.Embed(title='Max duration type set to', color=ctx.me.color)
         if is_dynamic:
-            embed.description = f'Dynamic'
+            embed.description = 'Dynamic'
         else:
-            embed.description = f'Static'
+            embed.description = 'Static'
         await ctx.send(embed=embed)
 
     @commands.guild_only()

@@ -1,8 +1,10 @@
+# Discord Packages
 from discord.ext import commands
+
 import re
 
+# Bot Utilities
 from cogs.utils.paginator import HelpPaginator, Scroller
-
 
 usermention = r"<@!?\d{17,19}>"
 

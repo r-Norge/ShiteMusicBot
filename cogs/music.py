@@ -1,25 +1,25 @@
 """
 Music commands
 """
+# Discord Packages
+import discord
+import lavalink
+from discord.ext import commands
+
+import asyncio
+import codecs
+import json
 import math
 import re
-import asyncio
-import yaml
-import codecs
-
-import lavalink
-import discord
-from discord.ext import commands
+import urllib
 from typing import Optional
 
-import urllib
-import json
+import yaml
 from bs4 import BeautifulSoup
 
-from .utils import checks, RoxUtils, timeformatter
+from .utils import RoxUtils, checks, timeformatter
 from .utils.mixplayer import MixPlayer
-from .utils.paginator import QueuePaginator, TextPaginator, Scroller
-
+from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
 
 time_rx = re.compile('[0-9]+')
@@ -81,11 +81,13 @@ class Music(commands.Cog):
                 numtracks = 0
                 for track in tracks:
                     if track['info']['length'] <= maxlength:
+                        track = lavalink.models.AudioTrack(track, ctx.author.id)
                         player.add(requester=ctx.author.id, track=track)
                         numtracks += 1
             else:
                 numtracks = len(tracks)
                 for track in tracks:
+                    track = lavalink.models.AudioTrack(track, ctx.author.id)
                     player.add(requester=ctx.author.id, track=track)
 
             embed.title = '{playlist_enqued}'
@@ -94,6 +96,7 @@ class Music(commands.Cog):
             await ctx.send(embed=embed)
         else:
             track = results['tracks'][0]
+            track = lavalink.models.AudioTrack(track, ctx.author.id)
             await self.enqueue(ctx, track, embed)
             embed = ctx.localizer.format_embed(embed)
             await ctx.send(embed=embed)

@@ -1,5 +1,7 @@
-import traceback
+# Discord Packages
 from discord.ext import commands
+
+import traceback
 
 
 class Cogs(commands.Cog):
@@ -28,6 +30,8 @@ class Cogs(commands.Cog):
     @commands.is_owner()
     async def unload(self, ctx, *, module):
         """Unloads a module."""
+        if module == "cogs":
+            return await ctx.send('Unloading this cog is not allowed')
         try:
             self.bot.unload_extension(f'cogs.{module}')
             await ctx.send(f'{module} unloaded')
