@@ -195,7 +195,8 @@ class Music(commands.Cog):
 
         player.queue.clear()
         await player.stop()
-        await ctx.send(ctx.localizer.format_str("{stop}"))
+        embed = discord.Embed(color=ctx.me.color, title='{stop}')
+        await ctx.send(embed=ctx.localizer.format_embed(embed))
 
     @commands.command(name='now')
     async def _now(self, ctx):

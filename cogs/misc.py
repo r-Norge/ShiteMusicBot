@@ -51,7 +51,7 @@ class Misc(commands.Cog):
         lavalink = self.bot.lavalink
 
         listeners = 0
-        for guild, player in lavalink.player_manager.players:
+        for guild, player in lavalink.player_manager.players.items():
             listeners += len(player.listeners)
 
         embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')

@@ -63,7 +63,7 @@ class Cogs(commands.Cog):
     @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
-        self.bot.lavalink.players.clear()
+        self.bot.lavalink.player_manager.players.clear()
         await self.bot.logout()
 
 

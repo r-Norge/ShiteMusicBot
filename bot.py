@@ -49,8 +49,6 @@ class Bot(commands.Bot):
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
         self.datadir = datadir
         self.debug = debug
         self.main_logger = logger
@@ -121,6 +119,9 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
+
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
