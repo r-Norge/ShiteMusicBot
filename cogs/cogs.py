@@ -23,8 +23,8 @@ class Cogs(commands.Cog):
         try:
             self.bot.load_extension(f'cogs.{module}')
             await ctx.send(f'{module} loaded')
-        except Exception as e:
-            await ctx.send(f'```py\n{traceback.format_exc(e)}\n```')
+        except Exception:
+            await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command()
     @commands.is_owner()
