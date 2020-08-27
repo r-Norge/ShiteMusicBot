@@ -48,14 +48,14 @@ class NodeManager(commands.Cog):
                 name_cache.append(node.name)
 
             for node in conf['lavalink nodes']:
-                if conf['lavalink nodes'][node]['name'] in name_cache:
+                if node['name'] in name_cache:
                     continue
 
-                self.bot.lavalink.add_node(**conf['lavalink nodes'][node])
+                self.bot.lavalink.add_node(**node)                
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
-                    conf['lavalink nodes'][node]['name'], conf['lavalink nodes'][node]['host'],
-                    conf['lavalink nodes'][node]['port'], conf['lavalink nodes'][node]['region'],))
-                new_nodes.append({**conf['lavalink nodes'][node]})
+                    node['name'], node['host'],
+                    node['port'], node['region'],))
+                new_nodes.append({**node})
             return new_nodes
 
     async def _regioner(self, region):
