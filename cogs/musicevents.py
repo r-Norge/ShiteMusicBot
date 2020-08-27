@@ -19,6 +19,8 @@ class MusicEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.leave_timer.start()
+        self.logger = self.bot.main_logger.bot_logger.getChild("Errors")
+
         # TODO: maybe only load when Music loads
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
@@ -83,16 +85,15 @@ class MusicEvents(commands.Cog):
                 await self.connect_to(guild.id, None)
 
     async def leave_check(self):
-        if len(self.bot.lavalink.player_manager.players) != 0:
-            for player_id in self.bot.lavalink.player_manager.players:
-                await self.check_leave_voice(player_id)
-            return
-        return
+        for player_id in self.bot.lavalink.player_manager.players:
+            await self.check_leave_voice(self.bot.get_guild(player_id))
 
     @tasks.loop(seconds=10.0)
     async def leave_timer(self):
-        await self.leave_check()
-        await asyncio.sleep(10)
+        try:
+            await self.leave_check()
+        except Exception as err:
+            self.logger.debug("Error in leave_timer loop.\nTraceback: %s" % (err))
 
 
 def setup(bot):
