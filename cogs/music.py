@@ -772,8 +772,10 @@ class Music(commands.Cog):
                 raise commands.CommandInvokeError('You need to be in my voicechannel.')
 
     async def enqueue(self, ctx, track, embed):
-
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if isinstance(track, dict):
+            track = lavalink.models.AudioTrack(track, ctx.author.id)
 
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
