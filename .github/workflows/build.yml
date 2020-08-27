@@ -1,0 +1,47 @@
+name: Test And Build BOT
+on: [push, pull_request]
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Lint Code Base
+        uses: github/super-linter@v3
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_PYTHON_BLACK: false
+          DEFAULT_BRANCH: master
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # build-and-push:
+  #   needs: flake8
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     repo: rnorge/music
+  #     ref: ${{github.ref}}
+  #     DOCKER_USERNAME: roxedus
+  #     DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Build the Docker image
+  #       run: |
+  #         branch="${ref##*/}"
+  #         docker build -t $repo:$branch -t $repo:$branch-${{github.sha}} .
+  #     - name: Master tag
+  #       if: github.ref == 'refs/heads/master'
+  #       run: |
+  #         branch="${ref##*/}"
+  #         bot_ver=$(grep -i bot_version cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \")
+  #         docker tag $repo:$branch $repo:$bot_ver
+  #     - name: Bump version and push tag
+  #       if: github.ref == 'refs/heads/master'
+  #       uses: mathieudutour/github-tag-action@v3
+  #       with:
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Login to registry
+  #       if: github.event.pull_request == false
+  #       run: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+  #     - name: Pushes the Docker image
+  #       if: github.event.pull_request == false
+  #       run: docker push $repo
