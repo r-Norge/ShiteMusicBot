@@ -16,7 +16,6 @@ from typing import Optional
 from bs4 import BeautifulSoup
 
 from .utils import checks, thumbnailer, timeformatter
-from .utils.mixplayer import MixPlayer
 from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
 

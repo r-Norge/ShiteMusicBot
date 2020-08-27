@@ -6,7 +6,6 @@ from os import path
 
 import yaml
 
-
 """
 Not the prettiest this, works by replacing any found aliases in a command string with the actual command names.
 Allows per guild aliases of subcommands without doing anything to discord.py itself. Suggestions of better/correct

@@ -8,9 +8,11 @@ import codecs
 
 import yaml
 
-from .utils.mixplayer import MixPlayer
+# Bot Utilities
 from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
+from .utils.mixplayer import MixPlayer
+
 
 class NodeManager(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +53,7 @@ class NodeManager(commands.Cog):
                 if node['name'] in name_cache:
                     continue
 
-                self.bot.lavalink.add_node(**node)                
+                self.bot.lavalink.add_node(**node)
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
                     node['name'], node['host'],
                     node['port'], node['region'],))

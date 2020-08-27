@@ -4,8 +4,10 @@ on: [push, pull_request]
 jobs:
   flake8:
     runs-on: ubuntu-latest
+    env:
+      CheckFiles: "bot.py cogs/"
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
@@ -13,7 +15,25 @@ jobs:
       - name: Lint with flake8
         run: |
           pip install flake8
-          flake8 --max-line-length 120 --statistics ${FLAKE_FILES}
+          flake8 ${CheckFiles}
+
+      - name: Check with Isort
+        run: |
+          pip install isort
+          isort --check --sp setup.cfg ${CheckFiles}
+      - name: Sort with Isort
+        if: failure()
+        run: |
+          isort --sp setup.cfg ${CheckFiles}
+      - name: Create Pull Request
+        if: failure()
+        uses: peter-evans/create-pull-request@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          branch: actions/auto
+          commit-message: Changes done by tests
+          committer: Roxedus <bot@roxedus.dev>
+          title: Linter changed files
 
   build-and-push:
     needs: flake8
@@ -23,8 +43,9 @@ jobs:
       ref: ${{github.ref}}
       DOCKER_USERNAME: roxedus
       DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Build the Docker image
         run: |
           branch="${ref##*/}"
