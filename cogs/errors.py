@@ -57,10 +57,9 @@ class Errors(commands.Cog):
             elif (err.original == 'You need to be in my voicechannel.'):
                 return await send_error_embed('{errors.my_channel}')
 
-        
         if isinstance(err, commands.CommandOnCooldown):
             await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
-                            f"Try again in `{err.retry_after:.1f}` seconds.")
+                           f"Try again in `{err.retry_after:.1f}` seconds.")
 
         elif isinstance(err, commands.NoPrivateMessage):
             await ctx.send('That command is not available in DMs')
@@ -70,11 +69,11 @@ class Errors(commands.Cog):
             if self.bot.debug:
                 tb = err.__traceback__
                 traceback.print_tb(tb)
-                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))            
+                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
 
             else:
                 to_log = (RuntimeError, commands.CheckFailure, commands.CommandInvokeError,
-                              commands.NoPrivateMessage)
+                          commands.NoPrivateMessage)
 
                 if isinstance(err, to_log):
                     self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
