@@ -15,7 +15,7 @@ skip_to:
   invalid_pos: Invalid specified position.
   exceeds_queue: The position exceeds the queue\'s length.
   skipped_to: skipped to `{_title}` at position `{_pos}`
-stop: "⏹ | Stopped."
+stop: "Stopped."
 live: "\U0001F534 LIVE"
 now: Now Playing
 queue:
@@ -74,3 +74,10 @@ history:
 settings_check:
   textchannel: "You can't use music commands in this channel.\nTry in: "
   voicechannel: 'I can only play music in: '
+errors:
+  error_occurred: An error occurred
+  join_voice_first: You need to join a voicechannel first
+  not_connected: Not connected
+  need_permission: I need the `CONNECT` and `SPEAK` permissions
+  right_channel: You need to be in the right voice channel
+  my_channel: You need to be in my voicechannel
