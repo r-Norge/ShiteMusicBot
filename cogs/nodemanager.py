@@ -9,7 +9,8 @@ import codecs
 import yaml
 
 from .utils.mixplayer import MixPlayer
-
+from cogs.helpformatter import commandhelper
+from cogs.utils.paginator import Scroller
 
 class NodeManager(commands.Cog):
     def __init__(self, bot):
@@ -100,9 +101,10 @@ class NodeManager(commands.Cog):
     @commands.group(name='node', hidden=True)
     @commands.is_owner()
     async def _node(self, ctx):
-        # TODO: @Even help
         if ctx.invoked_subcommand is None:
-            await ctx.invoke(self.bot.get_command('help'), ctx.command.qualified_name)
+            paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling()
 
     @_node.command(name='reload_file')
     @commands.is_owner()
