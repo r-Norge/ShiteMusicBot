@@ -1,0 +1,15 @@
+{
+    "python.languageSever": "Pylance",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pycodestyleEnabled": true,
+    "[python]": {
+        "editor.rulers": [120],
+    },
+    "[Dockerfile]": {
+        "editor.formatOnSave": false
+    },
+    "editor.tabSize": 4
+
+}

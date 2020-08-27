@@ -112,6 +112,24 @@ reloadalias:
   aliases:        [reloadalias]
   description:    'Reload all aliases and help information.'
 
+# NodeManager
+node:
+  aliases: [node]
+  description:      'Manage server nodes.'
+  sub_commands:
+    add:
+      aliases:      [add]
+      description:  'Adds node to pool.'
+    list:
+      aliases:      [list, nodes]
+      description:  'Lists nodes in the pool.'
+    remove:
+      aliases:      [remove]
+      description:  'Removes nodes in the pool.'
+    reload_file:
+      aliases:      [reload_file, reload]
+      description:  'Reads the settings and adds newly added nodes.'
+
 # Settings
 settings:
   aliases:            [settings, set]

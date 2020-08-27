@@ -74,3 +74,10 @@ history:
 settings_check:
   textchannel: "Du kan ikke bruke musikkommandoer i denne kanalen.\nPrøv i: "
   voicechannel: 'Jeg kan bare spille musikk i: '
+errors:
+  error_occurred: En feil oppstod
+  join_voice_first: Du må være i en stemmekanal
+  not_connected: Ikke tilkoblet
+  need_permission: Jeg trenger tillgang til `CONNECT` og `SPEAK`
+  right_channel: Du må være i riktig kanal
+  my_channel: Du må være i samme stemmekanal som meg

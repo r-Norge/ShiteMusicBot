@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "oderwat.indent-rainbow",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+    ]
+}
