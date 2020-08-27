@@ -19,20 +19,17 @@ default server settings:
   dynamic max duration: Yes
 
 lavalink nodes:
-  main:  # The preferred lavalink node for your music bot
-    host: localhost
+  - host: localhost
     port: 2333
     password: youshallnotpass
     region: eu
-    name: default-node
+    name: main
 
-  # Backup nodes for your music bot
-  backup:
-    - host: localhost
-      port: 2333
-      password: youshallnotpass
-      region: eu
-      name: backup-1
+  - host: localhost
+    port: 2333
+    password: youshallnotpass
+    region: eu
+    name: backup-1
 
 APIkeys:
   genius: 
