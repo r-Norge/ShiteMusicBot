@@ -23,73 +23,61 @@ class Errors(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, err):
-        ignored = (commands.CommandNotFound)
 
-        if isinstance(err, ignored):
+        # Help commands
+        if (isinstance(err, commands.MissingRequiredArgument) or
+                isinstance(err, commands.BadArgument)):
+            paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling()
+
+        if isinstance(err, (commands.CommandNotFound)):
             return
 
-        if isinstance(err, commands.CommandInvokeError) and (err.original == 'Join a voicechannel first.'):
+        async def send_error_embed(description):
             embed = await self.base_msg(ctx, state=0xFC0303)
-            embed.description = '{errors.join_voice_first}'
+            embed.description = description
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
-        elif isinstance(err, commands.CommandInvokeError) and (err.original == 'Not connected.'):
-            embed = await self.base_msg(ctx, state=0xFC0303)
-            embed.description = '{errors.not_connected}'
-            embed = ctx.localizer.format_embed(embed)
-            return await ctx.send(embed=embed)
-        elif isinstance(err, commands.CommandInvokeError) and (err.original ==
-                                                               'I need the `CONNECT` and `SPEAK` permissions.'):
-            embed = await self.base_msg(ctx, state=0xFC0303)
-            embed.description = '{errors.need_permission}'
-            embed = ctx.localizer.format_embed(embed)
-            return await ctx.send(embed=embed)
-        elif isinstance(err, commands.CommandInvokeError) and (err.original ==
-                                                               'You need to be in the right voice channel'):
-            embed = await self.base_msg(ctx, state=0xFC0303)
-            embed.description = '{errors.right_channel}'
-            embed = ctx.localizer.format_embed(embed)
-            return await ctx.send(embed=embed)
-        elif isinstance(err, commands.CommandInvokeError) and (err.original == 'You need to be in my voicechannel.'):
-            embed = await self.base_msg(ctx, state=0xFC0303)
-            embed.description = '{errors.my_channel}'
-            embed = ctx.localizer.format_embed(embed)
-            return await ctx.send(embed=embed)
-        if not self.bot.debug:
-            if (isinstance(err, commands.MissingRequiredArgument) or
-                    isinstance(err, commands.BadArgument)):
-                paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
-                scroller = Scroller(ctx, paginator)
-                await scroller.start_scrolling()
 
-            if isinstance(err, commands.CommandInvokeError):
-                self.logger.debug(
-                    "Error running command: %s\nTraceback: %s" % (ctx.command, err))
-                pass
+        # Music related errors
+        if isinstance(err, commands.CommandInvokeError):
+            if (err.original == 'Join a voicechannel first.'):
+                return await send_error_embed('{errors.join_voice_first}')
 
-            elif isinstance(err, commands.NoPrivateMessage):
-                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
-                await ctx.send('That command is not available in DMs')
+            elif (err.original == 'Not connected.'):
+                return await send_error_embed('{errors.not_connected}')
 
-            elif isinstance(err, commands.CommandOnCooldown):
-                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
-                               f"Try again in `{err.retry_after:.1f}` seconds.")
+            elif (err.original == 'I need the `CONNECT` and `SPEAK` permissions.'):
+                return await send_error_embed('{errors.need_permission}')
 
-            elif isinstance(err, RuntimeError):
-                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
-                pass
+            elif (err.original == 'You need to be in the right voice channel'):
+                return await send_error_embed('{errors.right_channel}')
 
-            elif isinstance(err, commands.CheckFailure):
-                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
-                pass
+            elif (err.original == 'You need to be in my voicechannel.'):
+                return await send_error_embed('{errors.my_channel}')
 
-            elif isinstance(err, commands.CommandNotFound):
-                pass
+        
+        if isinstance(err, commands.CommandOnCooldown):
+            await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
+                            f"Try again in `{err.retry_after:.1f}` seconds.")
+
+        elif isinstance(err, commands.NoPrivateMessage):
+            await ctx.send('That command is not available in DMs')
+
         else:
-            tb = err.__traceback__
-            traceback.print_tb(tb)
-            print(err)
-            self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
+            # Log all exceptions if the bot is in debug mode
+            if self.bot.debug:
+                tb = err.__traceback__
+                traceback.print_tb(tb)
+                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))            
+
+            else:
+                to_log = (RuntimeError, commands.CheckFailure, commands.CommandInvokeError,
+                              commands.NoPrivateMessage)
+
+                if isinstance(err, to_log):
+                    self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
 
 
 def setup(bot):
