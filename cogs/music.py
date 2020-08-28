@@ -765,17 +765,17 @@ class Music(commands.Cog):
     async def enqueue(self, ctx, track, embed):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        if isinstance(track, dict):
-            thumbnail_url = await thumbnailer.ThumbNailer.identify(
-                self, track['info']['identifier'], track['info']['uri'])
-            track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
-
         maxlength = self.max_track_length(ctx.guild, player)
         if maxlength and track['info']['length'] > maxlength:
             embed.description = ctx.localizer.format_str("{enqueue.toolong}",
                                                          _length=timeformatter.format_ms(track['info']['length']),
                                                          _max=timeformatter.format_ms(maxlength))
             return
+
+        if isinstance(track, dict):
+            thumbnail_url = await thumbnailer.ThumbNailer.identify(
+                self, track['info']['identifier'], track['info']['uri'])
+            track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
 
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
 
