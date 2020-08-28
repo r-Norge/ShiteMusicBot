@@ -85,8 +85,6 @@ class Bot(commands.Bot):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
