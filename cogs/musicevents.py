@@ -2,29 +2,18 @@
 A cog to separate events from regular music commands
 """
 
-import codecs
-import yaml
+# Discord Packages
 import lavalink
-from discord.ext import commands
-
-from .utils.mixplayer import MixPlayer
 import lavalink.events
+from discord.ext import commands, tasks
 
 
 class MusicEvents(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # TODO: maybe only load when Music loads
-        if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
-            bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
-
-            with codecs.open(f"{self.bot.datadir}/config.yaml", 'r', encoding='utf8') as f:
-                conf = yaml.load(f, Loader=yaml.SafeLoader)
-
-            bot.lavalink.add_node(**conf['lavalink nodes']['main'])
-            bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
-
-        lavalink.add_event_hook(self.track_hook)
+        self.leave_timer.start()
+        self.logger = self.bot.main_logger.bot_logger.getChild("Errors")
+        bot.lavalink.add_event_hook(self.track_hook)
 
     def cog_unload(self):
         self.bot.lavalink._event_hooks.clear()
@@ -76,6 +65,17 @@ class MusicEvents(commands.Cog):
             if player.queue.empty and player.current is None:
                 await player.stop()
                 await self.connect_to(guild.id, None)
+
+    async def leave_check(self):
+        for player_id in self.bot.lavalink.player_manager.players:
+            await self.check_leave_voice(self.bot.get_guild(player_id))
+
+    @tasks.loop(seconds=10.0)
+    async def leave_timer(self):
+        try:
+            await self.leave_check()
+        except Exception as err:
+            self.logger.debug("Error in leave_timer loop.\nTraceback: %s" % (err))
 
 
 def setup(bot):

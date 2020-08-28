@@ -19,7 +19,7 @@ class ThumbNailer(object):
             img = soup.find("meta", property="twitter:image")
             return img["content"]
         except Exception as e:
-            self.logger.exception("%s".format(e))
+            self.logger.exception("%s" % e)
 
     async def _bandcamp(self, url):
         html = await ThumbNailer.get_html(self, url)
@@ -28,7 +28,7 @@ class ThumbNailer(object):
             img = soup.find(class_="popupImage").get("href")
             return img
         except Exception as e:
-            self.logger.exception("%s".format(e))
+            self.logger.exception("%s" % e)
 
     async def _vimeo(self, url):
         html = await ThumbNailer.get_html(self, url)
@@ -37,7 +37,7 @@ class ThumbNailer(object):
             img = soup.find("meta", property="og:image")
             return img["content"]
         except Exception as e:
-            self.logger.exception("%s".format(e))
+            self.logger.exception("%s" % e)
 
     @staticmethod
     async def identify(self, identifier, uri):

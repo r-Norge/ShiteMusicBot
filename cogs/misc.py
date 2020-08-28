@@ -1,10 +1,13 @@
+# Discord Packages
 import discord
-import time
-import platform
-
 from discord.ext import commands
-from cogs.utils import bot_version
 from lavalink import __version__ as LavalinkVersion
+
+import platform
+import time
+
+# Bot Utilities
+from cogs.utils import bot_version
 
 
 class Misc(commands.Cog):
@@ -51,7 +54,7 @@ class Misc(commands.Cog):
         lavalink = self.bot.lavalink
 
         listeners = 0
-        for guild, player in lavalink.player_manager.players:
+        for guild, player in lavalink.player_manager.players.items():
             listeners += len(player.listeners)
 
         embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')

@@ -1,5 +1,7 @@
-import traceback
+# Discord Packages
 from discord.ext import commands
+
+import traceback
 
 
 class Cogs(commands.Cog):
@@ -21,13 +23,15 @@ class Cogs(commands.Cog):
         try:
             self.bot.load_extension(f'cogs.{module}')
             await ctx.send(f'{module} loaded')
-        except Exception as e:
-            await ctx.send(f'```py\n{traceback.format_exc(e)}\n```')
+        except Exception:
+            await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
     @_cogs.command()
     @commands.is_owner()
     async def unload(self, ctx, *, module):
         """Unloads a module."""
+        if module == "cogs":
+            return await ctx.send('Unloading this cog is not allowed')
         try:
             self.bot.unload_extension(f'cogs.{module}')
             await ctx.send(f'{module} unloaded')
@@ -63,7 +67,7 @@ class Cogs(commands.Cog):
     @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
-        self.bot.lavalink.players.clear()
+        self.bot.lavalink.player_manager.players.clear()
         await self.bot.logout()
 
 

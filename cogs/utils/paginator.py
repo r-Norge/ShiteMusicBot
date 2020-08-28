@@ -1,4 +1,6 @@
+# Discord Packages
 import discord
+
 import asyncio
 
 
@@ -93,7 +95,7 @@ class FieldPaginator(BasePaginator):
         field = {"name": name, "value": value}
         fieldsize = sum([len(val) for _, val in field.items()])
         if len(name) > 256 or len(value) > 1024:
-            raise RuntimeError(f'Maximum field size exceeded, max name length: 256. max value length: 1024.')
+            raise RuntimeError('Maximum field size exceeded, max name length: 256. max value length: 1024.')
 
         if self._current_page_size + fieldsize > self._max_size:
             self.close_page()

@@ -1,0 +1,2 @@
+pageindicator: Viser side {_current}/{_total} | Skriv "{_prefix}hjelp <kommando>" for mer informasjon
+notcommand: Ser ut som "{_command}" ikke er en kategori eller en kommando.

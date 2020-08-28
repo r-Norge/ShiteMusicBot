@@ -1,3 +1,4 @@
+# Discord Packages
 import discord
 from discord.ext import commands
 
@@ -60,7 +61,7 @@ def is_dj(ctx):
 def dj_or(alone: bool = False, track_requester: bool = False):
     async def predicate(ctx):
         try:
-            player = ctx.bot.lavalink.players.get(ctx.guild.id)
+            player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
             is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
             requester = (player.current.requester == ctx.author.id) and track_requester
 

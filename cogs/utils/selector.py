@@ -1,6 +1,9 @@
+# Discord Packages
 import discord
+
 import asyncio
 import inspect
+
 from .paginator import TextPaginator
 
 

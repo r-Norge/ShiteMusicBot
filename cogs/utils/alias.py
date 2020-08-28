@@ -1,9 +1,10 @@
-import yaml
+# Discord Packages
+from discord.ext import commands
 
 from glob import glob
 from os import path
 
-from discord.ext import commands
+import yaml
 
 """
 Not the prettiest this, works by replacing any found aliases in a command string with the actual command names.

@@ -1,23 +1,25 @@
+# Discord Packages
 import discord
-import codecs
-import time
-import os
-import traceback
-import yaml
-import aiohttp
-
 from discord.ext import commands
+
+import codecs
+import os
+import time
+import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
-from cogs.utils.settingsmanager import Settings
-from cogs.utils.localizer import Localizer
-from cogs.utils.localizer import LocalizerWrapper
+
+import aiohttp
+import yaml
+
+# Bot Utilities
 from cogs.utils.alias import Aliaser
 from cogs.utils.context import Context
+from cogs.utils.localizer import Localizer, LocalizerWrapper
 from cogs.utils.logger import BotLogger
-from cogs.helpformatter import commandhelper
-from cogs.utils.paginator import Scroller
+from cogs.utils.settingsmanager import Settings
 
 initial_extensions = [
+    'cogs.errors',
     'cogs.cogs',
     'cogs.settings',
     'cogs.misc',
@@ -25,8 +27,7 @@ initial_extensions = [
 ]
 
 on_ready_extensions = [
-    'cogs.music',
-    'cogs.musicevents'
+    'cogs.nodemanager'
 ]
 
 
@@ -49,8 +50,6 @@ class Bot(commands.Bot):
         self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
         self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
-
         self.datadir = datadir
         self.debug = debug
         self.main_logger = logger
@@ -62,42 +61,6 @@ class Bot(commands.Bot):
                 self.load_extension(extension)
             except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
-
-    async def on_command_error(self, ctx, err):
-        if not self.debug:
-            if (isinstance(err, commands.MissingRequiredArgument) or
-                    isinstance(err, commands.BadArgument)):
-                paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
-                scroller = Scroller(ctx, paginator)
-                await scroller.start_scrolling()
-
-            if isinstance(err, commands.CommandInvokeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
-                pass
-
-            elif isinstance(err, commands.NoPrivateMessage):
-                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
-                await ctx.send('That command is not available in DMs')
-
-            elif isinstance(err, commands.CommandOnCooldown):
-                await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
-                               f"Try again in `{err.retry_after:.1f}` seconds.")
-
-            elif isinstance(err, RuntimeError):
-                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
-                pass
-
-            elif isinstance(err, commands.CheckFailure):
-                self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
-                pass
-
-            elif isinstance(err, commands.CommandNotFound):
-                pass
-        else:
-            tb = err.__traceback__
-            traceback.print_tb(tb)
-            print(err)
-            self.logger.debug("Error running command: %s\n Traceback: %s" % (ctx.command, err))
 
     async def on_message(self, message):
         if message.author.bot:
@@ -121,6 +84,7 @@ class Bot(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = time.time()
+
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
@@ -133,8 +97,9 @@ class Bot(commands.Bot):
         print(f'Version: {discord.__version__}\n')
         self.logger.debug("Bot Ready\n\n\n")
 
+        self.session = aiohttp.ClientSession(loop=self.loop)
         await self.change_presence(activity=discord.Game(type=0,
-                                   name=conf["bot"]["playing status"]),
+                                                         name=conf["bot"]["playing status"]),
                                    status=discord.Status.online)
 
     def run(self):

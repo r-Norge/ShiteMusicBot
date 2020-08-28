@@ -1,14 +1,15 @@
+# Discord Packages
+from discord import Embed
+
+import copy
+import re
 from glob import glob
 from os import path
 
-import re
-
-from cogs.utils.dict_utils import flatten, SafeDict
-
 import yaml
 
-import copy
-from discord import Embed
+# Bot Utilities
+from cogs.utils.dict_utils import SafeDict, flatten
 
 """
 Localizer for bot
@@ -95,6 +96,7 @@ class Localizer:
             nstr = nstr.replace(".", "/")
             value = value.replace(outer, nstr)
         return value
+
     # parses and interpolates strings
     @staticmethod
     def _parse_localization_string(value, d, prefix=None):
