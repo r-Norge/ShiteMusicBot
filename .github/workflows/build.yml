@@ -42,7 +42,7 @@ jobs:
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
-    if: ! github.event_name == 'pull_request'
+    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true' && ! contains(toJSON(github.event.commits.*.message), '[ci skip]')
     env:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
@@ -97,11 +97,11 @@ jobs:
           docker tag $REPO:$BRANCH $REPO:${{ steps.vars.tagger.tag }}
 
       - name: Login to registry
-        if: github.event.pull_request == false
+        if: github.event_name != 'pull_request'
         run: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
 
       - name: Pushes the Docker image
         env:
           REPO: ${{ steps.vars.outputs.repo }}
-        if: github.event.pull_request == false
+        if: github.event_name != 'pull_request'
         run: docker push $REPO
