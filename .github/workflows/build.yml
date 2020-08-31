@@ -42,7 +42,7 @@ jobs:
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true' && ! contains(toJSON(github.event.commits.*.message), '[ci skip]')
+    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true'
     env:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
