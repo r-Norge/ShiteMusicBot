@@ -42,7 +42,7 @@ jobs:
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true' && ! contains(toJSON(github.event.commits.*.message), '[ci skip]')
+    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true'
     env:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
@@ -52,12 +52,13 @@ jobs:
       - name: Create VARS
         env:
           _repo: rnorge/music
+          _username: roxedus
           _ref: ${{github.ref}}
         id: vars
         run: |
           echo "::set-output name=branch::$(echo ${_ref} | cut -d/ -f3)"
-          echo "::set-output name=username::roxedus"
-          echo "::set-output name=repo::rnorge/music"
+          echo "::set-output name=username::$(echo ${_username} | cut -d/ -f1 | tr '[:upper:]' '[:lower:]')"
+          echo "::set-output name=repo::$(echo ${_repo} | tr '[:upper:]' '[:lower:]')"
 
       - name: Bump TAG
         if: github.ref == 'refs/heads/master'
@@ -77,7 +78,7 @@ jobs:
           add: cogs/utils/bot_version.py
           author_name: MarlinBotCode
           message: Bump Version
-          tag: ${{ steps.vars.tagger.tag }}
+          tag: v${{ steps.tagger.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -94,7 +95,7 @@ jobs:
           REPO: ${{ steps.vars.outputs.repo }}
           BRANCH: ${{ steps.vars.outputs.branch }}
         run: |
-          docker tag $REPO:$BRANCH $REPO:${{ steps.vars.tagger.tag }}
+          docker tag $REPO:$BRANCH $REPO:${{ steps.tagger.outputs.tag }}
 
       - name: Login to registry
         if: github.event_name != 'pull_request'
