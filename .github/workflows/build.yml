@@ -98,7 +98,7 @@ jobs:
 
       - name: Login to registry
         if: github.event_name != 'pull_request'
-        run: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+        run: echo $DOCKER_PASSWORD | docker login -u ${{ steps.vars.outputs.username }} --password-stdin
 
       - name: Pushes the Docker image
         env:
