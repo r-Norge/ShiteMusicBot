@@ -8,10 +8,12 @@ jobs:
       CheckFiles: "bot.py cogs/"
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
+
       - name: Lint with flake8
         run: |
           pip install flake8
@@ -21,10 +23,12 @@ jobs:
         run: |
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
+
       - name: Sort with Isort
         if: failure()
         run: |
           isort --sp setup.cfg ${CheckFiles}
+
       - name: Create Pull Request
         if: failure()
         uses: peter-evans/create-pull-request@v2
@@ -38,36 +42,66 @@ jobs:
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true' && ! contains(toJSON(github.event.commits.*.message), '[ci skip]')
     env:
-      repo: rnorge/music
-      ref: ${{github.ref}}
-      DOCKER_USERNAME: roxedus
       DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v2
-      - name: Build the Docker image
+
+      - name: Create VARS
+        env:
+          _repo: rnorge/music
+          _ref: ${{github.ref}}
+        id: vars
         run: |
-          branch="${ref##*/}"
-          docker build -t $repo:$branch -t $repo:$branch-${{github.sha}} .
+          echo "::set-output name=branch::$(echo ${_ref} | cut -d/ -f3)"
+          echo "::set-output name=username::roxedus"
+          echo "::set-output name=repo::rnorge/music"
+
+      - name: Bump TAG
+        if: github.ref == 'refs/heads/master'
+        id: tagger
+        run: |
+          version=$(grep -i bot_version cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \")
+          a=(${version//./ })
+          ((a[2]++))
+          new_version=$(echo "${a[0]}.${a[1]}.${a[2]}")
+          sed -i "s/${version}/${new_version}/g" cogs/utils/bot_version.py
+          echo "::set-output name=tag::${new_version}"
+
+      - name: Push changed files, and tags
+        if: github.ref == 'refs/heads/master'
+        uses: EndBug/add-and-commit@v4
+        with:
+          add: cogs/utils/bot_version.py
+          author_name: MarlinBotCode
+          message: Bump Version
+          tag: ${{ steps.vars.tagger.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build the Docker image
+        env:
+          REPO: ${{ steps.vars.outputs.repo }}
+          BRANCH: ${{ steps.vars.outputs.branch }}
+        run: |
+          docker build -t $REPO:$BRANCH -t $REPO:$BRANCH-${{github.sha}} .
 
       - name: Master tag
         if: github.ref == 'refs/heads/master'
+        env:
+          REPO: ${{ steps.vars.outputs.repo }}
+          BRANCH: ${{ steps.vars.outputs.branch }}
         run: |
-          branch="${ref##*/}"
-          bot_ver=$(grep -i bot_version cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \")
-          docker tag $repo:$branch $repo:$bot_ver
-
-      - name: Bump version and push tag
-        if: github.ref == 'refs/heads/master'
-        uses: mathieudutour/github-tag-action@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          docker tag $REPO:$BRANCH $REPO:${{ steps.vars.tagger.tag }}
 
       - name: Login to registry
-        if: github.event.pull_request == false
-        run: echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+        if: github.event_name != 'pull_request'
+        run: echo $DOCKER_PASSWORD | docker login -u ${{ steps.vars.outputs.username }} --password-stdin
 
       - name: Pushes the Docker image
-        if: github.event.pull_request == false
-        run: docker push $repo
+        env:
+          REPO: ${{ steps.vars.outputs.repo }}
+        if: github.event_name != 'pull_request'
+        run: docker push $REPO
