@@ -81,15 +81,9 @@ class Misc(commands.Cog):
         """
         Info about the bot
         """
-        membercount = []
-        for guild in self.bot.guilds:
-            for member in guild.members:
-                if member.id in membercount:
-                    pass
-                else:
-                    membercount.append(member.id)
         guilds = len(self.bot.guilds)
-        members = len(membercount)
+        members = len(self.bot.users)
+
         days, hours, minutes, seconds = self.get_uptime()
         avatar = self.bot.user.avatar_url_as(format=None, static_format='png', size=1024)
 
