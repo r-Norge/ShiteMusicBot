@@ -96,7 +96,7 @@ class Music(commands.Cog):
             await player.play()
 
     @commands.command(name='seek')
-    @checks.dj_or(alone=True)
+    @checks.dj_or(alone=True, track_requester=True)
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -223,7 +223,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='queue')
-    async def _queue(self, ctx, user: discord.Member = None):
+    async def _queue(self, ctx, member: discord.Member = None):
         """ Shows the player's queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
@@ -232,15 +232,16 @@ class Music(commands.Cog):
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
-        if user is None:
+        if member is None:
             queue = player.global_queue()
             pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
 
         else:
-            user_queue = player.user_queue(user.id, dual=True)
+            user_queue = player.user_queue(member.id, dual=True)
             if not user_queue:
-                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=user.name))
-            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, user_name=user.name)
+                return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=member.display_name))
+            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, 
+                                            user_name=member.display_name)
 
         scroller = Scroller(ctx, pagified_queue)
         await scroller.start_scrolling()
@@ -487,6 +488,24 @@ class Music(commands.Cog):
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
+    @commands.command(name='reconnect')
+    @checks.dj_or(alone=True)
+    async def _reconnect(self, ctx):
+        """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        if not player.is_connected:
+            return await ctx.send(ctx.localizer.format_str("{not_connected}"))
+
+        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
+            return await ctx.send(ctx.localizer.format_str("{disconnect.not_in_voice}"))
+
+        current_channel = player.channel_id
+        await player.stop()
+        await self.connect_to(ctx.guild.id, None)
+        await asyncio.sleep(1) # Pretend to do stuff?
+        await self.connect_to(ctx.guild.id, current_channel)
+        await player.play()
+
     @commands.command(name='volume')
     @checks.dj_or(alone=True, track_requester=True)
     async def _volume(self, ctx, volume: int = None):
@@ -723,7 +742,7 @@ class Music(commands.Cog):
         # Add commands that require joining voice to work.
         should_connect = ctx.command.callback.__name__ in ('_play', '_find', '_search', '_sk')
 
-        # Add commands that don't require the you being in voice.
+        # Add commands that don't require you being in voice.
         without_connect = ctx.command.callback.__name__ in ('_queue', '_history', '_now', '_lyrics')
 
         if without_connect:
