@@ -240,7 +240,7 @@ class Music(commands.Cog):
             user_queue = player.user_queue(member.id, dual=True)
             if not user_queue:
                 return await ctx.send(ctx.localizer.format_str("{queue.empty}", _user=member.display_name))
-            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color, 
+            pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color,
                                             user_name=member.display_name)
 
         scroller = Scroller(ctx, pagified_queue)
@@ -502,7 +502,7 @@ class Music(commands.Cog):
         current_channel = player.channel_id
         await player.stop()
         await self.connect_to(ctx.guild.id, None)
-        await asyncio.sleep(1) # Pretend to do stuff?
+        await asyncio.sleep(1)  # Pretend to do stuff?
         await self.connect_to(ctx.guild.id, current_channel)
         await player.play()
 
