@@ -4,7 +4,7 @@ from discord.ext import commands
 import inspect
 
 
-def ensure_voice_connection(should_connect=False):
+def require_voice_connection(should_connect=False):
     """
     Checks if the bot is in a valid voice channel for the command
     should_connect indicates whether the bot should try to join a channel
@@ -53,7 +53,7 @@ def ensure_voice_connection(should_connect=False):
     return ensure_voice_proper
 
 
-def require_playing(ensure_user_listening=False):
+def require_playing(require_user_listening=False):
     """
     Checks if the bot is currently playing a track
     ensure_user_listening: also checks if the user is listening to the bot
@@ -67,7 +67,7 @@ def require_playing(ensure_user_listening=False):
                 if not player.is_playing:
                     raise commands.CommandInvokeError('Not playing')
 
-                if ensure_user_listening and (ctx.author not in player.listeners):
+                if require_user_listening and (ctx.author not in player.listeners):
                     raise commands.CommandInvokeError('Not listening')
 
             else:

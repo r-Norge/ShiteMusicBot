@@ -41,6 +41,7 @@ class Music(commands.Cog):
     async def cog_before_invoke(self, ctx):
         """ Ensures a valic player exists whenever a command is run """
         region = ctx.guild.region if isinstance(ctx.guild.region, str) else ctx.guild.region.value
+        # Creates a new only if one doesn't exist, ensures a valid player for all checks.
         self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=region)
 
     async def connect_to(self, guild_id: int, channel_id: str):
@@ -101,7 +102,7 @@ class Music(commands.Cog):
     @commands.command(name='seek')
     @checks.dj_or(alone=True, track_requester=True)
     @require_voice_connection()
-    @require_playing(ensure_user_listening=True)
+    @require_playing(require_user_listening=True)
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -155,7 +156,7 @@ class Music(commands.Cog):
 
     @commands.command(name='skipto')
     @checks.dj_or(alone=True)
-    @require_playing(ensure_user_listening=True)
+    @require_playing(require_user_listening=True)
     async def _skip_to(self, ctx, pos: int = 1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -172,7 +173,7 @@ class Music(commands.Cog):
     @commands.command(name='stop')
     @checks.dj_or(alone=True)
     @require_voice_connection()
-    @require_playing(ensure_user_listening=True)
+    @require_playing(require_user_listening=True)
     async def _stop(self, ctx):
         """ Stops the player and clears its queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -238,7 +239,6 @@ class Music(commands.Cog):
                                         user_name=ctx.author.display_name)
         scroller = Scroller(ctx, pagified_queue)
         await scroller.start_scrolling()
-
 
     @commands.command(name='pause')
     @checks.dj_or(alone=True)
@@ -465,8 +465,7 @@ class Music(commands.Cog):
                 return await ctx.send(ctx.localizer.format_str("{volume.out_of_range}"))
         await player.set_volume(volume)
 
-        embed = discord.Embed(color=ctx.me.color)
-        embed.description = "{volume.set_to}"
+        embed = discord.Embed(description="{volume.set_to}", color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
 
@@ -480,7 +479,7 @@ class Music(commands.Cog):
         await player.set_volume(100)
         await player.bassboost(False)
 
-        embed = discord.Embed(description='{volume.reset}' , color=ctx.me.color)
+        embed = discord.Embed(description='{volume.reset}', color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
@@ -592,7 +591,7 @@ class Music(commands.Cog):
     @commands.command(name='scrub')
     @checks.dj_or(alone=True)
     @require_voice_connection()
-    @require_playing(ensure_user_listening=True)
+    @require_playing(require_user_listening=True)
     async def _scrub(self, ctx):
         """ Lists the first 10 search results from a given query. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)

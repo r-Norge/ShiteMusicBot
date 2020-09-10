@@ -62,7 +62,6 @@ def dj_or(alone: bool = False, track_requester: bool = False):
     async def predicate(ctx):
         try:
             player = ctx.bot.lavalink.player_manager.get(ctx.guild.id)
-            # Make this false if no player
             is_alone = (ctx.author in player.listeners and len(player.listeners) == 1) and alone
             requester = (player.current.requester == ctx.author.id) and track_requester
 
@@ -71,6 +70,5 @@ def dj_or(alone: bool = False, track_requester: bool = False):
             is_alone = False
 
         dj = is_dj(ctx)
-        print(dj, is_alone, requester)
         return dj or is_alone or requester
     return commands.check(predicate)
