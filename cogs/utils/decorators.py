@@ -36,14 +36,8 @@ def require_voice_connection(should_connect=False):
                 # Check against music channel restrictions in bot settings
                 if voice_channels := self.bot.settings.get(ctx.guild, 'channels.music', []):
                     if user_voice_channel.id not in voice_channels:
-                        response = ctx.localizer.format_str('{settings_check.voicechannel}')
-                        for channel_id in voice_channels:
-                            channel = ctx.guild.get_channel(channel_id)
-                            if channel is not None:
-                                response += f'{channel.name}, '
-
                         raise WrongVoiceChannelError(
-                            'You need to be in the right voice channel', channels=response[:-2])
+                            'You need to be in the right voice channel', channels=voice_channels)
 
                 player.store('channel', ctx.channel.id)
                 await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))

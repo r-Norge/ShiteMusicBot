@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 
 from .utils import checks, thumbnailer, timeformatter
 from .utils.decorators import require_playing, require_queue, require_voice_connection
+from .utils.music_errors import WrongTextChannelError
 from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
 
@@ -33,7 +34,7 @@ class Music(commands.Cog):
             raise commands.NoPrivateMessage
         if textchannels := self.bot.settings.get(ctx.guild, 'channels.text', []):
             if ctx.channel.id not in textchannels:
-                return False
+                raise WrongTextChannelError('You need to be in the right text channel', channels=textchannels)
         return True
 
     async def cog_before_invoke(self, ctx):

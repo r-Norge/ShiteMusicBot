@@ -6,7 +6,7 @@ import traceback
 
 # Bot Utilities
 from cogs.helpformatter import commandhelper
-from cogs.utils.music_errors import WrongVoiceChannelError
+from cogs.utils.music_errors import WrongTextChannelError, WrongVoiceChannelError
 from cogs.utils.paginator import Scroller
 
 
@@ -64,11 +64,28 @@ class Errors(commands.Cog):
                 return await send_error_embed('{have_to_listen}')
 
         if isinstance(err, WrongVoiceChannelError):
-            if (err.original == 'You need to be in the right voice channel'):
-                kwargs = {}
-                if err.channels:
-                    kwargs['title'] = err.channels
-                return await send_error_embed('{errors.right_channel}', **kwargs)
+            changed = False
+            response = ctx.localizer.format_str('{settings_check.voicechannel}')
+            for channel_id in err.channels:
+                channel = ctx.guild.get_channel(channel_id)
+                if channel is not None:
+                    response += f'{channel.name}, '
+                    changed = True
+            if changed:
+                return await send_error_embed(response[:-2], title='{errors.right_channel}')
+            else:
+                return await send_error_embed('{errors.right_channel}')
+
+        if isinstance(err, WrongTextChannelError):
+            try:
+                await ctx.message.delete()
+            except Exception as e:
+                self.logger.debug("Error deleting message: %s\nTraceback: %s" % (e, err))
+            response = ctx.localizer.format_str('{settings_check.textchannel}')
+            for channel_id in err.channels:
+                response += f'<#{channel_id}>, '
+            msg = await send_error_embed(response[:-2], title='{errors.right_channel}')
+            return await msg.delete(delay=5)
 
         if isinstance(err, commands.CheckFailure):
             pass
