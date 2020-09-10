@@ -5,6 +5,9 @@ from discord.ext import commands
 import functools
 import inspect
 
+# Bot Utilities
+from cogs.utils.music_errors import WrongVoiceChannelError
+
 
 def require_voice_connection(should_connect=False):
     """
@@ -38,10 +41,9 @@ def require_voice_connection(should_connect=False):
                             channel = ctx.guild.get_channel(channel_id)
                             if channel is not None:
                                 response += f'{channel.name}, '
-                        # TODO: Make this send the channels in question to the error, if not it is not that useful of
-                        # an error message
-                        await ctx.send(response[:-2])
-                        raise commands.CommandInvokeError('You need to be in the right voice channel')
+
+                        raise WrongVoiceChannelError(
+                            'You need to be in the right voice channel', channels=response[:-2])
 
                 player.store('channel', ctx.channel.id)
                 await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))

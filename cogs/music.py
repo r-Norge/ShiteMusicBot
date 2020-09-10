@@ -713,17 +713,6 @@ class Music(commands.Cog):
         else:
             return maxlength*60*1000
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, err):
-        if isinstance(err, commands.CheckFailure):
-            textchannels = self.bot.settings.get(ctx.guild, 'channels.text', [])
-            if textchannels:
-                if ctx.channel.id not in textchannels:
-                    response = ctx.localizer.format_str('{settings_check.textchannel}')
-                    for channel_id in textchannels:
-                        response += f'<#{channel_id}>, '
-                    await ctx.send(response[:-2])
-
 
 def setup(bot):
     bot.add_cog(Music(bot))

@@ -6,6 +6,7 @@ import traceback
 
 # Bot Utilities
 from cogs.helpformatter import commandhelper
+from cogs.utils.music_errors import WrongVoiceChannelError
 from cogs.utils.paginator import Scroller
 
 
@@ -34,9 +35,11 @@ class Errors(commands.Cog):
         if isinstance(err, (commands.CommandNotFound)):
             return
 
-        async def send_error_embed(description):
+        async def send_error_embed(description, **kwargs):
             embed = await self.base_msg(ctx, state=0xFC0303)
             embed.description = description
+            if kwargs.get("title"):
+                embed.title = kwargs["title"]
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
@@ -51,9 +54,6 @@ class Errors(commands.Cog):
             elif (err.original == 'I need the `CONNECT` and `SPEAK` permissions.'):
                 return await send_error_embed('{errors.need_permission}')
 
-            elif (err.original == 'You need to be in the right voice channel'):
-                return await send_error_embed('{errors.right_channel}')
-
             elif (err.original == 'You need to be in my voicechannel.'):
                 return await send_error_embed('{errors.my_channel}')
 
@@ -62,6 +62,13 @@ class Errors(commands.Cog):
 
             elif (err.original == 'Not listening'):
                 return await send_error_embed('{have_to_listen}')
+
+        if isinstance(err, WrongVoiceChannelError):
+            if (err.original == 'You need to be in the right voice channel'):
+                kwargs = {}
+                if err.channels:
+                    kwargs['title'] = err.channels
+                return await send_error_embed('{errors.right_channel}', **kwargs)
 
         if isinstance(err, commands.CheckFailure):
             pass
