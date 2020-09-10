@@ -15,11 +15,9 @@ import urllib
 from bs4 import BeautifulSoup
 
 from .utils import checks, thumbnailer, timeformatter
+from .utils.decorators import require_playing, require_queue, require_voice_connection
 from .utils.paginator import QueuePaginator, Scroller, TextPaginator
 from .utils.selector import Selector
-
-from .utils.decorators import require_voice_connection, require_playing, require_queue
-
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
