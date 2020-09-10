@@ -57,6 +57,12 @@ class Errors(commands.Cog):
             elif (err.original == 'You need to be in my voicechannel.'):
                 return await send_error_embed('{errors.my_channel}')
 
+            elif (err.original == 'Not playing'):
+                return await send_error_embed('{not_playing}')
+
+            elif (err.original == 'Not listening'):
+                return await send_error_embed('{have_to_listen}')
+
         if isinstance(err, commands.CommandOnCooldown):
             await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "
                            f"Try again in `{err.retry_after:.1f}` seconds.")
