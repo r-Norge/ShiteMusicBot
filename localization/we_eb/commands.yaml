@@ -165,8 +165,8 @@ settings:
       description:      'Set the vote thweshowd wequiwed to skip a sonyg.'
       
 # Cogs
-cogs:
-  aliases:              [cogs]
+cogmanager:
+  aliases:              [cogmanager]
   description:          'cog management'
   sub_commands:
     load:

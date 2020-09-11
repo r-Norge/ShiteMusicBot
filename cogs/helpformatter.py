@@ -42,21 +42,24 @@ async def helper(ctx):
 async def coghelper(ctx, cog, ignore_subcommands=True):
     paginator = HelpPaginator(max_size=5000, max_fields=5, color=ctx.me.color, title=cog.__cog_name__)
     for cmd in cog.walk_commands():
-        if ignore_subcommands:
-            if len(cmd.qualified_name.split()) > 1:
-                continue
-        if cmd.hidden:
-            continue
         try:
-            can_run = await cmd.can_run(ctx)
-        except commands.CommandError:  # Was 'CommandError' guessed it was supposed to be what it is now
-            can_run = False
-        if not can_run:
-            continue
-        cmd_dict = get_cmd_dict(ctx, cmd.qualified_name)
-        if cmd_dict:
-            paginator.add_command_field(cmd_dict)
-
+            if ignore_subcommands:
+                if len(cmd.qualified_name.split()) > 1:
+                    continue
+            if cmd.hidden:
+                continue
+            try:
+                can_run = await cmd.can_run(ctx)
+            except commands.CommandError:  # Was 'CommandError' guessed it was supposed to be what it is now
+                can_run = False
+            if not can_run:
+                continue
+            cmd_dict = get_cmd_dict(ctx, cmd.qualified_name)
+            if cmd_dict:
+                paginator.add_command_field(cmd_dict)
+        except Exception as e:
+            print(e)
+            print("Help failed for command: ", cmd)
     paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 

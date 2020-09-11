@@ -4,9 +4,10 @@ from discord.ext import commands
 
 import traceback
 
+from cogs.music.music_errors import WrongTextChannelError, WrongVoiceChannelError
+
 # Bot Utilities
 from cogs.helpformatter import commandhelper
-from cogs.utils.music_errors import WrongTextChannelError, WrongVoiceChannelError
 from cogs.utils.paginator import Scroller
 
 

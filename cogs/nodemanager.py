@@ -22,7 +22,6 @@ class NodeManager(commands.Cog):
 
         music_extensions = [
             'cogs.music',
-            'cogs.musicevents'
         ]
 
         if not hasattr(bot, 'lavalink'):
@@ -104,6 +103,7 @@ class NodeManager(commands.Cog):
     @commands.is_owner()
     async def _node(self, ctx):
         if ctx.invoked_subcommand is None:
+            ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
             await scroller.start_scrolling()

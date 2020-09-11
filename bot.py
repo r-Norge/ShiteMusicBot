@@ -20,7 +20,7 @@ from cogs.utils.settingsmanager import Settings
 
 initial_extensions = [
     'cogs.errors',
-    'cogs.cogs',
+    'cogs.cogmanager',
     'cogs.settings',
     'cogs.misc',
     'cogs.helpformatter'

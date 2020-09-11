@@ -5,8 +5,7 @@ from discord.ext import commands
 import functools
 import inspect
 
-# Bot Utilities
-from cogs.utils.music_errors import WrongVoiceChannelError
+from cogs.music.music_errors import WrongVoiceChannelError
 
 
 def require_voice_connection(should_connect=False):
