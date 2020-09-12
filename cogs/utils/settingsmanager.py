@@ -89,7 +89,7 @@ class Settings:
 
         if default and isinstance(default, str) and hasattr(self, default):
             default = getattr(self, default)
-        elif not default:
+        elif default == '':
             default = None
 
         if identifier not in self.settings.keys():
