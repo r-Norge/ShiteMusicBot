@@ -64,6 +64,9 @@ class Errors(commands.Cog):
             elif (err.original == 'Not listening'):
                 return await send_error_embed('{have_to_listen}')
 
+            elif (err.original == 'The channel is currently full'):
+                return await send_error_embed('{errors.full_channel}')
+
         if isinstance(err, WrongVoiceChannelError):
             changed = False
             response = ctx.localizer.format_str('{settings_check.voicechannel}')

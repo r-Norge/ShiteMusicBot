@@ -81,3 +81,4 @@ errors:
   need_permission: I need the `CONNECT` and `SPEAK` permissions
   right_channel: You need to be in the right voice channel
   my_channel: You need to be in my voicechannel
+  full_channel: The channel is currently full

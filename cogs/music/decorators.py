@@ -13,7 +13,7 @@ def require_voice_connection(should_connect=False):
     Checks if the bot is in a valid voice channel for the command
     should_connect indicates whether the bot should try to join a channel
     """
-    def ensure_voice_proper(func):
+    def ensure_voice(func):
         @functools.wraps(func)
         async def ensure_voice_inner(self, ctx, *command_args, **kwargs):
             """ This check ensures that the bot and command author are in the same voicechannel. """
@@ -32,6 +32,9 @@ def require_voice_connection(should_connect=False):
                 if not permissions.connect or not permissions.speak:  # Check user limit too?
                     raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
 
+                if (len(user_voice_channel.members) == user_voice_channel.user_limit) and not permissions.administrator:
+                    raise commands.CommandInvokeError('The channel is currently full')
+
                 # Check against music channel restrictions in bot settings
                 if voice_channels := self.bot.settings.get(ctx.guild, 'channels.music', []):
                     if user_voice_channel.id not in voice_channels:
@@ -47,7 +50,7 @@ def require_voice_connection(should_connect=False):
             await func(self, ctx, *command_args, **kwargs)
 
         return ensure_voice_inner
-    return ensure_voice_proper
+    return ensure_voice
 
 
 def require_playing(require_user_listening=False):
