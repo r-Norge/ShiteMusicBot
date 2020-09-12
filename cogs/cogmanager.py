@@ -3,20 +3,26 @@ from discord.ext import commands
 
 import traceback
 
+# Bot Utilities
+from cogs.helpformatter import commandhelper
+from cogs.utils.paginator import Scroller
 
-class Cogs(commands.Cog):
+
+class CogManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = self.bot.settings
 
-    @commands.group(name='cogs', hidden=True)
+    @commands.group(name='cogmanager', hidden=True)
     @commands.is_owner()
-    async def _cogs(self, ctx):
+    async def _cogmanager(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.invoke(self.bot.get_command('help'),
-                             ctx.command.qualified_name)
+            ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
+            paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling()
 
-    @_cogs.command()
+    @_cogmanager.command()
     @commands.is_owner()
     async def load(self, ctx, *, module):
         """Loads a module."""
@@ -26,11 +32,11 @@ class Cogs(commands.Cog):
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
-    @_cogs.command()
+    @_cogmanager.command()
     @commands.is_owner()
     async def unload(self, ctx, *, module):
         """Unloads a module."""
-        if module == "cogs":
+        if module == "cogmanager":
             return await ctx.send('Unloading this cog is not allowed')
         try:
             self.bot.unload_extension(f'cogs.{module}')
@@ -38,7 +44,7 @@ class Cogs(commands.Cog):
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
-    @_cogs.command(name='reload')
+    @_cogmanager.command(name='reload')
     @commands.is_owner()
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
@@ -49,13 +55,13 @@ class Cogs(commands.Cog):
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
-    @_cogs.command(name='reloadall')
+    @_cogmanager.command(name='reloadall')
     @commands.is_owner()
     async def _relaod_all(self, ctx):
         """Reloads all extensions"""
         try:
             for extension in self.bot.extensions:
-                if extension == 'cogs.cogs':
+                if extension == 'cogs.cogmanager':
                     continue
                 self.bot.unload_extension(f'{extension}')
                 self.bot.load_extension(f'{extension}')
@@ -63,7 +69,7 @@ class Cogs(commands.Cog):
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
 
-    @_cogs.command(name='shutdown')
+    @_cogmanager.command(name='shutdown')
     @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
@@ -72,4 +78,4 @@ class Cogs(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Cogs(bot))
+    bot.add_cog(CogManager(bot))

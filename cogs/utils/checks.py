@@ -70,6 +70,5 @@ def dj_or(alone: bool = False, track_requester: bool = False):
             is_alone = False
 
         dj = is_dj(ctx)
-
         return dj or is_alone or requester
     return commands.check(predicate)

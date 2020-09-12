@@ -81,3 +81,4 @@ errors:
   need_permission: Jeg trenger tillgang til `CONNECT` og `SPEAK`
   right_channel: Du må være i riktig kanal
   my_channel: Du må være i samme stemmekanal som meg
+  full_channel: Den kanalen er full

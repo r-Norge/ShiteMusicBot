@@ -34,7 +34,6 @@ class Settings(commands.Cog):
         self.bot.aliaser.load_localizations()
 
         if locale in self.bot.aliaser.localization_table.keys():
-
             self.settings.set(ctx.guild, 'locale', locale)
             locale = self.settings.get(ctx.guild, 'locale', 'default_lang')
             await ctx.send(f'Locale set to `{locale}`')
@@ -45,8 +44,7 @@ class Settings(commands.Cog):
     @commands.guild_only()
     @_set.command(name='serverprefix')
     async def _set_guild_prefix(self, ctx, *prefixes):
-        prefixes = list(prefixes)
-        if prefixes:
+        if prefixes := list(prefixes):
             self.settings.set(ctx.guild, 'prefixes', prefixes)
         prefixes = self.settings.get(ctx.guild, 'prefixes')
         await ctx.send(f'Server prefixes: {self.format_prefixes(prefixes)}')
@@ -86,9 +84,7 @@ class Settings(commands.Cog):
         else:
             self.bot.settings.set(ctx.guild, 'channels.text', None)
 
-        textchannels = self.bot.settings.get(ctx.guild, 'channels.text')
-
-        if textchannels:
+        if textchannels := self.bot.settings.get(ctx.guild, 'channels.text'):
             embed = discord.Embed(title='Music command channels set', color=ctx.me.color)
             channels = [ctx.guild.get_channel(channel) for channel in textchannels]
             mentioned = [channel.mention for channel in channels if channel is not None]
@@ -108,9 +104,7 @@ class Settings(commands.Cog):
         else:
             self.bot.settings.set(ctx.guild, 'channels.music', None)
 
-        musicchannels = self.bot.settings.get(ctx.guild, 'channels.music')
-
-        if musicchannels:
+        if musicchannels := self.bot.settings.get(ctx.guild, 'channels.music'):
             embed = discord.Embed(title='Music channels set', color=ctx.me.color)
             channels = [ctx.guild.get_channel(channel) for channel in musicchannels]
             mentioned = [channel.name for channel in channels if channel is not None]
@@ -130,9 +124,7 @@ class Settings(commands.Cog):
         else:
             self.bot.settings.set(ctx.guild, 'channels.listen_only', None)
 
-        listenchannels = self.bot.settings.get(ctx.guild, 'channels.listen_only')
-
-        if listenchannels:
+        if listenchannels := self.bot.settings.get(ctx.guild, 'channels.listen_only'):
             embed = discord.Embed(title='Listen only channels set', color=ctx.me.color)
             channels = [ctx.guild.get_channel(channel) for channel in listenchannels]
             mentioned = [channel.name for channel in channels if channel is not None]
@@ -152,9 +144,7 @@ class Settings(commands.Cog):
         else:
             self.bot.settings.set(ctx.guild, 'roles.dj', None)
 
-        djroles = self.bot.settings.get(ctx.guild, 'roles.dj')
-
-        if djroles:
+        if djroles := self.bot.settings.get(ctx.guild, 'roles.dj'):
             embed = discord.Embed(title='DJ roles set to', color=ctx.me.color)
             roles = [ctx.guild.get_role(role) for role in djroles]
             mentioned = [role.name for role in roles if role is not None]
@@ -170,9 +160,7 @@ class Settings(commands.Cog):
     async def set_max_track_duration(self, ctx, duration: int = None):
         self.bot.settings.set(ctx.guild, 'duration.max', duration)
 
-        duration = self.bot.settings.get(ctx.guild, 'duration.max')
-
-        if duration:
+        if duration := self.bot.settings.get(ctx.guild, 'duration.max'):
             embed = discord.Embed(title='Max track duration set to', color=ctx.me.color)
             embed.description = f'{duration} minutes'
             await ctx.send(embed=embed)
@@ -186,10 +174,8 @@ class Settings(commands.Cog):
     async def set_track_duration_type(self, ctx, dynamic: bool = False):
         self.bot.settings.set(ctx.guild, 'duration.is_dynamic', dynamic)
 
-        is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic')
-
         embed = discord.Embed(title='Max duration type set to', color=ctx.me.color)
-        if is_dynamic:
+        if self.bot.settings.get(ctx.guild, 'duration.is_dynamic'):
             embed.description = 'Dynamic'
         else:
             embed.description = 'Static'
@@ -214,24 +200,20 @@ class Settings(commands.Cog):
         is_dynamic = self.bot.settings.get(ctx.guild, 'duration.is_dynamic', 'default_is_dynamic')
         embed.add_field(name='{current.dynamicmax}', value=is_dynamic)
 
-        duration = self.bot.settings.get(ctx.guild, 'maxduration')
-        if duration:
+        if duration := self.bot.settings.get(ctx.guild, 'maxduration'):
             embed.add_field(name='{current.maxduration}', value=f'{duration} minutes')
 
-        textchannels = self.bot.settings.get(ctx.guild, 'channels.text')
-        if textchannels:
+        if textchannels := self.bot.settings.get(ctx.guild, 'channels.text'):
             channels = [ctx.guild.get_channel(channel) for channel in textchannels]
             mentioned = [channel.mention for channel in channels if channel is not None]
             embed.add_field(name='{current.textchannels}', value='\n'.join(mentioned))
 
-        voicechannels = self.bot.settings.get(ctx.guild, 'channels.music')
-        if voicechannels:
+        if voicechannels := self.bot.settings.get(ctx.guild, 'channels.music'):
             channels = [ctx.guild.get_channel(channel) for channel in voicechannels]
             mentioned = [channel.name for channel in channels if channel is not None]
             embed.add_field(name='{current.musicchannels}', value='\n'.join(mentioned))
 
-        listenchannels = self.bot.settings.get(ctx.guild, 'channels.listen_only')
-        if listenchannels:
+        if listenchannels := self.bot.settings.get(ctx.guild, 'channels.listen_only'):
             channels = [ctx.guild.get_channel(channel) for channel in listenchannels]
             mentioned = [channel.name for channel in channels if channel is not None]
             embed.add_field(name='{current.listenchannels}', value='\n'.join(mentioned))
