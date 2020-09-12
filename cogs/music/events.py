@@ -28,6 +28,8 @@ async def track_hook(self, event):
         pass
     if isinstance(event, lavalink.events.NodeChangedEvent):
         pass
+    if isinstance(event, lavalink.events.TrackStuckEvent):
+        print(event)
 
 
 @commands.Cog.listener()

@@ -119,7 +119,7 @@ class NodeManager(commands.Cog):
     @_node.command(name='add')
     @commands.is_owner()
     async def _add(self, ctx, host, port, password, region, name=None):
-        self.bot.lavalink.add_node(host, port, password, region, name)
+        self.bot.lavalink.add_node(host, port, password, region, name=name)
         self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (host, port, region, name,))
         embed = await self._node_presenter(ctx, {'host': host, 'port': port, 'password': password,
                                                  'region': region, 'name': name})
@@ -151,6 +151,24 @@ class NodeManager(commands.Cog):
                 self.logger.info("Removed Lavalink node: %s" % _node.host)
         if not sent_feedback:
             await ctx.send('No node found')
+
+    @_node.command(name='change')
+    @commands.is_owner()
+    async def _nodechange(self, ctx, node=None):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if node is None:
+            await player.change_node(player.node)
+
+        else:
+            newnode = None
+            for _node in self.bot.lavalink.node_manager.nodes:
+                if (_node.name or _node.host) == node:
+                    newnode = _node
+
+            if not newnode:
+                return
+            await player.change_node(newnode)
 
 
 def setup(bot):

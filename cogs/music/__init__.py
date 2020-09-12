@@ -94,10 +94,12 @@ class Music(commands.Cog):
 
     # commands
     from .basic_commands import (
-        _boost, _disconnect, _djremove, _history, _lyrics, _move, _myqueue, _normalize, _now, _pause, _play, _queue,
-        _reconnect, _remove, _scrub, _search, _seek, _shuffle, _skip, _skip_to, _stop, _user_queue_remove, _volume)
+        _disconnect, _djremove, _move, _myqueue, _now, _pause, _play, _queue, _reconnect, _remove, _search, _seek,
+        _shuffle, _skip, _skip_to, _stop, _user_queue_remove, _volume)
     # events
     from .events import check_leave_voice, cog_unload, leave_check, leave_timer, on_voice_state_update, track_hook
+    # commands
+    from .extra_commands import _boost, _history, _lyrics, _normalize, _scrub
 
 
 def setup(bot):
