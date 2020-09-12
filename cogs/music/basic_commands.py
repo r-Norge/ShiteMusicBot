@@ -1,5 +1,5 @@
 """
-Commands that interacti with just discord and lavalink and only present the basic commands needed for a music bot
+Commands that interact with just discord and lavalink and only present the basic commands needed for a music bot
 """
 
 # Discord Packages
