@@ -7,13 +7,12 @@ import discord
 from discord.ext import commands
 
 import asyncio
-import math
 import re
 
 from ..utils import checks, timeformatter
 from ..utils.paginator import QueuePaginator, Scroller
 from ..utils.selector import Selector
-from .decorators import require_playing, require_queue, require_voice_connection
+from .decorators import require_playing, require_queue, require_voice_connection, voteable
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
@@ -78,38 +77,17 @@ async def _seek(self, ctx, *, time: str):
 @commands.command(name='skip')
 @require_voice_connection()
 @require_playing()
+@voteable(requester_override=True)
 async def _skip(self, ctx):
-    # TODO: rework
     """ Skips the current track. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-    player.add_skipper(ctx.author)
-    total = len(player.listeners)
-    skips = len(player.skip_voters)
-    threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 'default_threshold')
-
-    if skips/total >= threshold/100 or player.current.requester == ctx.author.id:
-        await player.skip()
-        if player.current:
-            song = f'**[{player.current.title}]({player.current.uri})**'
-            embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-            thumbnail_url = player.current.extra["thumbnail_url"]
-            member = ctx.guild.get_member(player.current.requester)
-            if thumbnail_url:
-                embed.set_thumbnail(url=thumbnail_url)
-
-            embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.avatar_url)
-
-            embed = ctx.localizer.format_embed(embed)
-            await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
-        else:
-            await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
+    await player.skip()
+    if player.current:
+        embed = self.get_current_song_embed(ctx)
+        await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
     else:
-        if skips != 0:
-            needed = math.ceil(total*threshold/100)
-            msg = ctx.localizer.format_str("{skip.require_vote}", _skips=skips, _total=needed)
-
-            await ctx.send(msg)
+        await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
 
 
 @commands.command(name='skipto')
@@ -132,9 +110,9 @@ async def _skip_to(self, ctx, pos: int = 1):
 
 
 @commands.command(name='stop')
-@checks.dj_or(alone=True)
 @require_voice_connection()
 @require_playing(require_user_listening=True)
+@voteable(DJ_override=True)
 async def _stop(self, ctx):
     """ Stops the player and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -148,25 +126,7 @@ async def _stop(self, ctx):
 @commands.command(name='now')
 @require_playing()
 async def _now(self, ctx):
-    # TODO: rework
-    """ Shows some stats about the currently playing song. """
-    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-
-    position = timeformatter.format_ms(player.position)
-    if player.current.stream:
-        duration = '{live}'
-    else:
-        duration = timeformatter.format_ms(player.current.duration)
-    song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
-
-    member = ctx.guild.get_member(player.current.requester)
-    embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-    thumbnail_url = player.current.extra["thumbnail_url"]
-    if thumbnail_url:
-        embed.set_thumbnail(url=thumbnail_url)
-
-    embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.avatar_url)
-
+    embed = self.get_current_song_embed(ctx, include_time=True)
     embed = ctx.localizer.format_embed(embed)
     await ctx.send(embed=embed)
 
@@ -195,12 +155,11 @@ async def _myqueue(self, ctx):
 async def _pause(self, ctx):
     """ Pauses/Resumes the current track. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+    await player.set_pause(not player.paused)
     if player.paused:
-        await player.set_pause(False)
-        await ctx.send(ctx.localizer.format_str("{resume.resumed}"))
-    else:
-        await player.set_pause(True)
         await ctx.send(ctx.localizer.format_str("{resume.paused}"))
+    else:
+        await ctx.send(ctx.localizer.format_str("{resume.resumed}"))
 
 
 @commands.command(name='shuffle')
@@ -373,8 +332,8 @@ async def _search(self, ctx, *, query):
 
 
 @commands.command(name='disconnect')
-@checks.dj_or(alone=True)
 @require_voice_connection()
+@voteable(DJ_override=True)
 async def _disconnect(self, ctx):
     """ Disconnects the player from the voice channel and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -388,8 +347,8 @@ async def _disconnect(self, ctx):
 
 
 @commands.command(name='reconnect')
-@checks.dj_or(alone=True)
 @require_voice_connection()
+@voteable(DJ_override=True)
 async def _reconnect(self, ctx):
     """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)

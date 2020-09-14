@@ -1,4 +1,5 @@
 # Discord Packages
+import discord
 import lavalink
 from discord.ext import commands
 
@@ -69,6 +70,31 @@ class Music(commands.Cog):
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
         return embed, True
+
+    def get_current_song_embed(self, ctx, include_time=False):
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if include_time:
+            position = timeformatter.format_ms(player.position)
+            if player.current.stream:
+                duration = '{live}'
+            else:
+                duration = timeformatter.format_ms(player.current.duration)
+            song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
+        else:
+            song = f'**[{player.current.title}]({player.current.uri})**'
+
+        embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
+        thumbnail_url = player.current.extra["thumbnail_url"]
+        member = ctx.guild.get_member(player.current.requester)
+
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+
+        embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.avatar_url)
+
+        embed = ctx.localizer.format_embed(embed)
+        return embed
 
     def max_track_length(self, guild, player):
         if maxlength := self.bot.settings.get(guild, 'duration.max', None):

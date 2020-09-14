@@ -4,8 +4,11 @@ from discord.ext import commands
 
 import functools
 import inspect
+import math
 
 from cogs.music.music_errors import WrongVoiceChannelError
+
+from ..utils.checks import is_dj
 
 
 def require_voice_connection(should_connect=False):
@@ -122,3 +125,32 @@ def require_queue(require_member_queue=False, require_author_queue=False):
             await func(self, ctx, *command_args, **kwargs)
         return ensure_queue_inner
     return ensure_queue
+
+
+def voteable(requester_override=False, DJ_override=False):
+    def make_voteable(func):
+        @functools.wraps(func)
+        async def voteable_inner(self, ctx, *command_args, **kwargs):
+            player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+            player.add_vote(func.__name__, ctx.author)
+
+            total = len(player.listeners)
+            votes = len(player.get_voters(func.__name__))
+            threshold = self.bot.settings.get(ctx.guild, 'vote_threshold', 'default_threshold')
+
+            enough_votes = votes/total >= threshold/100
+            DJ = DJ_override and is_dj(ctx)
+            requester = player.current.requester == ctx.author.id and requester_override
+
+            if enough_votes or requester or DJ:
+                await func(self, ctx, *command_args, **kwargs)
+                player.clear_votes()
+            else:
+                if votes != 0:
+                    needed = math.ceil(total*threshold/100)
+                    # TODO: redo this message to allow for other vote types
+                    msg = ctx.localizer.format_str("{skip.require_vote}", _skips=votes, _total=needed)
+                    await ctx.send(msg)
+
+        return voteable_inner
+    return make_voteable
