@@ -4,14 +4,13 @@ Commands that interact with just discord and lavalink and only present the basic
 
 # Discord Packages
 import discord
-import lavalink
 from discord.ext import commands
 
 import asyncio
 import math
 import re
 
-from ..utils import checks, thumbnailer, timeformatter
+from ..utils import checks, timeformatter
 from ..utils.paginator import QueuePaginator, Scroller
 from ..utils.selector import Selector
 from .decorators import require_playing, require_queue, require_voice_connection
@@ -24,7 +23,6 @@ url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 @require_voice_connection(should_connect=True)
 async def _play(self, ctx, *, query: str):
     """ Searches and plays a song from a given query. """
-    # TODO: rework
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
     query = query.strip('<>')
 
@@ -39,34 +37,20 @@ async def _play(self, ctx, *, query: str):
     embed = discord.Embed(color=ctx.me.color)
 
     if results['loadType'] == 'PLAYLIST_LOADED':
-        tracks = results['tracks']
-
-        if maxlength := self.max_track_length(ctx.guild, player):
-            numtracks = 0
-            for track in tracks:
-                if track['info']['length'] <= maxlength:
-                    thumbnail_url = await thumbnailer.ThumbNailer.identify(
-                        self, track['info']['identifier'], track['info']['uri'])
-                    track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
-                    player.add(requester=ctx.author.id, track=track)
-                    numtracks += 1
-        else:
-            numtracks = len(tracks)
-            for track in tracks:
-                thumbnail_url = await thumbnailer.ThumbNailer.identify(
-                    self, track['info']['identifier'], track['info']['uri'])
-                track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
-                player.add(requester=ctx.author.id, track=track)
+        numtracks = 0
+        for track in results['tracks']:
+            _, track_added = await self.enqueue(ctx, track, embed, silent=True)
+            if track_added:
+                numtracks += 1
 
         embed.title = '{playlist_enqued}'
         embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
-        embed = ctx.localizer.format_embed(embed)
-        await ctx.send(embed=embed)
     else:
         track = results['tracks'][0]
         await self.enqueue(ctx, track, embed)
-        embed = ctx.localizer.format_embed(embed)
-        await ctx.send(embed=embed)
+
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)
 
     if not player.is_playing:
         await player.play()
@@ -192,16 +176,7 @@ async def _now(self, ctx):
 async def _queue(self, ctx, *, member: discord.Member = None):
     """ Shows the player's queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-    if member is None:
-        queue = player.global_queue()
-        pagified_queue = QueuePaginator(ctx.localizer, queue, color=ctx.me.color)
-
-    else:
-        member_queue = player.user_queue(member.id, dual=True)
-
-        pagified_queue = QueuePaginator(ctx.localizer, member_queue, color=ctx.me.color,
-                                        user_name=member.display_name)
-
+    pagified_queue = QueuePaginator(ctx.localizer, player, color=ctx.me.color, member=member)
     scroller = Scroller(ctx, pagified_queue)
     await scroller.start_scrolling()
 
@@ -210,12 +185,7 @@ async def _queue(self, ctx, *, member: discord.Member = None):
 @require_queue(require_author_queue=True)
 async def _myqueue(self, ctx):
     """ Shows your queue. """
-    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-    user_queue = player.user_queue(ctx.author.id, dual=True)
-    pagified_queue = QueuePaginator(ctx.localizer, user_queue, color=ctx.me.color,
-                                    user_name=ctx.author.display_name)
-    scroller = Scroller(ctx, pagified_queue)
-    await scroller.start_scrolling()
+    await self._queue(ctx, member=ctx.author)
 
 
 @commands.command(name='pause')
@@ -384,20 +354,19 @@ async def _search(self, ctx, *, query):
     arguments = [(ctx, tracks[i], discord.Embed(color=ctx.me.color)) for i in range(result_count)]
 
     for index, track in enumerate(tracks, start=1):
-        track_title = track['info']['title']
-        track_uri = track['info']['uri']
-        duration = timeformatter.format_ms(int(track['info']['length']))
-        identifiers.append(f'`{index}.` [{track_title}]({track_uri}) `{duration}`')
+        track = track['info']
+        duration = timeformatter.format_ms(int(track['length']))
+        identifiers.append(f'`{index}.` [{track["title"]}]({track["uri"]}) `{duration}`')
         if index == result_count:
             break
 
     search_selector = Selector(ctx, identifiers, functions, arguments, num_selections=5,
                                color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
     # Let the user scroll through results
-    message, current_page, result = await search_selector.start_scrolling()
+    message, current_page, (embed, added) = await search_selector.start_scrolling()
 
-    result = ctx.localizer.format_embed(result)
-    await message.edit(embed=result)
+    embed = ctx.localizer.format_embed(embed)
+    await message.edit(embed=embed)
 
     if not player.is_playing:
         await player.play()
@@ -439,7 +408,7 @@ async def _reconnect(self, ctx):
         if track:
             await player.play(track, start_time=start_time)
     else:
-        recon()
+        await recon()
 
 
 @commands.command(name='volume')

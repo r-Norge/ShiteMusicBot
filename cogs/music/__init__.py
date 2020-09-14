@@ -35,36 +35,29 @@ class Music(commands.Cog):
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
-    async def enqueue(self, ctx, track, embed):
-        # TODO: rework
+    async def enqueue(self, ctx, track, embed, silent=False):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        maxlength = self.max_track_length(ctx.guild, player)
-        if maxlength and track['info']['length'] > maxlength:
-            embed.description = ctx.localizer.format_str("{enqueue.toolong}",
-                                                         _length=timeformatter.format_ms(track['info']['length']),
-                                                         _max=timeformatter.format_ms(maxlength))
-            return
+        # Only add tracks that don't exceed the max track length
+        if maxlength := self.max_track_length(ctx.guild, player):
+            if track['info']['length'] > maxlength:
+                embed.description = ctx.localizer.format_str("{enqueue.toolong}",
+                                                             _length=timeformatter.format_ms(track['info']['length']),
+                                                             _max=timeformatter.format_ms(maxlength))
+                return embed, False
 
-        # TODO: make use of track vs track dict more consistent
-        if isinstance(track, dict):
-            thumbnail_url = await thumbnailer.ThumbNailer.identify(
-                self, track['info']['identifier'], track['info']['uri'])
-            track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
+        # Add thumbnail, turn track into track class
+        thumbnail_url = await thumbnailer.ThumbNailer.identify(self, track['info']['identifier'], track['info']['uri'])
+        track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
 
+        # Add to player
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
 
-        if player.current is not None:
-            queue_duration = 0
-            for i, track in enumerate(player.queue):
-                if i == pos_global:
-                    break
-                queue_duration += int(track.duration)
-
-            until_play = queue_duration + player.current.duration - player.position
-            until_play = timeformatter.format_ms(until_play)
+        if player.current is not None and not silent:
+            until_play = player.queue_duration(include_current=True, end_pos=pos_global)
             embed.add_field(name="{enqueue.position}", value=f"`{pos_local + 1}({pos_global + 1})`", inline=True)
-            embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`", inline=True)
+            embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`",
+                            inline=True)
 
         embed.title = '{enqueue.enqueued}'
         thumbnail_url = track.extra["thumbnail_url"]
@@ -75,22 +68,19 @@ class Music(commands.Cog):
         duration = timeformatter.format_ms(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
-        return embed
+        return embed, True
 
     def max_track_length(self, guild, player):
-        # TODO: Move somewhere else
-        is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
-        maxlength = self.bot.settings.get(guild, 'duration.max', None)
-        if maxlength is None:
+        if maxlength := self.bot.settings.get(guild, 'duration.max', None):
+            is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
+            listeners = max(1, len(player.listeners))  # Avoid division by 0
+
+            if maxlength > 10 and is_dynamic:
+                return max(maxlength*60*1000/listeners, 60*10*1000)
+            else:
+                return maxlength*60*1000
+        else:
             return None
-        if len(player.listeners):  # Avoid division by 0.
-            listeners = len(player.listeners)
-        else:
-            listeners = 1
-        if maxlength > 10 and is_dynamic:
-            return max(maxlength*60*1000/listeners, 60*10*1000)
-        else:
-            return maxlength*60*1000
 
     # commands
     from .basic_commands import (

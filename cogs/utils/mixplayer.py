@@ -1,4 +1,5 @@
 # Discord Packages
+import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
@@ -55,14 +56,21 @@ class MixPlayer(DefaultPlayer):
     def get_history(self):
         return self.queue.history
 
-    def queue_duration(self, include_current: bool = True):
+    def queue_duration(self, include_current: bool = False, member: discord.Member = None, end_pos: int = None):
         duration = 0
-        for track in self.queue:
-            duration += track.duration
+        queue = self.user_queue(member.id) if member else self.queue
+
+        for i, track in enumerate(queue):
+            if i == end_pos:
+                break
+            duration += int(track.duration)
+
         remaining = self.current.duration - self.position
         if include_current:
-            return lavalink.Utils.format_time(duration + remaining)
-        return lavalink.Utils.format_time(duration)
+            if self.current:
+                remaining = self.current.duration - self.position
+                return lavalink.utils.format_time(duration + remaining)
+        return lavalink.utils.format_time(duration)
 
     async def play(self, track: AudioTrack = None, start_time: int = 0):
 
