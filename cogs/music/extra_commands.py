@@ -40,7 +40,7 @@ async def _boost(self, ctx, boost: bool = None):
     """ Set the equalizer to bass boost the music """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-    if boost:
+    if boost is not None:
         await player.bassboost(boost)
 
     embed = discord.Embed(color=ctx.me.color)
