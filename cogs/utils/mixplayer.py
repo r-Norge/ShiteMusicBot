@@ -1,4 +1,5 @@
 # Discord Packages
+import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
@@ -16,6 +17,7 @@ class MixPlayer(DefaultPlayer):
         self.queue = MixQueue()
 
         self.listeners = set()
+        self.voteables = {}
         self.skip_voters = set()
         self.boosted = False
 
@@ -55,14 +57,21 @@ class MixPlayer(DefaultPlayer):
     def get_history(self):
         return self.queue.history
 
-    def queue_duration(self, include_current: bool = True):
+    def queue_duration(self, include_current: bool = False, member: discord.Member = None, end_pos: int = None):
         duration = 0
-        for track in self.queue:
-            duration += track.duration
+        queue = self.user_queue(member.id) if member else self.queue
+
+        for i, track in enumerate(queue):
+            if i == end_pos:
+                break
+            duration += int(track.duration)
+
         remaining = self.current.duration - self.position
         if include_current:
-            return lavalink.Utils.format_time(duration + remaining)
-        return lavalink.Utils.format_time(duration)
+            if self.current:
+                remaining = self.current.duration - self.position
+                return lavalink.utils.format_time(duration + remaining)
+        return lavalink.utils.format_time(duration)
 
     async def play(self, track: AudioTrack = None, start_time: int = 0):
 
@@ -90,7 +99,7 @@ class MixPlayer(DefaultPlayer):
         """ Plays the next track in the queue, if any. """
         for i in range(pos):
             _ = self.queue.pop_first()
-        self.skip_voters.clear()
+        self.clear_votes()
         await self.play()
 
     def update_listeners(self, member, voice_state):
@@ -98,26 +107,43 @@ class MixPlayer(DefaultPlayer):
             vc = int(self.channel_id)
             if voice_state.channel is None or voice_state.channel.id != vc:
                 self.listeners.discard(member)
-                self.skip_voters.discard(member)
+                self.remove_member_votes(member)
             else:
                 if voice_state.deaf or voice_state.self_deaf:
                     self.listeners.discard(member)
-                    self.skip_voters.discard(member)
+                    self.remove_member_votes(member)
                 else:
                     self.listeners.add(member)
 
     def clear_listeners(self):
         self.listeners.clear()
 
-    def add_skipper(self, member):
+    def add_vote(self, category, member):
         if member in self.listeners:
-            self.skip_voters.add(member)
+            if category not in self.voteables:
+                self.voteables[category] = set()
+            self.voteables[category].add(member)
+
+    def remove_member_votes(self, member):
+        for category, votes in self.voteables.items():
+            votes.discard(member)
+
+    def get_voters(self, category):
+        if category not in self.voteables:
+            self.voteables[category] = set()
+        return self.voteables[category]
+
+    def clear_votes(self):
+        for category, votes in self.voteables.items():
+            votes.clear()
 
     async def handle_event(self, event):
         """ Handles the given event as necessary. """
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             self.skip_voters.clear()
+            for category, votes in self.voteables.items():
+                votes.clear()
             await self.play()
 
     async def bassboost(self, boost: bool = False):

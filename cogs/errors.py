@@ -4,6 +4,8 @@ from discord.ext import commands
 
 import traceback
 
+from cogs.music.music_errors import WrongTextChannelError, WrongVoiceChannelError
+
 # Bot Utilities
 from cogs.helpformatter import commandhelper
 from cogs.utils.paginator import Scroller
@@ -34,9 +36,11 @@ class Errors(commands.Cog):
         if isinstance(err, (commands.CommandNotFound)):
             return
 
-        async def send_error_embed(description):
+        async def send_error_embed(description, **kwargs):
             embed = await self.base_msg(ctx, state=0xFC0303)
             embed.description = description
+            if kwargs.get("title"):
+                embed.title = kwargs["title"]
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
@@ -51,11 +55,44 @@ class Errors(commands.Cog):
             elif (err.original == 'I need the `CONNECT` and `SPEAK` permissions.'):
                 return await send_error_embed('{errors.need_permission}')
 
-            elif (err.original == 'You need to be in the right voice channel'):
-                return await send_error_embed('{errors.right_channel}')
-
             elif (err.original == 'You need to be in my voicechannel.'):
                 return await send_error_embed('{errors.my_channel}')
+
+            elif (err.original == 'Not playing'):
+                return await send_error_embed('{not_playing}')
+
+            elif (err.original == 'Not listening'):
+                return await send_error_embed('{have_to_listen}')
+
+            elif (err.original == 'The channel is currently full'):
+                return await send_error_embed('{errors.full_channel}')
+
+        if isinstance(err, WrongVoiceChannelError):
+            changed = False
+            response = ctx.localizer.format_str('{settings_check.voicechannel}')
+            for channel_id in err.channels:
+                channel = ctx.guild.get_channel(channel_id)
+                if channel is not None:
+                    response += f'{channel.name}, '
+                    changed = True
+            if changed:
+                return await send_error_embed(response[:-2], title='{errors.right_channel}')
+            else:
+                return await send_error_embed('{errors.right_channel}')
+
+        if isinstance(err, WrongTextChannelError):
+            try:
+                await ctx.message.delete()
+            except Exception as e:
+                self.logger.debug("Error deleting message: %s\nTraceback: %s" % (e, err))
+            response = ctx.localizer.format_str('{settings_check.textchannel}')
+            for channel_id in err.channels:
+                response += f'<#{channel_id}>, '
+            msg = await send_error_embed(response[:-2], title='{errors.right_channel}')
+            return await msg.delete(delay=5)
+
+        if isinstance(err, commands.CheckFailure):
+            pass
 
         if isinstance(err, commands.CommandOnCooldown):
             await ctx.send(f"{ctx.message.author.mention} Command is on cooldown. "

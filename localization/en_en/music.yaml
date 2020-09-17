@@ -21,8 +21,8 @@ now: Now Playing
 queue:
   empty: The queue is empty
   user_empty: "{_user}'s queue is empty"
-  length: "**Queue** `{_length} songs`"
-  userqueue: "**{_user}\\'s queue** `{_length}`"
+  length: "**Queue** `{_length}` songs `{_duration}`"
+  userqueue: "**{_user}\\'s queue** `{_length}` songs `{_duration}`"
   globaltrack: "`{_index}.` **[{_title}]({_uri})** _by <@{_user_id}>_"
   usertrack: "`{_index}({_globalindex}).` **[{_title}]({_uri})**"
   pageindicator: Viewing page {_current}/{_total}
@@ -81,3 +81,4 @@ errors:
   need_permission: I need the `CONNECT` and `SPEAK` permissions
   right_channel: You need to be in the right voice channel
   my_channel: You need to be in my voicechannel
+  full_channel: The channel is currently full

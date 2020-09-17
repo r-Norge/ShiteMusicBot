@@ -165,8 +165,8 @@ settings:
       description:      'Setter grensen for hvor mange prosent som må stemme for å hoppe over en sang.'
 
 # Cogs
-cogs:
-  aliases:              [cogs]
+cogmanager:
+  aliases:              [cogmanager]
   description:          'behandle cogs'
   sub_commands:
     load:

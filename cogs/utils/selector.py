@@ -191,6 +191,10 @@ class Selector(TextPaginator):
             self.args = None
             self.control_input = False
         if len(results) == 1:
+            self.stopped = True
+            await self.message.clear_reactions()
             return self.message, self.pages[self.current_page], results[0]
         else:
+            self.stopped = True
+            await self.message.clear_reactions()
             return self.message, self.pages[self.current_page], results

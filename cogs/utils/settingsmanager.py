@@ -1,3 +1,6 @@
+# Discord Packages
+import discord
+
 import codecs
 import locale as localee
 import os
@@ -60,34 +63,39 @@ class Settings:
         except KeyError:
             return None
 
-    def set(self, guild, setting, value):
+    def set(self, identifier, setting, value):
         """ Set value in settings, will overwrite any existing values. """
-        guild_id = str(guild.id)
+        guild_name = None
+        if isinstance(identifier, discord.Guild):
+            guild_name = identifier.name
+            identifier = str(identifier.id)
 
-        if guild_id not in self.settings.keys():
-            self.settings[guild_id] = {}
+        if identifier not in self.settings.keys():
+            self.settings[identifier] = {}
 
-        self.settings[guild_id]["_servername"] = guild.name
-        self._set(self.settings[guild_id], setting.split('.'), value)
+        if guild_name:
+            self.settings[identifier]["_servername"] = guild_name
+        self._set(self.settings[identifier], setting.split('.'), value)
 
         with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
             yaml.dump(self.settings, f, indent=2)
 
-    def get(self, guild, setting, default=''):
+    def get(self, identifier, setting, default=''):
         """ Gets a value from the settings if a default return value is specified
-        it will return the default if no setting is found. If that default is a
-        class attribute the value of the attribute will get returned."""
-        guild_id = str(guild.id)
+        it will return the default if no setting is found. If that default is an
+        attribute of the settings class, the value of the attribute will get returned."""
+        if isinstance(identifier, discord.Guild):
+            identifier = str(identifier.id)
 
         if default and isinstance(default, str) and hasattr(self, default):
             default = getattr(self, default)
-        elif not default:
+        elif default == '':
             default = None
 
-        if guild_id not in self.settings.keys():
+        if identifier not in self.settings.keys():
             return default
 
-        value = self._get(self.settings[guild_id], setting.split('.'))
+        value = self._get(self.settings[identifier], setting.split('.'))
         if value is not None:
             return value
         else:
