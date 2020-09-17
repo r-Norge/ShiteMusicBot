@@ -137,6 +137,12 @@ class MixPlayer(DefaultPlayer):
         for category, votes in self.voteables.items():
             votes.clear()
 
+    def enable_looping(self, looping):
+        self.queue.enable_looping(looping)
+        if track := self.current:
+            if looping:
+                self.queue.add_track(track.requester, track)
+
     async def handle_event(self, event):
         """ Handles the given event as necessary. """
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
@@ -183,6 +189,9 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
         self._history = deque(maxlen=11)  # 10 + current
+        self.looped_queue = []
+        self.looping = False
+        self.loop_offset = 0
 
     def __str__(self):
         tmp = ''
@@ -197,7 +206,8 @@ class MixQueue:
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
         priority_queue = self.priority_queue
-        out = chain(priority_queue, global_queue)
+        looped_queue = self.looped_queue
+        out = chain(priority_queue, looped_queue, global_queue)
         return out
 
     def __len__(self):
@@ -207,7 +217,11 @@ class MixQueue:
         return length
 
     def get_queue(self):
-        return list(self)
+        if self.looping:
+            offset = self.loop_offset
+            return list(self)[offset:] + list(self)[:offset]
+        else:
+            return list(self)
 
     def clear(self):
         self.queues = OrderedDict()
@@ -218,6 +232,8 @@ class MixQueue:
         queue = self.queues.get(requester, [])
         if dual and queue:
             pos = [self._loc_to_glob(requester, i) for i in range(len(queue))]
+            if self.looping:
+                pos = [(p + self.loop_offset) % len(self) for p in pos]
             combined = zip(queue, pos)
             return list(combined)
         return queue
@@ -227,12 +243,24 @@ class MixQueue:
             next_track = self.priority_queue.pop(0)
             self._history.append(next_track)
             return next_track
-        try:
-            next_track = self.queues[self.first_queue].pop(0)
-            self._shuffle()
-            self._clear_empty()
+        if self.looped_queue:
+            next_track = self.looped_queue.pop(0)
             self._history.append(next_track)
             return next_track
+        try:
+            if self.looping:
+                queue = list(self)
+                next_track = queue[self.loop_offset]
+                self.loop_offset += 1
+                if self.loop_offset == len(self):
+                    self.loop_offset = 0
+                return next_track
+            else:
+                next_track = self.queues[self.first_queue].pop(0)
+                self._shuffle()
+                self._clear_empty()
+                self._history.append(next_track)
+                return next_track
         except KeyError:
             pass
 
@@ -291,6 +319,19 @@ class MixQueue:
         if queue:
             shuffle(queue)
 
+    def enable_looping(self, looping):
+        if not self.looping and looping:  # Not enabled and turning on
+            self.looping = looping
+            self.loop_offset = 0
+        elif self.looping and not looping:  # Enabled to turning off
+            tmp = [track for track in self.get_queue()]
+            for key, _ in self.queues.items():
+                self.queues = OrderedDict()
+            self.looping = looping
+            for track in tmp:
+                self.add_track(track.requester, track)
+            self.loop_offset = 0
+
     # Switches the order of user queues
     def _shuffle(self):
         self.queues.move_to_end(self.first_queue)
@@ -302,7 +343,7 @@ class MixQueue:
             self.queues.pop(i)
 
     def _loc_to_glob(self, requester, pos):
-        globpos = len(self.priority_queue)
+        globpos = len(self.priority_queue) + len(self.looped_queue)
         passed = False
         for key, queue in self.queues.items():
             if len(queue) <= pos:

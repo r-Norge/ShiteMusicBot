@@ -14,9 +14,10 @@ import urllib
 
 from bs4 import BeautifulSoup
 
+from ..helpformatter import commandhelper
 from ..utils import checks
 from ..utils.paginator import Scroller, TextPaginator
-from .decorators import require_playing, require_voice_connection
+from .decorators import require_playing, require_voice_connection, voteable
 
 
 @commands.command(name='normalize')
@@ -213,3 +214,39 @@ async def _scrub(self, ctx):
             if not isinstance(arg, bool):
                 arg = player.position + arg * 1000
             await selection(arg)
+
+
+@commands.group(name='loop')
+async def _loop(self, ctx):
+    # This is done using subcommands to have separate vote counts for starting and stopping.
+    if ctx.invoked_subcommand is None:
+        ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
+        paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
+        scroller = Scroller(ctx, paginator)
+        await scroller.start_scrolling()
+
+
+@_loop.command(name='start')
+@require_playing(require_user_listening=True)
+@voteable(DJ_override=True)
+async def _loop_start(self, ctx):
+    """ Set the equalizer to bass boost the music """
+    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+    player.enable_looping(True)
+    embed = discord.Embed(color=ctx.me.color)
+    embed.description = 'Looping turned on'
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)
+
+
+@_loop.command(name='stop')
+@require_playing(require_user_listening=True)
+@voteable(DJ_override=True)
+async def _loop_stop(self, ctx):
+    """ Set the equalizer to bass boost the music """
+    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+    player.enable_looping(False)
+    embed = discord.Embed(color=ctx.me.color)
+    embed.description = 'Looping turned off'
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)

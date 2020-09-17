@@ -91,6 +91,16 @@ scrub:
 reconnect:
   aliases:        [rc]
   description:    'disconnects then reconnects the bot in case of bugged songs'
+loop:
+  aliases:        [loop, looping]
+  description:    'Loops the queue'
+  sub_commands:
+    start:
+      aliases:        ['on', start, begin]
+      description:    'Starts looping the queue'
+    stop:
+      aliases:        ['off', stop, end]
+      description:    'Stops looping the queue'
 
 # Misc
 info:

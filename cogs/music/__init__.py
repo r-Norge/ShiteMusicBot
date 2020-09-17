@@ -115,7 +115,7 @@ class Music(commands.Cog):
     # events
     from .events import check_leave_voice, cog_unload, leave_check, leave_timer, on_voice_state_update, track_hook
     # commands
-    from .extra_commands import _boost, _history, _lyrics, _normalize, _scrub
+    from .extra_commands import _boost, _history, _loop, _loop_start, _loop_stop, _lyrics, _normalize, _scrub
 
 
 def setup(bot):

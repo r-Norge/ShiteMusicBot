@@ -88,6 +88,16 @@ lyrics:
 scrub:
   aliases:        [kontroller]
   description:    'Gir deg en kontroller som du kan styre musikken med.'
+loop:
+  aliases:        [gjenta, repeter]
+  description:    'Styr om køen skal gjenta seg'
+  sub_commands:
+    start:
+      aliases:        [på, start, begynn]
+      description:    'Får køen til å gjenta seg'
+    stop:
+      aliases:        [av, stopp, slutt]
+      description:    'Får køen til å slutte å gjenta seg'
 
 # Misc
 info:
