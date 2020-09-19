@@ -138,10 +138,13 @@ class MixPlayer(DefaultPlayer):
             votes.clear()
 
     def enable_looping(self, looping):
-        self.queue.enable_looping(looping)
-        if track := self.current:
-            if looping:
-                self.queue.add_track(track.requester, track)
+        if (not self.queue.looping) and looping:
+            self.queue.enable_looping(looping)
+            if track := self.current:
+                if looping:
+                    self.queue.add_track(track.requester, track)
+        elif not looping and self.queue.looping:
+            self.queue.enable_looping(looping)
 
     async def handle_event(self, event):
         """ Handles the given event as necessary. """
@@ -315,7 +318,7 @@ class MixQueue:
             shuffle(queue)
 
     def enable_looping(self, looping):
-        if not self.looping and looping:  # Not enabled and turning on
+        if (not self.looping) and looping:  # Not enabled and turning on
             self.looping = looping
             self.loop_offset = 0
         elif self.looping and not looping:  # Enabled to turning off
