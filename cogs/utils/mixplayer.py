@@ -247,9 +247,9 @@ class MixQueue:
         try:
             if self.looping:
                 queue = list(self)
-                next_track = queue[self.loop_offset]
+                next_track = queue[max(self.loop_offset, len(queue)-1)]
                 self.loop_offset += 1
-                if self.loop_offset == len(self):
+                if self.loop_offset >= len(self):
                     self.loop_offset = 0
                 self._history.append(next_track)
                 return next_track
@@ -294,8 +294,11 @@ class MixQueue:
                 return track
 
     def remove_global_track(self, pos: int):
-        pos = (pos - self.loop_offset) % len(self)
-        q, pos = self._glob_to_loc(pos)
+        # TODO: handle removed songs in loop mode.
+        p = (pos - self.loop_offset) % len(self)
+        if p < pos:
+            self.loop_offset -= 1
+        q, pos = self._glob_to_loc(p)
         if q is None or pos is None:
             return
         queue = self.queues.get(q)
