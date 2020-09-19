@@ -148,7 +148,8 @@ def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
                 player.clear_votes()
 
             elif react_to_vote:
-                embed = discord.Embed(title="Votes", description=f"{votes} out of {total} required votes.",
+                embed = discord.Embed(title="Votes",
+                                      description=f"{votes} out of {math.ceil(total*threshold/100)} required votes.",
                                       color=ctx.me.color)
                 embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.avatar_url)
                 msg = await ctx.send(embed=ctx.localizer.format_embed(embed))
@@ -179,7 +180,7 @@ def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
                     total = len(player.listeners)
                     votes = len(player.get_voters(func.__name__))
 
-                    embed.description = f"{votes} out of {total} required votes."
+                    embed.description = f"{votes} out of {math.ceil(total*threshold/100)} required votes."
                     await msg.edit(embed=ctx.localizer.format_embed(embed))
 
                     if votes/total >= threshold/100:
