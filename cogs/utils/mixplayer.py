@@ -294,6 +294,7 @@ class MixQueue:
                 return track
 
     def remove_global_track(self, pos: int):
+        pos = (pos - self.loop_offset) % len(self)
         q, pos = self._glob_to_loc(pos)
         if q is None or pos is None:
             return
