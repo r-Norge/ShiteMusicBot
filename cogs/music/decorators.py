@@ -141,7 +141,7 @@ def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
 
             enough_votes = votes/total >= threshold/100
             DJ = DJ_override and is_dj(ctx)
-            requester = player.current.requester == ctx.author.id and requester_override
+            requester = player.current is None or (player.current.requester == ctx.author.id and requester_override)
 
             if enough_votes or requester or DJ:
                 await func(self, ctx, *command_args, **kwargs)

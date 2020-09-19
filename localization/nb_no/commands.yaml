@@ -88,6 +88,10 @@ lyrics:
 scrub:
   aliases:        [kontroller]
   description:    'Gir deg en kontroller som du kan styre musikken med.'
+forceplay:
+  aliases:        [tvingspill, ts]
+  args:           '<sang>'   # This is just a cosmetic representation of the arguments.
+  description:    'Søker opp og spiller av en sang.'
 loop:
   aliases:        [gjenta, repeter]
   description:    'Styr om køen skal gjenta seg'

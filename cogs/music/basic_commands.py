@@ -390,3 +390,41 @@ async def _volume(self, ctx, volume: int = None):
     embed = discord.Embed(description="{volume.set_to}", color=ctx.me.color)
     embed = ctx.localizer.format_embed(embed, _volume=player.volume)
     await ctx.send(embed=embed)
+
+
+@commands.command(name='forceplay')
+@require_voice_connection(should_connect=True)
+@voteable(DJ_override=True, react_to_vote=True)
+async def _forceplay(self, ctx, *, query: str):
+    """ Searches and plays a song from a given query. """
+    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+    query = query.strip('<>')
+
+    if not url_rx.match(query):
+        query = f'ytsearch:{query}'
+
+    results = await player.node.get_tracks(query)
+
+    if not results or not results['tracks']:
+        return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
+
+    embed = discord.Embed(color=ctx.me.color)
+
+    if results['loadType'] == 'PLAYLIST_LOADED':
+        numtracks = 0
+        for track in results['tracks']:
+            _, track_added = await self.enqueue(ctx, track, embed, silent=True, check_max_length=False)
+            if track_added:
+                numtracks += 1
+
+        embed.title = '{playlist_enqued}'
+        embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
+    else:
+        track = results['tracks'][0]
+        await self.enqueue(ctx, track, embed, check_max_length=False)
+
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)
+
+    if not player.is_playing:
+        await player.play()

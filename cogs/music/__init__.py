@@ -36,14 +36,18 @@ class Music(commands.Cog):
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
 
-    async def enqueue(self, ctx, track, embed, silent=False):
+    async def enqueue(self, ctx, track, embed, silent=False, check_max_length=True):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         # Only add tracks that don't exceed the max track length
         if maxlength := self.max_track_length(ctx.guild, player):
-            if track['info']['length'] > maxlength:
+            if track['info']['length'] > maxlength and check_max_length:
+                if track['info']['isStream']:
+                    length = '{live}'
+                else:
+                    length = timeformatter.format_ms(track['info']['length'])
                 embed.description = ctx.localizer.format_str("{enqueue.toolong}",
-                                                             _length=timeformatter.format_ms(track['info']['length']),
+                                                             _length=length,
                                                              _max=timeformatter.format_ms(maxlength))
                 return embed, False
 
@@ -55,7 +59,10 @@ class Music(commands.Cog):
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
 
         if player.current is not None and not silent:
-            until_play = player.queue_duration(include_current=True, end_pos=pos_global)
+            if player.current.stream:
+                until_play = '--:--'
+            else:
+                until_play = player.queue_duration(include_current=True, end_pos=pos_global)
             embed.add_field(name="{enqueue.position}", value=f"`{pos_local + 1}({pos_global + 1})`", inline=True)
             embed.add_field(name="{enqueue.playing_in}", value=f"`{until_play} ({{enqueue.estimated}})`",
                             inline=True)
@@ -66,7 +73,10 @@ class Music(commands.Cog):
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
 
-        duration = timeformatter.format_ms(int(track.duration))
+        if track.stream:
+            duration = '{live}'
+        else:
+            duration = timeformatter.format_ms(int(track.duration))
         embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
 
         return embed, True
@@ -110,8 +120,8 @@ class Music(commands.Cog):
 
     # commands
     from .basic_commands import (
-        _disconnect, _djremove, _move, _myqueue, _now, _pause, _play, _queue, _reconnect, _remove, _search, _seek,
-        _shuffle, _skip, _skip_to, _stop, _user_queue_remove, _volume)
+        _disconnect, _djremove, _forceplay, _move, _myqueue, _now, _pause, _play, _queue, _reconnect, _remove, _search,
+        _seek, _shuffle, _skip, _skip_to, _stop, _user_queue_remove, _volume)
     # events
     from .events import check_leave_voice, cog_unload, leave_check, leave_timer, on_voice_state_update, track_hook
     # commands
