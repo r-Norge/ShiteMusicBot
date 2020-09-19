@@ -77,7 +77,7 @@ async def _seek(self, ctx, *, time: str):
 @commands.command(name='skip')
 @require_voice_connection()
 @require_playing()
-@voteable(requester_override=True)
+@voteable(requester_override=True, react_to_vote=True)
 async def _skip(self, ctx):
     """ Skips the current track. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -112,7 +112,7 @@ async def _skip_to(self, ctx, pos: int = 1):
 @commands.command(name='stop')
 @require_voice_connection()
 @require_playing(require_user_listening=True)
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _stop(self, ctx):
     """ Stops the player and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -333,7 +333,7 @@ async def _search(self, ctx, *, query):
 
 @commands.command(name='disconnect')
 @require_voice_connection()
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _disconnect(self, ctx):
     """ Disconnects the player from the voice channel and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -348,7 +348,7 @@ async def _disconnect(self, ctx):
 
 @commands.command(name='reconnect')
 @require_voice_connection()
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _reconnect(self, ctx):
     """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)

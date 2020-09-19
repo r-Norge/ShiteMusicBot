@@ -189,7 +189,6 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
         self._history = deque(maxlen=11)  # 10 + current
-        self.looped_queue = []
         self.looping = False
         self.loop_offset = 0
 
@@ -206,8 +205,7 @@ class MixQueue:
     def __iter__(self):
         global_queue = roundrobin(*[x for x in self.queues.values()])
         priority_queue = self.priority_queue
-        looped_queue = self.looped_queue
-        out = chain(priority_queue, looped_queue, global_queue)
+        out = chain(priority_queue, global_queue)
         return out
 
     def __len__(self):
@@ -243,10 +241,6 @@ class MixQueue:
             next_track = self.priority_queue.pop(0)
             self._history.append(next_track)
             return next_track
-        if self.looped_queue:
-            next_track = self.looped_queue.pop(0)
-            self._history.append(next_track)
-            return next_track
         try:
             if self.looping:
                 queue = list(self)
@@ -254,6 +248,7 @@ class MixQueue:
                 self.loop_offset += 1
                 if self.loop_offset == len(self):
                     self.loop_offset = 0
+                self._history.append(next_track)
                 return next_track
             else:
                 next_track = self.queues[self.first_queue].pop(0)
@@ -343,7 +338,7 @@ class MixQueue:
             self.queues.pop(i)
 
     def _loc_to_glob(self, requester, pos):
-        globpos = len(self.priority_queue) + len(self.looped_queue)
+        globpos = len(self.priority_queue)
         passed = False
         for key, queue in self.queues.items():
             if len(queue) <= pos:

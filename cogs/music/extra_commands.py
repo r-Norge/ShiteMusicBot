@@ -228,7 +228,7 @@ async def _loop(self, ctx):
 
 @_loop.command(name='start')
 @require_playing(require_user_listening=True)
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _loop_start(self, ctx):
     """ Set the equalizer to bass boost the music """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -241,7 +241,7 @@ async def _loop_start(self, ctx):
 
 @_loop.command(name='stop')
 @require_playing(require_user_listening=True)
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _loop_stop(self, ctx):
     """ Set the equalizer to bass boost the music """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
