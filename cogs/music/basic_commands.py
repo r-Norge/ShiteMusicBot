@@ -204,7 +204,11 @@ async def _move(self, ctx):
 
     # Get the initial and final position
     message, page, selections = await selector.start_scrolling()
-    pos_initial, pos_final = selections[0], selections[1]
+
+    try:
+        pos_initial, pos_final = selections[0], selections[1]
+    except (IndexError, TypeError):
+        return await message.delete()
 
     # Move the track
     moved = player.move_user_track(ctx.author.id, pos_initial, pos_final)
@@ -247,7 +251,10 @@ async def _remove(self, ctx):
     selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, color=0xFF0000,
                         title='Remove song plz')
     message, _, removed = await selector.start_scrolling()
-    await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
+    if removed:
+        await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
+    else:
+        await message.delete()
 
 
 @commands.command(name="DJremove")
@@ -322,13 +329,17 @@ async def _search(self, ctx, *, query):
     search_selector = Selector(ctx, identifiers, functions, arguments, num_selections=5,
                                color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
     # Let the user scroll through results
-    message, current_page, (embed, added) = await search_selector.start_scrolling()
+    message, current_page, result = await search_selector.start_scrolling()
 
-    embed = ctx.localizer.format_embed(embed)
-    await message.edit(embed=embed)
+    if result:
+        (embed, added) = result
+        embed = ctx.localizer.format_embed(embed)
+        await message.edit(embed=embed)
 
-    if not player.is_playing:
-        await player.play()
+        if not player.is_playing:
+            await player.play()
+    else:
+        await message.delete()
 
 
 @commands.command(name='disconnect')

@@ -246,13 +246,18 @@ class MixQueue:
             return next_track
         try:
             if self.looping:
-                queue = list(self)
-                next_track = queue[max(self.loop_offset, len(queue)-1)]
-                self.loop_offset += 1
-                if self.loop_offset >= len(self):
-                    self.loop_offset = 0
-                self._history.append(next_track)
-                return next_track
+                try:
+                    queue = list(self)
+                    next_track = queue[self.loop_offset]
+                    self.loop_offset += 1
+                    if self.loop_offset >= len(self):
+                        self.loop_offset = 0
+                    self._history.append(next_track)
+                    return next_track
+                except IndexError as e:
+                    print(e)
+                    print(self.loop_offset)
+                    print(len(self))
             else:
                 next_track = self.queues[self.first_queue].pop(0)
                 self._shuffle()
@@ -283,22 +288,32 @@ class MixQueue:
     def remove_user_queue(self, requester: int):
         user_queue = self.queues.get(requester, [])
         if user_queue:
-            self.queues.pop(requester)
+            if self.looping:
+                # Should work, kinda hacky.
+                for pos, track in reversed(list(enumerate(user_queue))):
+                    self.remove_user_track(requester, pos)
+            else:
+                self.queues.pop(requester)
 
     def remove_user_track(self, requester: int, pos: int):
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
+                glob_pos = self._loc_to_glob(requester, pos)
+                if glob_pos <= self.loop_offset:
+                    self.loop_offset -= 1
                 track = user_queue.pop(pos)
                 self._clear_empty()
                 return track
 
     def remove_global_track(self, pos: int):
-        # TODO: handle removed songs in loop mode.
-        p = (pos - self.loop_offset) % len(self)
-        if p < pos:
+        # Get the actual index of the song
+        pos = list(self).index(self.get_queue()[pos])
+
+        if pos < self.loop_offset:
             self.loop_offset -= 1
-        q, pos = self._glob_to_loc(p)
+
+        q, pos = self._glob_to_loc(pos)
         if q is None or pos is None:
             return
         queue = self.queues.get(q)
