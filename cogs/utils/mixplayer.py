@@ -310,7 +310,7 @@ class MixQueue:
         # Get the actual index of the song
         pos = list(self).index(self.get_queue()[pos])
 
-        if pos < self.loop_offset:
+        if pos <= self.loop_offset:
             self.loop_offset -= 1
 
         q, pos = self._glob_to_loc(pos)
