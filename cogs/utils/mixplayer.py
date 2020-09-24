@@ -172,6 +172,10 @@ class MixPlayer(DefaultPlayer):
             self.boosted = False
             await self.reset_equalizer()
 
+    @property
+    def looping(self):
+        return self.queue.looping
+
 
 def roundrobin(*iterables):
     """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""

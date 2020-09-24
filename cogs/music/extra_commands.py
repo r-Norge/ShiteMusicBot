@@ -14,7 +14,6 @@ import urllib
 
 from bs4 import BeautifulSoup
 
-from ..helpformatter import commandhelper
 from ..utils import checks
 from ..utils.paginator import Scroller, TextPaginator
 from .decorators import require_playing, require_voice_connection, voteable
@@ -220,10 +219,14 @@ async def _scrub(self, ctx):
 async def _loop(self, ctx):
     # This is done using subcommands to have separate vote counts for starting and stopping.
     if ctx.invoked_subcommand is None:
-        ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
-        paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
-        scroller = Scroller(ctx, paginator)
-        await scroller.start_scrolling()
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        embed = discord.Embed(color=ctx.me.color, title='Loop status')
+
+        if player.looping:
+            embed.description = 'The bot is currently looping: ♾️'
+        else:
+            embed.description = 'The bot is currently not looping'
+        await ctx.send(embed=embed)
 
 
 @_loop.command(name='start')
