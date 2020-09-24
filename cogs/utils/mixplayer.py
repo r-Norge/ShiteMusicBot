@@ -102,6 +102,13 @@ class MixPlayer(DefaultPlayer):
         self.clear_votes()
         await self.play()
 
+    async def stop(self):
+        """ Stops the player. """
+        await self.node._send(op='stop', guildId=self.guild_id)
+        self.current = None
+        self.queue.looping = False
+        self.clear_votes()
+
     def update_listeners(self, member, voice_state):
         if self.is_connected:
             vc = int(self.channel_id)
@@ -262,6 +269,7 @@ class MixQueue:
                     print(e)
                     print(self.loop_offset)
                     print(len(self))
+                    self.loop_offset = min(self.loop_offset, len(self)-1)
             else:
                 next_track = self.queues[self.first_queue].pop(0)
                 self._shuffle()
