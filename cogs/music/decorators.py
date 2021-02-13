@@ -2,6 +2,7 @@
 import discord
 from discord.ext import commands
 
+import asyncio
 import functools
 import inspect
 import math
@@ -127,7 +128,7 @@ def require_queue(require_member_queue=False, require_author_queue=False):
     return ensure_queue
 
 
-def voteable(requester_override=False, DJ_override=False):
+def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
     def make_voteable(func):
         @functools.wraps(func)
         async def voteable_inner(self, ctx, *command_args, **kwargs):
@@ -140,11 +141,54 @@ def voteable(requester_override=False, DJ_override=False):
 
             enough_votes = votes/total >= threshold/100
             DJ = DJ_override and is_dj(ctx)
-            requester = player.current.requester == ctx.author.id and requester_override
+            requester = player.current is None or (player.current.requester == ctx.author.id and requester_override)
 
             if enough_votes or requester or DJ:
                 await func(self, ctx, *command_args, **kwargs)
                 player.clear_votes()
+
+            elif react_to_vote:
+                embed = discord.Embed(title="Votes",
+                                      description=f"{votes} out of {math.ceil(total*threshold/100)} required votes.",
+                                      color=ctx.me.color)
+                embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.avatar_url)
+                msg = await ctx.send(embed=ctx.localizer.format_embed(embed))
+                await msg.add_reaction('👍')
+
+                def check(reaction, user):
+                    if not reaction.message.id == msg.id:
+                        return False
+
+                    if user is None or user not in player.listeners:
+                        return False
+
+                    if reaction.emoji == '👍' and user.id not in player.get_voters(func.__name__):
+                        player.add_vote(func.__name__, user)
+                        return True
+                    return False
+
+                while True:
+                    try:
+                        reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
+                    except asyncio.TimeoutError:
+                        await msg.clear_reactions()
+                        embed.title = ''
+                        embed.set_footer(text='{time_expired}')
+                        await msg.edit(embed=ctx.localizer.format_embed(embed))
+                        break
+
+                    total = len(player.listeners)
+                    votes = len(player.get_voters(func.__name__))
+
+                    embed.description = f"{votes} out of {math.ceil(total*threshold/100)} required votes."
+                    await msg.edit(embed=ctx.localizer.format_embed(embed))
+
+                    if votes/total >= threshold/100:
+                        player.clear_votes()
+                        await msg.delete()
+                        await func(self, ctx, *command_args, **kwargs)
+                        break
+
             else:
                 if votes != 0:
                     needed = math.ceil(total*threshold/100)

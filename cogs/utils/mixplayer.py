@@ -102,6 +102,13 @@ class MixPlayer(DefaultPlayer):
         self.clear_votes()
         await self.play()
 
+    async def stop(self):
+        """ Stops the player. """
+        await self.node._send(op='stop', guildId=self.guild_id)
+        self.current = None
+        self.queue.looping = False
+        self.clear_votes()
+
     def update_listeners(self, member, voice_state):
         if self.is_connected:
             vc = int(self.channel_id)
@@ -137,6 +144,15 @@ class MixPlayer(DefaultPlayer):
         for category, votes in self.voteables.items():
             votes.clear()
 
+    def enable_looping(self, looping):
+        if (not self.queue.looping) and looping:
+            self.queue.enable_looping(looping)
+            if track := self.current:
+                if looping:
+                    self.queue.add_track(track.requester, track)
+        elif not looping and self.queue.looping:
+            self.queue.enable_looping(looping)
+
     async def handle_event(self, event):
         """ Handles the given event as necessary. """
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
@@ -163,6 +179,10 @@ class MixPlayer(DefaultPlayer):
             self.boosted = False
             await self.reset_equalizer()
 
+    @property
+    def looping(self):
+        return self.queue.looping
+
 
 def roundrobin(*iterables):
     """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""
@@ -183,6 +203,8 @@ class MixQueue:
         self.queues = OrderedDict()
         self.priority_queue = []
         self._history = deque(maxlen=11)  # 10 + current
+        self.looping = False
+        self.loop_offset = 0
 
     def __str__(self):
         tmp = ''
@@ -207,17 +229,25 @@ class MixQueue:
         return length
 
     def get_queue(self):
-        return list(self)
+        if self.looping:
+            offset = self.loop_offset
+            return list(self)[offset:] + list(self)[:offset]
+        else:
+            return list(self)
 
     def clear(self):
         self.queues = OrderedDict()
         self.priority_queue = []
+        self.looping = False
+        self.loop_offset = 0
 
     # if dual is true also returns global positions of tracks
     def get_user_queue(self, requester: int, dual: bool = False):
         queue = self.queues.get(requester, [])
         if dual and queue:
             pos = [self._loc_to_glob(requester, i) for i in range(len(queue))]
+            if self.looping:
+                pos = [(p + self.loop_offset) % len(self) for p in pos]
             combined = zip(queue, pos)
             return list(combined)
         return queue
@@ -228,11 +258,26 @@ class MixQueue:
             self._history.append(next_track)
             return next_track
         try:
-            next_track = self.queues[self.first_queue].pop(0)
-            self._shuffle()
-            self._clear_empty()
-            self._history.append(next_track)
-            return next_track
+            if self.looping:
+                try:
+                    queue = list(self)
+                    next_track = queue[self.loop_offset]
+                    self.loop_offset += 1
+                    if self.loop_offset >= len(self):
+                        self.loop_offset = 0
+                    self._history.append(next_track)
+                    return next_track
+                except IndexError as e:
+                    print(e)
+                    print(self.loop_offset)
+                    print(len(self))
+                    self.loop_offset = min(self.loop_offset, len(self)-1)
+            else:
+                next_track = self.queues[self.first_queue].pop(0)
+                self._shuffle()
+                self._clear_empty()
+                self._history.append(next_track)
+                return next_track
         except KeyError:
             pass
 
@@ -257,17 +302,31 @@ class MixQueue:
     def remove_user_queue(self, requester: int):
         user_queue = self.queues.get(requester, [])
         if user_queue:
-            self.queues.pop(requester)
+            if self.looping:
+                # Should work, kinda hacky.
+                for pos, track in reversed(list(enumerate(user_queue))):
+                    self.remove_user_track(requester, pos)
+            else:
+                self.queues.pop(requester)
 
     def remove_user_track(self, requester: int, pos: int):
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
+                glob_pos = self._loc_to_glob(requester, pos)
+                if glob_pos <= self.loop_offset:
+                    self.loop_offset -= 1
                 track = user_queue.pop(pos)
                 self._clear_empty()
                 return track
 
     def remove_global_track(self, pos: int):
+        # Get the actual index of the song
+        pos = list(self).index(self.get_queue()[pos])
+
+        if pos <= self.loop_offset:
+            self.loop_offset -= 1
+
         q, pos = self._glob_to_loc(pos)
         if q is None or pos is None:
             return
@@ -290,6 +349,19 @@ class MixQueue:
         queue = self.queues.get(requester, [])
         if queue:
             shuffle(queue)
+
+    def enable_looping(self, looping):
+        if (not self.looping) and looping:  # Not enabled and turning on
+            self.looping = looping
+            self.loop_offset = 0
+        elif self.looping and not looping:  # Enabled to turning off
+            tmp = [track for track in self.get_queue()]
+            for key, _ in self.queues.items():
+                self.queues = OrderedDict()
+            self.looping = looping
+            for track in tmp:
+                self.add_track(track.requester, track)
+            self.loop_offset = 0
 
     # Switches the order of user queues
     def _shuffle(self):

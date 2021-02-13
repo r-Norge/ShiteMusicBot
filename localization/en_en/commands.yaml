@@ -91,6 +91,20 @@ scrub:
 reconnect:
   aliases:        [rc]
   description:    'disconnects then reconnects the bot in case of bugged songs'
+forceplay:
+  aliases:        [forceplay, fp]
+  args:           '<query>'   # This is just a cosmetic representation of the arguments.
+  description:    'Searches and plays a song from a given query.'
+loop:
+  aliases:        [loop, looping]
+  description:    'Loops the queue'
+  sub_commands:
+    start:
+      aliases:        ['on', start, begin]
+      description:    'Starts looping the queue'
+    stop:
+      aliases:        ['off', stop, end]
+      description:    'Stops looping the queue'
 
 # Misc
 info:
