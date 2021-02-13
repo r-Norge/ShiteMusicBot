@@ -238,6 +238,8 @@ class MixQueue:
     def clear(self):
         self.queues = OrderedDict()
         self.priority_queue = []
+        self.looping = False
+        self.loop_offset = 0
 
     # if dual is true also returns global positions of tracks
     def get_user_queue(self, requester: int, dual: bool = False):
