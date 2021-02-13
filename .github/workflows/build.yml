@@ -105,4 +105,4 @@ jobs:
         env:
           REPO: ${{ steps.vars.outputs.repo }}
         if: github.event_name != 'pull_request'
-        run: docker push $REPO
+        run: docker push -a $REPO

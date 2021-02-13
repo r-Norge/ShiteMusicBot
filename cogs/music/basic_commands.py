@@ -77,7 +77,7 @@ async def _seek(self, ctx, *, time: str):
 @commands.command(name='skip')
 @require_voice_connection()
 @require_playing()
-@voteable(requester_override=True)
+@voteable(requester_override=True, react_to_vote=True)
 async def _skip(self, ctx):
     """ Skips the current track. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -112,7 +112,7 @@ async def _skip_to(self, ctx, pos: int = 1):
 @commands.command(name='stop')
 @require_voice_connection()
 @require_playing(require_user_listening=True)
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _stop(self, ctx):
     """ Stops the player and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -204,7 +204,11 @@ async def _move(self, ctx):
 
     # Get the initial and final position
     message, page, selections = await selector.start_scrolling()
-    pos_initial, pos_final = selections[0], selections[1]
+
+    try:
+        pos_initial, pos_final = selections[0], selections[1]
+    except (IndexError, TypeError):
+        return await message.delete()
 
     # Move the track
     moved = player.move_user_track(ctx.author.id, pos_initial, pos_final)
@@ -247,7 +251,10 @@ async def _remove(self, ctx):
     selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, color=0xFF0000,
                         title='Remove song plz')
     message, _, removed = await selector.start_scrolling()
-    await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
+    if removed:
+        await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
+    else:
+        await message.delete()
 
 
 @commands.command(name="DJremove")
@@ -322,18 +329,22 @@ async def _search(self, ctx, *, query):
     search_selector = Selector(ctx, identifiers, functions, arguments, num_selections=5,
                                color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
     # Let the user scroll through results
-    message, current_page, (embed, added) = await search_selector.start_scrolling()
+    message, current_page, result = await search_selector.start_scrolling()
 
-    embed = ctx.localizer.format_embed(embed)
-    await message.edit(embed=embed)
+    if result:
+        (embed, added) = result
+        embed = ctx.localizer.format_embed(embed)
+        await message.edit(embed=embed)
 
-    if not player.is_playing:
-        await player.play()
+        if not player.is_playing:
+            await player.play()
+    else:
+        await message.delete()
 
 
 @commands.command(name='disconnect')
 @require_voice_connection()
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _disconnect(self, ctx):
     """ Disconnects the player from the voice channel and clears its queue. """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -348,7 +359,7 @@ async def _disconnect(self, ctx):
 
 @commands.command(name='reconnect')
 @require_voice_connection()
-@voteable(DJ_override=True)
+@voteable(DJ_override=True, react_to_vote=True)
 async def _reconnect(self, ctx):
     """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -390,3 +401,41 @@ async def _volume(self, ctx, volume: int = None):
     embed = discord.Embed(description="{volume.set_to}", color=ctx.me.color)
     embed = ctx.localizer.format_embed(embed, _volume=player.volume)
     await ctx.send(embed=embed)
+
+
+@commands.command(name='forceplay')
+@require_voice_connection(should_connect=True)
+@voteable(DJ_override=True, react_to_vote=True)
+async def _forceplay(self, ctx, *, query: str):
+    """ Searches and plays a song from a given query. """
+    player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+    query = query.strip('<>')
+
+    if not url_rx.match(query):
+        query = f'ytsearch:{query}'
+
+    results = await player.node.get_tracks(query)
+
+    if not results or not results['tracks']:
+        return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
+
+    embed = discord.Embed(color=ctx.me.color)
+
+    if results['loadType'] == 'PLAYLIST_LOADED':
+        numtracks = 0
+        for track in results['tracks']:
+            _, track_added = await self.enqueue(ctx, track, embed, silent=True, check_max_length=False)
+            if track_added:
+                numtracks += 1
+
+        embed.title = '{playlist_enqued}'
+        embed.description = f'{results["playlistInfo"]["name"]} - {numtracks} {{tracks}}'
+    else:
+        track = results['tracks'][0]
+        await self.enqueue(ctx, track, embed, check_max_length=False)
+
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)
+
+    if not player.is_playing:
+        await player.play()
