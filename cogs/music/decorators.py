@@ -49,7 +49,9 @@ def require_voice_connection(should_connect=False):
                 await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
 
             elif int(player.channel_id) != ctx.author.voice.channel.id:
-                raise commands.CommandInvokeError('You need to be in my voicechannel.')
+                bot_channel = self.bot.get_channel(int(player.channel_id))
+                raise WrongVoiceChannelError(
+                    'You need to be in my voice channel', channels=[bot_channel])
 
             await func(self, ctx, *command_args, **kwargs)
 

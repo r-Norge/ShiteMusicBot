@@ -3,7 +3,9 @@ import discord
 from discord.ext import commands
 
 # Bot Utilities
+from cogs.helpformatter import commandhelper
 from cogs.utils import checks
+from cogs.utils.paginator import Scroller
 
 
 class Settings(commands.Cog):
@@ -22,7 +24,10 @@ class Settings(commands.Cog):
     @commands.group(name='settings', hidden=True)
     async def _set(self, ctx):
         if ctx.invoked_subcommand is None:
-            await self.current_settings.invoke(ctx)
+            ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
+            paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling()
 
     @checks.is_admin()
     @commands.guild_only()

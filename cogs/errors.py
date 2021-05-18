@@ -55,9 +55,6 @@ class Errors(commands.Cog):
             elif (err.original == 'I need the `CONNECT` and `SPEAK` permissions.'):
                 return await send_error_embed('{errors.need_permission}')
 
-            elif (err.original == 'You need to be in my voicechannel.'):
-                return await send_error_embed('{errors.my_channel}')
-
             elif (err.original == 'Not playing'):
                 return await send_error_embed('{not_playing}')
 
@@ -68,17 +65,21 @@ class Errors(commands.Cog):
                 return await send_error_embed('{errors.full_channel}')
 
         if isinstance(err, WrongVoiceChannelError):
-            changed = False
-            response = ctx.localizer.format_str('{settings_check.voicechannel}')
-            for channel_id in err.channels:
-                channel = ctx.guild.get_channel(channel_id)
-                if channel is not None:
-                    response += f'{channel.name}, '
-                    changed = True
-            if changed:
-                return await send_error_embed(response[:-2], title='{errors.right_channel}')
-            else:
-                return await send_error_embed('{errors.right_channel}')
+            if(err.original.startswith("You need to be in my voice channel")):
+                return await send_error_embed(err.channels[0].name, title='{errors.my_channel}')
+
+            elif (err.original.startswith('You need to be in the right voice channel')):
+                changed = False
+                response = ctx.localizer.format_str('{settings_check.voicechannel}')
+                for channel_id in err.channels:
+                    channel = ctx.guild.get_channel(channel_id)
+                    if channel is not None:
+                        response += f'{channel.name}, '
+                        changed = True
+                if changed:
+                    return await send_error_embed(response[:-2], title='{errors.right_channel}')
+                else:
+                    return await send_error_embed('{errors.right_channel}')
 
         if isinstance(err, WrongTextChannelError):
             try:
