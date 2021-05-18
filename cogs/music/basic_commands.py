@@ -439,3 +439,19 @@ async def _forceplay(self, ctx, *, query: str):
 
     if not player.is_playing:
         await player.play()
+
+
+@commands.command(name='forcedisconnect')
+@checks.dj_or(alone=True)
+async def _forcedisconnect(self, ctx, *, query: str):
+    """ Searches and plays a song from a given query. """
+    try:
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player.queue.clear()
+        await player.stop()
+    except Exception:
+        self.logger.exception("Error forcedisconnecting")
+    await self.connect_to(ctx.guild.id, None)
+    embed = discord.Embed(description='{disconnect.disconnected}', color=ctx.me.color)
+    embed = ctx.localizer.format_embed(embed)
+    await ctx.send(embed=embed)
