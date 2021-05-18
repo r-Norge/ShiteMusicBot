@@ -444,7 +444,7 @@ async def _forceplay(self, ctx, *, query: str):
 @commands.command(name='forcedisconnect')
 @checks.dj_or(alone=True)
 async def _forcedisconnect(self, ctx):
-    """ Searches and plays a song from a given query. """
+    """ Attempts to force disconnect the bot without checking if it is connected initially. """
     try:
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         player.queue.clear()
