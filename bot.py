@@ -1,6 +1,7 @@
 # Discord Packages
 import discord
 from discord.ext import commands
+from discord.flags import MemberCacheFlags
 
 import codecs
 import os
@@ -41,8 +42,12 @@ def _get_prefix(bot, message):
 
 class Bot(commands.Bot):
     def __init__(self, datadir, debug: bool = False):
+        intents = discord.Intents.all()
         super().__init__(command_prefix=_get_prefix,
-                         description=conf["bot"]["description"])
+                         description=conf["bot"]["description"],
+                         intents=intents,
+                         member_cache_flags=MemberCacheFlags.from_intents(intents)
+                         )
 
         self.settings = Settings(datadir, **conf['default server settings'])
         self.APIkeys = conf.get('APIkeys', {})
