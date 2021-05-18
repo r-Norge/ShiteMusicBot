@@ -1,11 +1,11 @@
 # Discord Packages
-from cogs.helpformatter import commandhelper
-from cogs.utils.paginator import Scroller
 import discord
 from discord.ext import commands
 
 # Bot Utilities
+from cogs.helpformatter import commandhelper
 from cogs.utils import checks
+from cogs.utils.paginator import Scroller
 
 
 class Settings(commands.Cog):
