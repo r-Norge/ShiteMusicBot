@@ -1,4 +1,5 @@
 from discord.ext import commands
+from .helpformatter import prefix_cleaner, helper, commandhelper, coghelper, Scroller
 
 
 class Help(commands.Cog):

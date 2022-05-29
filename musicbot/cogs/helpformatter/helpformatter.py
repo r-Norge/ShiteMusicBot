@@ -4,7 +4,7 @@ from discord.ext import commands
 import re
 
 # Bot Utilities
-from ...utils.userinteraction import HelpPaginator, Scroller
+from ...utils.userinteraction import HelpPaginator
 
 usermention = r"<@!?\d{17,19}>"
 
@@ -110,4 +110,3 @@ def prefix_cleaner(ctx):
             pref = pref[0]
         ctx.prefix = pref
     return ctx
-
