@@ -1,5 +1,5 @@
 discord.py == 1.7.*
-lavalink
+lavalink = 3.*.*
 asyncio
 pyyaml
 BeautifulSoup4
