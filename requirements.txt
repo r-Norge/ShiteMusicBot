@@ -1,5 +1,5 @@
 discord.py == 1.7.*
-git+https://github.com/Devoxin/Lavalink.py@dev
+lavalink
 asyncio
 pyyaml
 BeautifulSoup4
