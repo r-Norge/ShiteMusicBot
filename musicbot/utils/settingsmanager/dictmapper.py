@@ -1,8 +1,10 @@
 
 class DictMapper:
     """
-        Base class for interacting with nested dictionaries through lists of keys
-        E.g. mapping ["a", "b", "c"] to example_dictionary["a"]["b"]["c"]
+        Class for creating and interacting with nested dictionaries through lists of keys
+        E.g. mapping ["a", "b", "c"] to example_dictionary["a"]["b"]["c"].
+
+        DictMapper.get(d["a"], ["b", "c"]) and DictMapper.get(d, ["a", "b", "c"]) are equivalent.
     """
 
     @staticmethod
