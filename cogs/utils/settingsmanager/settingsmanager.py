@@ -6,9 +6,10 @@ import locale as localee
 import os
 
 import yaml
+from .dictmapper import DictMapper
 
 
-class Settings:
+class Settings():
     def __init__(self, datadir, **default_settings):
         self._DATA_PATH = f"{datadir}/bot/"
         self._SETTINGS_PATH = self._DATA_PATH + 'settings.yaml'
@@ -34,35 +35,6 @@ class Settings:
         with codecs.open(self._SETTINGS_PATH, "r", encoding='utf8') as f:
             self.settings = yaml.load(f, Loader=yaml.SafeLoader)
 
-    def _set(self, d, keys, val):
-        key = keys[0]
-        if len(keys) == 1:
-            if val is None:
-                try:
-                    d.pop(key)
-                except KeyError:
-                    pass
-            else:
-                d[key] = val
-            return
-        if key in d.keys():
-            if not isinstance(d[key], dict):
-                d[key] = {}
-            self._set(d[key], keys[1:], val)
-        else:
-            d[key] = {}
-            self._set(d[key], keys[1:], val)
-
-    def _get(self, d, keys):
-        key = keys[0]
-        try:
-            if len(keys) > 1 and isinstance(d[key], dict):
-                return self._get(d[key], keys[1:])
-            else:
-                return d[key]
-        except KeyError:
-            return None
-
     def set(self, identifier, setting, value):
         """ Set value in settings, will overwrite any existing values. """
         guild_name = None
@@ -75,7 +47,7 @@ class Settings:
 
         if guild_name:
             self.settings[identifier]["_servername"] = guild_name
-        self._set(self.settings[identifier], setting.split('.'), value)
+        DictMapper.set(self.settings[identifier], setting.split('.'), value)
 
         with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
             yaml.dump(self.settings, f, indent=2)
@@ -95,7 +67,7 @@ class Settings:
         if identifier not in self.settings.keys():
             return default
 
-        value = self._get(self.settings[identifier], setting.split('.'))
+        value = DictMapper.get(self.settings[identifier], setting.split('.'))
         if value is not None:
             return value
         else:

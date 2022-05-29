@@ -13,9 +13,7 @@ import aiohttp
 import yaml
 
 # Bot Utilities
-from cogs.utils.alias import Aliaser
-from cogs.utils.context import Context
-from cogs.utils.localizer import Localizer, LocalizerWrapper
+from cogs.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
 from cogs.utils.logger import BotLogger
 from cogs.utils.settingsmanager import Settings
 
@@ -73,7 +71,7 @@ class Bot(commands.Bot):
         await self.process_commands(message)
 
     async def process_commands(self, message):
-        ctx = await self.get_context(message, cls=Context)
+        ctx = await self.get_context(message, cls=LocalizedContext)
 
         # Replace aliases with commands
         ctx = self.aliaser.get_command(ctx)

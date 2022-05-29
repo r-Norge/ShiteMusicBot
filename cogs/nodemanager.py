@@ -9,7 +9,7 @@ import yaml
 
 # Bot Utilities
 from cogs.helpformatter import commandhelper
-from cogs.utils.paginator import Scroller
+from cogs.utils.userinteraction import Scroller
 from .utils.mixplayer import MixPlayer
 
 

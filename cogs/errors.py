@@ -8,7 +8,7 @@ from cogs.music.music_errors import WrongTextChannelError, WrongVoiceChannelErro
 
 # Bot Utilities
 from cogs.helpformatter import commandhelper
-from cogs.utils.paginator import Scroller
+from cogs.utils.userinteraction import Scroller
 
 
 class Errors(commands.Cog):

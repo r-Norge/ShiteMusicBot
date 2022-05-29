@@ -5,7 +5,7 @@ import traceback
 
 # Bot Utilities
 from cogs.helpformatter import commandhelper
-from cogs.utils.paginator import Scroller
+from cogs.utils.userinteraction import Scroller
 
 
 class CogManager(commands.Cog):

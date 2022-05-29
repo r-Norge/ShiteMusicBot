@@ -9,7 +9,7 @@ from os import path
 import yaml
 
 # Bot Utilities
-from cogs.utils.dict_utils import SafeDict, flatten
+from .dict_utils import SafeDict, flatten
 
 """
 Localizer for bot
@@ -152,19 +152,3 @@ class Localizer:
     def format_embed(self, embed, lang=None, prefix=None, **kvpairs):
         raw = embed.to_dict()
         return Embed.from_dict(self.format_dict(raw, lang, prefix, **kvpairs))
-
-
-class LocalizerWrapper:
-    def __init__(self, localizer, lang=None, prefix=None):
-        self.localizer = localizer
-        self.lang = lang
-        self.prefix = prefix
-
-    def format_str(self, s, **kvpairs):
-        return self.localizer.format_str(s, self.lang, self.prefix, **kvpairs)
-
-    def format_dict(self, d, **kvpairs):
-        return self.localizer.format_dict(d, self.lang, self.prefix, **kvpairs)
-
-    def format_embed(self, embed, **kvpairs):
-        return self.localizer.format_embed(embed, self.lang, self.prefix, **kvpairs)

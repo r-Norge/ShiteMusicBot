@@ -5,7 +5,7 @@ from discord.ext import commands
 # Bot Utilities
 from cogs.helpformatter import commandhelper
 from cogs.utils import checks
-from cogs.utils.paginator import Scroller
+from cogs.utils.userinteraction import Scroller
 
 
 class Settings(commands.Cog):
