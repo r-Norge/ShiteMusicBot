@@ -13,20 +13,20 @@ import aiohttp
 import yaml
 
 # Bot Utilities
-from cogs.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
-from cogs.utils.logger import BotLogger
-from cogs.utils.settingsmanager import Settings
+from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
+from musicbot.utils.logger import BotLogger
+from musicbot.utils.settingsmanager import Settings
 
 initial_extensions = [
-    'cogs.errors',
-    'cogs.cogmanager',
-    'cogs.settings',
-    'cogs.misc',
-    'cogs.helpformatter'
+    'musicbot.cogs.errors',
+    'musicbot.cogs.cogmanager',
+    'musicbot.cogs.settings',
+    'musicbot.cogs.misc',
+    'musicbot.cogs.helpformatter'
 ]
 
 on_ready_extensions = [
-    'cogs.nodemanager'
+    'musicbot.cogs.nodemanager'
 ]
 
 

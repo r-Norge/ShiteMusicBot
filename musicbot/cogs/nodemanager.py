@@ -8,9 +8,9 @@ import codecs
 import yaml
 
 # Bot Utilities
-from cogs.helpformatter import commandhelper
-from cogs.utils.userinteraction import Scroller
-from .utils.mixplayer import MixPlayer
+from .helpformatter import commandhelper
+from ..utils.userinteraction import Scroller
+from ..utils.mixplayer import MixPlayer
 
 
 class NodeManager(commands.Cog):
@@ -20,7 +20,7 @@ class NodeManager(commands.Cog):
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
         music_extensions = [
-            'cogs.music',
+            'musicbot.cogs.music',
         ]
 
         if not hasattr(bot, 'lavalink'):

@@ -9,8 +9,8 @@ from discord.ext import commands
 import asyncio
 import re
 
-from ..utils import checks, timeformatter
-from ..utils.userinteraction import QueuePaginator, Scroller, Selector
+from ...utils import checks, timeformatter
+from ...utils.userinteraction import QueuePaginator, Scroller, Selector
 from .decorators import require_playing, require_queue, require_voice_connection, voteable
 
 time_rx = re.compile('[0-9]+')

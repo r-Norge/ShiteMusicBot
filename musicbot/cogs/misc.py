@@ -7,7 +7,7 @@ import platform
 import time
 
 # Bot Utilities
-from cogs.utils import bot_version
+from ..utils import bot_version
 
 
 class Misc(commands.Cog):

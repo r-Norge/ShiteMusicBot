@@ -7,9 +7,9 @@ import functools
 import inspect
 import math
 
-from cogs.music.music_errors import WrongVoiceChannelError
+from .music_errors import WrongVoiceChannelError
 
-from ..utils.checks import is_dj
+from ...utils.checks import is_dj
 
 
 def require_voice_connection(should_connect=False):

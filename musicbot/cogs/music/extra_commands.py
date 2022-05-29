@@ -14,8 +14,8 @@ import urllib
 
 from bs4 import BeautifulSoup
 
-from ..utils import checks
-from ..utils.userinteraction import Scroller, TextPaginator
+from ...utils import checks
+from ...utils.userinteraction import Scroller, TextPaginator
 from .decorators import require_playing, require_voice_connection, voteable
 
 
