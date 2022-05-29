@@ -8,7 +8,6 @@ from os import path
 
 import yaml
 
-# Bot Utilities
 from .dict_utils import SafeDict, flatten
 
 """

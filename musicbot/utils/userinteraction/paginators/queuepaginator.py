@@ -1,4 +1,6 @@
+# Discord Packages
 import discord
+
 from .textpaginator import TextPaginator
 
 

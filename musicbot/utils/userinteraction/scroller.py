@@ -2,7 +2,9 @@
 # This was at some point *heavliy* inspired by the paginator implementation by Rapptz for r.Danny
 # https://github.com/Rapptz/RoboDanny/blob/b0401e046814f42597c6e0280fef2432cc49cc5d/cogs/utils/paginator.py
 
+# Discord Packages
 import discord
+
 import asyncio
 
 from .paginators import BasePaginator, CantScrollException

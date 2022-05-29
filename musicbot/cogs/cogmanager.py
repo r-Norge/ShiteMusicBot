@@ -3,9 +3,8 @@ from discord.ext import commands
 
 import traceback
 
-# Bot Utilities
-from .helpformatter import commandhelper
 from ..utils.userinteraction import Scroller
+from .helpformatter import commandhelper
 
 
 class CogManager(commands.Cog):

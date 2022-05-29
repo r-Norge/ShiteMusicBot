@@ -5,12 +5,12 @@ from discord.ext import commands
 from lavalink import Node
 
 import codecs
+
 import yaml
 
-# Bot Utilities
-from .helpformatter import commandhelper
-from ..utils.userinteraction import Scroller
 from ..utils.mixplayer import MixPlayer
+from ..utils.userinteraction import Scroller
+from .helpformatter import commandhelper
 
 
 class NodeManager(commands.Cog):

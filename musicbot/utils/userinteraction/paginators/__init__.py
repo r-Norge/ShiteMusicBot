@@ -1,7 +1,7 @@
-from .queuepaginator import QueuePaginator
-from .helppaginator import HelpPaginator
-from .textpaginator import TextPaginator
+from .basepaginator import BasePaginator, CantScrollException
 from .fieldpaginator import FieldPaginator
-from .basepaginator import CantScrollException, BasePaginator
+from .helppaginator import HelpPaginator
+from .queuepaginator import QueuePaginator
+from .textpaginator import TextPaginator
 
 __all__ = ['QueuePaginator', 'HelpPaginator', 'TextPaginator', 'FieldPaginator', 'CantScrollException', 'BasePaginator']

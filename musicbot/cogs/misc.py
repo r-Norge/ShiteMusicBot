@@ -6,7 +6,6 @@ from lavalink import __version__ as LavalinkVersion
 import platform
 import time
 
-# Bot Utilities
 from ..utils import bot_version
 
 

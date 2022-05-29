@@ -12,7 +12,6 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import aiohttp
 import yaml
 
-# Bot Utilities
 from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
 from musicbot.utils.logger import BotLogger
 from musicbot.utils.settingsmanager import Settings

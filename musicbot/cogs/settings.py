@@ -2,10 +2,9 @@
 import discord
 from discord.ext import commands
 
-# Bot Utilities
-from .helpformatter import commandhelper
 from ..utils import checks
 from ..utils.userinteraction import Scroller
+from .helpformatter import commandhelper
 
 
 class Settings(commands.Cog):

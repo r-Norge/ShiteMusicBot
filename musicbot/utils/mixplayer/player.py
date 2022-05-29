@@ -1,11 +1,10 @@
-import typing
-
 # Discord Packages
 import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 
+import typing
 
 from .mixqueue import MixQueue
 
