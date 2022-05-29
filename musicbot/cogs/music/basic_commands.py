@@ -319,9 +319,8 @@ async def _search(self, ctx, *, query):
     arguments = [(ctx, tracks[i], discord.Embed(color=ctx.me.color)) for i in range(result_count)]
 
     for index, track in enumerate(tracks, start=1):
-        track = track['info']
-        duration = timeformatter.format_ms(int(track['length']))
-        identifiers.append(f'`{index}.` [{track["title"]}]({track["uri"]}) `{duration}`')
+        duration = timeformatter.format_ms(int(track.duration))
+        identifiers.append(f'`{index}.` [{track.title}]({track.uri}) `{duration}`')
         if index == result_count:
             break
 

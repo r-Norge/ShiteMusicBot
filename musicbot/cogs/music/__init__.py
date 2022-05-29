@@ -40,19 +40,20 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         # Only add tracks that don't exceed the max track length
-        if maxlength := self.max_track_length(ctx.guild, player):
-            if track['info']['length'] > maxlength and check_max_length:
-                if track['info']['isStream']:
+        if maxlength := self.max_track_length_ms(ctx.guild, player):
+            if track.duration > maxlength and check_max_length:
+                if track.stream:
                     length = '{live}'
                 else:
-                    length = timeformatter.format_ms(track['info']['length'])
+                    length = timeformatter.format_ms(track.duration)
                 embed.description = ctx.localizer.format_str("{enqueue.toolong}",
                                                              _length=length,
                                                              _max=timeformatter.format_ms(maxlength))
                 return embed, False
 
         # Add thumbnail, turn track into track class
-        thumbnail_url = await thumbnailer.ThumbNailer.identify(self, track['info']['identifier'], track['info']['uri'])
+
+        thumbnail_url = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
         track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
 
         # Add to player
@@ -68,10 +69,9 @@ class Music(commands.Cog):
                             inline=True)
 
         embed.title = '{enqueue.enqueued}'
-        thumbnail_url = track.extra["thumbnail_url"]
 
-        if thumbnail_url:
-            embed.set_thumbnail(url=thumbnail_url)
+        if "thumbnail_url" in track.extra:
+            embed.set_thumbnail(url=track.extra["thumbnail_url"])
 
         if track.stream:
             duration = '{live}'
@@ -106,7 +106,7 @@ class Music(commands.Cog):
         embed = ctx.localizer.format_embed(embed)
         return embed
 
-    def max_track_length(self, guild, player):
+    def max_track_length_ms(self, guild, player):
         if maxlength := self.bot.settings.get(guild, 'duration.max', None):
             is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
             listeners = max(1, len(player.listeners))  # Avoid division by 0
