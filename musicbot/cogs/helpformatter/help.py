@@ -1,7 +1,8 @@
 # Discord Packages
 from discord.ext import commands
 
-from .helpformatter import Scroller, coghelper, commandhelper, helper, prefix_cleaner
+from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
+from ...utils.userinteraction import Scroller
 
 
 class Help(commands.Cog):
