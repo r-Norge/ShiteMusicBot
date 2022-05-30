@@ -12,23 +12,20 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import aiohttp
 import yaml
 
-# Bot Utilities
-from cogs.utils.alias import Aliaser
-from cogs.utils.context import Context
-from cogs.utils.localizer import Localizer, LocalizerWrapper
-from cogs.utils.logger import BotLogger
-from cogs.utils.settingsmanager import Settings
+from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
+from musicbot.utils.logger import BotLogger
+from musicbot.utils.settingsmanager import Settings
 
 initial_extensions = [
-    'cogs.errors',
-    'cogs.cogmanager',
-    'cogs.settings',
-    'cogs.misc',
-    'cogs.helpformatter'
+    'musicbot.cogs.errors',
+    'musicbot.cogs.cogmanager',
+    'musicbot.cogs.settings',
+    'musicbot.cogs.misc',
+    'musicbot.cogs.helpformatter'
 ]
 
 on_ready_extensions = [
-    'cogs.nodemanager'
+    'musicbot.cogs.nodemanager'
 ]
 
 
@@ -73,7 +70,7 @@ class Bot(commands.Bot):
         await self.process_commands(message)
 
     async def process_commands(self, message):
-        ctx = await self.get_context(message, cls=Context)
+        ctx = await self.get_context(message, cls=LocalizedContext)
 
         # Replace aliases with commands
         ctx = self.aliaser.get_command(ctx)

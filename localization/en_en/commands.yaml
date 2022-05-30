@@ -91,6 +91,9 @@ scrub:
 reconnect:
   aliases:        [rc]
   description:    'disconnects then reconnects the bot in case of bugged songs'
+forcedisconnect:
+  aliases:        [fd]
+  description:    'Forces the bot to disconnect'
 forceplay:
   aliases:        [forceplay, fp]
   args:           '<query>'   # This is just a cosmetic representation of the arguments.
