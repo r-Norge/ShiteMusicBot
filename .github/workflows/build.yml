@@ -5,7 +5,7 @@ jobs:
   flake8:
     runs-on: ubuntu-latest
     env:
-      CheckFiles: "bot.py cogs/"
+      CheckFiles: "bot.py musicbot/"
     steps:
       - uses: actions/checkout@v2
 
@@ -64,18 +64,18 @@ jobs:
         if: github.ref == 'refs/heads/master'
         id: tagger
         run: |
-          version=$(grep -i bot_version cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \")
+          version=$(grep -i bot_version musicbot/cogs/utils/bot_version.py | cut -d" " -f3 | tr -d \")
           a=(${version//./ })
           ((a[2]++))
           new_version=$(echo "${a[0]}.${a[1]}.${a[2]}")
-          sed -i "s/${version}/${new_version}/g" cogs/utils/bot_version.py
+          sed -i "s/${version}/${new_version}/g" musicbot/cogs/utils/bot_version.py
           echo "::set-output name=tag::${new_version}"
 
       - name: Push changed files, and tags
         if: github.ref == 'refs/heads/master'
         uses: EndBug/add-and-commit@v4
         with:
-          add: cogs/utils/bot_version.py
+          add: musicbot/cogs/utils/bot_version.py
           author_name: MarlinBotCode
           message: Bump Version
           tag: v${{ steps.tagger.outputs.tag }}

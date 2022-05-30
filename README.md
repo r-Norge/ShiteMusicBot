@@ -5,11 +5,10 @@
 
 ## Features
 
-- Translations, get the bot in your preferred langauge!
+- Translations, get the bot in your preferred langauge! Works for both commands and replies.
 - Round Robin style queue, you won't have to wait forever for your songs to play.
-- Noice per server customization options.
+- Noice per server customization options, including per server localization.
 - Toit embeds.
-- More stuff to come?
 - Lyrics command that sometimes gives the correct lyrics
 - DJ roles
 
@@ -17,10 +16,11 @@
 
 1. Change or copy data/config.yaml.example to config.yaml
 2. Create or find a [lavalink](https://github.com/Frederikam/Lavalink) server you can use.
-3. Add your bot token and lavalink server.
+3. Add your bot token and lavalink server to the bot settings in your config.yaml.
 4. Edit any other settings you want.
-5. install requirements `python -m pip install -r requirements.txt`
-6. run the bot :)
+5. (Optional but recommended) Create a virtual environment and activate it.
+6. install requirements `python -m pip install -r requirements.txt`
+7. run the bot `python bot.py` :)
 
 ### Docker
 

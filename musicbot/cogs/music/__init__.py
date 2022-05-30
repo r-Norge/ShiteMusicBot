@@ -3,7 +3,7 @@ import discord
 import lavalink
 from discord.ext import commands
 
-from ..utils import thumbnailer, timeformatter
+from ...utils import thumbnailer, timeformatter
 from .music_errors import WrongTextChannelError
 
 
