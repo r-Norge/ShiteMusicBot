@@ -24,21 +24,6 @@ jobs:
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
 
-      - name: Sort with Isort
-        if: failure()
-        run: |
-          isort --sp setup.cfg ${CheckFiles}
-
-      - name: Create Pull Request
-        if: failure()
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          branch: actions/auto
-          commit-message: Changes done by tests
-          committer: Roxedus <bot@roxedus.dev>
-          title: Linter changed files
-
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
