@@ -21,6 +21,8 @@ url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 @require_voice_connection(should_connect=True)
 async def _play(self, ctx, *, query: str):
     """ Searches and plays a song from a given query. """
+    self.logger.debug("Query: %s" % query)
+    print(query)
     player = self.bot.lavalink.player_manager.get(ctx.guild.id)
     query = query.strip('<>')
 

@@ -16,16 +16,13 @@ from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, Lo
 from musicbot.utils.logger import BotLogger
 from musicbot.utils.settingsmanager import Settings
 
-initial_extensions = [
+on_ready_extensions = [
+    'musicbot.cogs.nodemanager',
     'musicbot.cogs.errors',
     'musicbot.cogs.cogmanager',
     'musicbot.cogs.settings',
     'musicbot.cogs.misc',
     'musicbot.cogs.helpformatter'
-]
-
-on_ready_extensions = [
-    'musicbot.cogs.nodemanager'
 ]
 
 
@@ -58,12 +55,6 @@ class Bot(commands.Bot):
         self.logger = self.main_logger.bot_logger.getChild("Bot")
         self.logger.debug("Debug: %s" % debug)
 
-        for extension in initial_extensions:
-            try:
-                self.load_extension(extension)
-            except Exception:
-                self.logger.exception("Loading of extension %s failed" % extension)
-
     async def on_message(self, message):
         if message.author.bot:
             return
@@ -90,7 +81,7 @@ class Bot(commands.Bot):
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
-                self.load_extension(extension)
+                await self.load_extension(extension)
             except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 

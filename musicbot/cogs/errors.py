@@ -17,7 +17,7 @@ class Errors(commands.Cog):
     async def base_msg(self, ctx, state: int = 0xFCBA03):
         embed = discord.Embed(color=state)
         embed.title = '{errors.error_occurred}'
-        embed.set_footer(icon_url=ctx.author.avatar_url,
+        embed.set_footer(icon_url=ctx.author.display_avatar.url,
                          text=f'{ctx.author.name}#{ctx.author.discriminator}')
         return embed
 
@@ -115,5 +115,5 @@ class Errors(commands.Cog):
                     self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
 
 
-def setup(bot):
-    bot.add_cog(Errors(bot))
+async def setup(bot):
+    await bot.add_cog(Errors(bot))

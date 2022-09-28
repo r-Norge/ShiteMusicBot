@@ -26,7 +26,7 @@ class CogManager(commands.Cog):
     async def load(self, ctx, *, module):
         """Loads a module."""
         try:
-            self.bot.load_extension(f'cogs.{module}')
+            await self.bot.load_extension(f'cogs.{module}')
             await ctx.send(f'{module} loaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -38,7 +38,7 @@ class CogManager(commands.Cog):
         if module == "cogmanager":
             return await ctx.send('Unloading this cog is not allowed')
         try:
-            self.bot.unload_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'cogs.{module}')
             await ctx.send(f'{module} unloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -48,8 +48,8 @@ class CogManager(commands.Cog):
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
-            self.bot.unload_extension(f'cogs.{module}')
-            self.bot.load_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'cogs.{module}')
+            await self.bot.load_extension(f'cogs.{module}')
             await ctx.send(f'{module} reloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -62,8 +62,8 @@ class CogManager(commands.Cog):
             for extension in self.bot.extensions:
                 if extension == 'cogs.cogmanager':
                     continue
-                self.bot.unload_extension(f'{extension}')
-                self.bot.load_extension(f'{extension}')
+                await self.bot.unload_extension(f'{extension}')
+                await self.bot.load_extension(f'{extension}')
             await ctx.send('Extensions reloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -76,5 +76,5 @@ class CogManager(commands.Cog):
         await self.bot.logout()
 
 
-def setup(bot):
-    bot.add_cog(CogManager(bot))
+async def setup(bot):
+    await bot.add_cog(CogManager(bot))

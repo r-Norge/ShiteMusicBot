@@ -90,7 +90,9 @@ class MixPlayer(DefaultPlayer):
                 track = self.queue.pop_first()
 
         self.current = track
-        await self.node._send(op='play', guildId=self.guild_id,
+        if track.track is None:
+            return
+        await self.node._send(op='play', guildId=str(self.guild_id),
                               track=track.track, startTime=start_time)
         await self.node._dispatch_event(TrackStartEvent(self, track))
 
@@ -103,7 +105,7 @@ class MixPlayer(DefaultPlayer):
 
     async def stop(self):
         """ Stops the player. """
-        await self.node._send(op='stop', guildId=self.guild_id)
+        await self.node._send(op='stop', guildId=str(self.guild_id))
         self.current = None
         self.queue.looping = False
         self.clear_votes()

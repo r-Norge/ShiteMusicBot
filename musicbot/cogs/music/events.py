@@ -5,7 +5,7 @@ import lavalink.events
 from discord.ext import commands, tasks
 
 
-def cog_unload(self):
+async def cog_unload(self):
     self.bot.lavalink._event_hooks.clear()
 
 

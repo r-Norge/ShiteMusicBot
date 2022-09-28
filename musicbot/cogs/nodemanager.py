@@ -19,21 +19,23 @@ class NodeManager(commands.Cog):
         self.settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
+
+    async def load_music_cogs(self):
         music_extensions = [
             'musicbot.cogs.music',
         ]
-
-        if not hasattr(bot, 'lavalink'):
-            bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
+        
+        if not hasattr(self.bot, 'lavalink'):
+            self.bot.lavalink = lavalink.Client(self.bot.user.id, player=MixPlayer)
 
             self.load_nodes_from_file()
 
-            bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
+            self.bot.add_listener(self.bot.lavalink.voice_update_handler, 'on_socket_response')
 
             for extension in music_extensions:
                 try:
                     self.logger.debug("Loading extension %s" % extension)
-                    self.bot.load_extension(extension)
+                    await self.bot.load_extension(extension)
                 except Exception:
                     self.logger.exception("Loading of extension %s failed" % extension)
 
@@ -194,5 +196,8 @@ class NodeManager(commands.Cog):
             await player.change_node(newnode)
 
 
-def setup(bot):
-    bot.add_cog(NodeManager(bot))
+async def setup(bot):
+    cog = NodeManager(bot)
+    await cog.load_music_cogs()
+    await bot.add_cog(cog)
+
