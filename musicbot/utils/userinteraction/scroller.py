@@ -3,8 +3,13 @@ from enum import Flag, auto
 from .paginators import BasePaginator, CantScrollException
 
 class ScrollerButton(discord.ui.Button):
-    def __init__(self, method, label, style=discord.ButtonStyle.gray):
-        super().__init__(label=label, style=style)
+    def __init__(self, method, label, style=discord.ButtonStyle.gray, **kwargs):
+        super().__init__(label=label, style=style, **kwargs)
+        self.callback = method
+
+class ScrollerNav(discord.ui.Select):
+    def __init__(self, method, **kwargs):
+        super().__init__(**kwargs)
         self.callback = method
 
 class ScrollClearSettings(Flag):
@@ -12,7 +17,7 @@ class ScrollClearSettings(Flag):
     OnInteractionExit = auto()
 
 class Scroller:
-    def __init__(self, ctx, paginator, timeout=20.0, clear_mode: ScrollClearSettings = ScrollClearSettings.OnInteractionExit):
+    def __init__(self, ctx, paginator, timeout=20.0, clear_mode: ScrollClearSettings = ScrollClearSettings.OnInteractionExit, with_nav_bar: bool=True):
         if not isinstance(paginator, BasePaginator):
             raise TypeError('Paginator needs to be a subclass of BasePaginator.')
 
@@ -28,6 +33,7 @@ class Scroller:
         self.view.on_timeout = self.on_timeout 
         
         self.clear_mode = clear_mode
+        self.use_nav_bar = with_nav_bar
 
         if len(self.pages) > 1:
             self.scrolling = True
@@ -67,7 +73,14 @@ class Scroller:
             return await self.channel.send(embed=self.pages[0])
 
         for (reaction, callback) in self.interaction_mapping:
-            self.view.add_item(item=ScrollerButton(callback, label=reaction))
+            self.view.add_item(item=ScrollerButton(callback, label=reaction, row=3))
+
+        if self.use_nav_bar:
+            self.navigator = ScrollerNav(self.navigate, placeholder="Navigate to page", row=4)
+            self.view.add_item(item=self.navigator)
+            for (i, _) in enumerate(self.pages):
+                self.navigator.add_option(label=str(i+1), value=str(i))
+
         self.message = await self.channel.send(embed=self.pages[0], view=self.view)
 
     async def stop(self, user_stopped: bool):
@@ -100,6 +113,10 @@ class Scroller:
 
     async def previous_page(self, interaction: discord.Interaction):
         await self.scroll(self.current_page_number - 1, interaction)
+
+    async def navigate(self, interaction: discord.Interaction):
+        page = int(self.navigator.values[0])
+        await self.scroll(page, interaction)
 
     async def stop_scrolling(self, _: discord.Interaction):
         await self.stop(user_stopped=True)
