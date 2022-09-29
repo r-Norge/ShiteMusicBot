@@ -39,7 +39,7 @@ class Scroller:
             ('\N{BLACK LEFT-POINTING TRIANGLE}', self.previous_page),
             ('\N{BLACK RIGHT-POINTING TRIANGLE}', self.next_page),
             ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.last_page),
-            ('❌', self.stop_scrolling),
+            ('❌', self.stop),
         ]
 
         if ctx.guild is not None:
@@ -57,7 +57,7 @@ class Scroller:
             if not self.permissions.read_message_history:
                 raise CantScrollException('Bot does not have Read Message History permission.')
 
-    async def start_interaction(self):
+    async def start_scrolling(self):
         self.current_page_number = 0
         # No embeds to scroll through
         if not self.pages:
@@ -70,7 +70,7 @@ class Scroller:
             self.view.add_item(item=ScrollerButton(callback, label=reaction))
         self.message = await self.channel.send(embed=self.pages[0], view=self.view)
 
-    async def stop_interaction(self, user_stopped: bool):
+    async def stop(self, user_stopped: bool):
         self.scrolling = False
         self.view.stop()
         self.view.clear_items()
@@ -102,8 +102,8 @@ class Scroller:
         await self.scroll(self.current_page_number - 1, interaction)
 
     async def stop_scrolling(self, _: discord.Interaction):
-        await self.stop_interaction(user_stopped=True)
+        await self.stop(user_stopped=True)
 
     async def on_timeout(self):
-        await self.stop_interaction(user_stopped=False)
+        await self.stop(user_stopped=False)
 
