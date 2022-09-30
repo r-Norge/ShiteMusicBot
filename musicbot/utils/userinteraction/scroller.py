@@ -1,21 +1,8 @@
 import discord
 from enum import Flag, auto
-from typing import Callable, Any, Tuple
 
 from lavalink.client import asyncio
 from .paginators import BasePaginator, CantScrollException
-
-
-class ScrollerButton(discord.ui.Button):
-    def __init__(self, method, label, style=discord.ButtonStyle.gray, **kwargs):
-        super().__init__(label=label, style=style, **kwargs)
-        self.callback = method
-
-
-class ScrollerNav(discord.ui.Select):
-    def __init__(self, method, **kwargs):
-        super().__init__(**kwargs)
-        self.callback = method
 
 
 class ScrollClearSettings(Flag):
@@ -23,9 +10,21 @@ class ScrollClearSettings(Flag):
     OnInteractionExit = auto()
 
 
+class ScrollerButton(discord.ui.Button):
+    def __init__(self, callback, label, style=discord.ButtonStyle.gray, **kwargs):
+        super().__init__(label=label, style=style, **kwargs)
+        self.callback = callback
+
+
+class ScrollerNav(discord.ui.Select):
+    def __init__(self, callback, **kwargs):
+        super().__init__(**kwargs)
+        self.callback = callback
+
+
 class Scroller:
     def __init__(self, ctx, paginator, clear_mode: ScrollClearSettings, timeout=20.0,
-            with_nav_bar: bool = True):
+                 with_nav_bar: bool = True):
 
         if not isinstance(paginator, BasePaginator):
             raise TypeError('Paginator needs to be a subclass of BasePaginator.')
@@ -37,8 +36,8 @@ class Scroller:
 
         # No embeds to scroll through
         if not self.paginator.pages:
-            raise Exception("Paginator contained no pages to display") # TODO: proper error
-        
+            raise Exception("Paginator contained no pages to display")  # TODO: proper error
+
         self.bot = ctx.bot
         self.channel = ctx.channel
         self.message = None
@@ -84,7 +83,7 @@ class Scroller:
 
     def build_view(self):
         for (reaction, callback) in self.interaction_mapping:
-            self.view.add_item(item=ScrollerButton(method=callback, label=reaction, row=3))
+            self.view.add_item(item=ScrollerButton(callback=callback, label=reaction, row=3))
 
         if self.use_nav_bar:
             self.navigator = ScrollerNav(self.navigate, placeholder="Navigate to page", row=4)
@@ -97,7 +96,7 @@ class Scroller:
         self.view.stop()
         self.view.clear_items()
         if (user_stopped and self.clear_mode & ScrollClearSettings.OnInteractionExit or
-            not user_stopped and self.clear_mode & ScrollClearSettings.OnTimeout):
+                not user_stopped and self.clear_mode & ScrollClearSettings.OnTimeout):
             await self.message.delete()
             self.message = None
             await self.ctx.message.delete()

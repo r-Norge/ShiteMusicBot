@@ -34,6 +34,6 @@ class Help(commands.Cog):
             else:
                 paginator = await coghelper(ctx, thing)
 
-        scroller = Scroller(ctx, paginator, 
-                ScrollClearSettings.OnTimeout | ScrollClearSettings.OnInteractionExit)
+        scroller = Scroller(ctx, paginator,
+                            ScrollClearSettings.OnTimeout | ScrollClearSettings.OnInteractionExit)
         await scroller.start_scrolling()

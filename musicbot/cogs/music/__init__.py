@@ -184,7 +184,6 @@ class Music(commands.Cog):
         else:
             await ctx.send(ctx.localizer.format_str("{seek.missing_amount}"))
     
-    
     @commands.command(name='skip')
     @require_voice_connection()
     @require_playing()
@@ -199,7 +198,6 @@ class Music(commands.Cog):
             await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
         else:
             await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
-    
     
     @commands.command(name='skipto')
     @checks.dj_or(alone=True)
@@ -218,7 +216,6 @@ class Music(commands.Cog):
     
         msg = ctx.localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
         await ctx.send(msg)
-    
     
     @commands.command(name='stop')
     @require_voice_connection()
@@ -271,8 +268,7 @@ class Music(commands.Cog):
             await ctx.send(ctx.localizer.format_str("{resume.paused}"))
         else:
             await ctx.send(ctx.localizer.format_str("{resume.resumed}"))
-    
-    
+
     @commands.command(name='shuffle')
     @require_voice_connection()
     @require_queue(require_author_queue=True)
@@ -281,8 +277,7 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         player.shuffle_user_queue(ctx.author.id)
         await ctx.send(ctx.localizer.format_str("{shuffle}"))
-    
-    
+
     @commands.command(name='move')
     @require_voice_connection()
     @require_queue(require_author_queue=True)
@@ -299,17 +294,17 @@ class Music(commands.Cog):
             identifiers.append(ctx.localizer.format_str("{queue.usertrack}", _index=index+1,
                                                         _globalindex=globpos+1, _title=track.title,
                                                         _uri=track.uri))
-    
+
         def ret_first_arg(*args):
             return args[0]
-    
+
         functions = [ret_first_arg]*len(user_queue)
         arguments = [(i,) for i in range(len(user_queue))]
-    
+
         # Set the different titles for the different selections
         round_titles = ["{moved.choose_song}", "{moved.choose_pos}"]
         round_titles = [ctx.localizer.format_str(i) for i in round_titles]
-    
+
         selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, round_titles=round_titles,
                             color=ctx.me.color, title=ctx.localizer.format_str("{moved.choose}"))
 
@@ -859,7 +854,6 @@ class Music(commands.Cog):
             if player is not None:
                 player.update_listeners(member, after)
                 await self.check_leave_voice(member.guild)
-
 
     async def check_leave_voice(self, guild):
         """ Checks if the bot should leave the voice channel """

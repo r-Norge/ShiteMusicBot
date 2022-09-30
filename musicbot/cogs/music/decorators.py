@@ -26,7 +26,8 @@ class BasicVoiceClient(discord.VoiceClient):
     async def on_voice_state_update(self, data):
         await self.lavalink.voice_update_handler({'t': 'VOICE_STATE_UPDATE', 'd': data})
 
-    async def connect(self, *, timeout: float, reconnect: bool, self_deaf: bool = False, self_mute: bool = False) -> None:
+    async def connect(self, *, timeout: float, reconnect: bool, self_deaf: bool = False,
+                      self_mute: bool = False) -> None:
         await self.channel.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
 
     async def disconnect(self, *, force: bool = False) -> None:
@@ -77,7 +78,6 @@ def require_voice_connection(should_connect=False):
 
                 player.store('channel', ctx.channel.id)
                 await ctx.author.voice.channel.connect(cls=BasicVoiceClient)
-
 
             elif int(player.channel_id) != ctx.author.voice.channel.id:
                 bot_channel = self.bot.get_channel(int(player.channel_id))

@@ -1,6 +1,5 @@
 # Discord Packages
 from __future__ import annotations
-from locale import resetlocale 
 import discord
 
 import asyncio
@@ -10,8 +9,10 @@ from typing import List, Callable, Coroutine
 from .paginators import TextPaginator
 from .scroller import ScrollClearSettings, Scroller
 
+
 class SelectorButton(discord.ui.Button):
-    def __init__(self, label, callback: Callable[[discord.Interaction, SelectorButton], Coroutine], style=discord.ButtonStyle.gray, **kwargs):
+    def __init__(self, label, callback: Callable[[discord.Interaction, SelectorButton], Coroutine],
+                 style=discord.ButtonStyle.gray, **kwargs):
         super().__init__(label=label, style=style, **kwargs)
 
         # The callback we need to supply to disord.py takes only a discord.Interaction
@@ -32,7 +33,8 @@ class SelectorItem:
 
 
 class Selector2(TextPaginator, Scroller):
-    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, terminate_on_select: bool = True, max_size=2000, **embed_base):
+    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None,
+                 terminate_on_select: bool = True, max_size=2000, **embed_base):
         self.match = None
         if round_titles is None:
             round_titles = []
@@ -58,7 +60,7 @@ class Selector2(TextPaginator, Scroller):
         # The list of currently visible buttons, gets cleared upon scroll.
         self.visible_buttons = []
 
-        # Depending on the selector we might want the result of callbacks 
+        # Depending on the selector we might want the result of callbacks
         # after we have finished interacting with the scroller
         self.callback_results = []
 
@@ -91,7 +93,7 @@ class Selector2(TextPaginator, Scroller):
         self.current_page_number
         start = self.current_page_number * self.max_selections_per_page
         end = min((self.current_page_number + 1) * self.max_selections_per_page, len(self.selections))
-        
+
         for button in self.buttons[start:end]:
             self.view.add_item(item=button)
             self.visible_buttons.append(button)
