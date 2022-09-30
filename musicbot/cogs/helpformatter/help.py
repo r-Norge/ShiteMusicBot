@@ -1,6 +1,8 @@
 # Discord Packages
 from discord.ext import commands
 
+from musicbot.utils.userinteraction.scroller import ScrollClearSettings
+
 from ...utils.userinteraction import Scroller
 from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
 
@@ -32,5 +34,6 @@ class Help(commands.Cog):
             else:
                 paginator = await coghelper(ctx, thing)
 
-        scroller = Scroller(ctx, paginator)
+        scroller = Scroller(ctx, paginator, 
+                ScrollClearSettings.OnTimeout | ScrollClearSettings.OnInteractionExit)
         await scroller.start_scrolling()

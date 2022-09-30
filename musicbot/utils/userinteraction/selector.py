@@ -1,10 +1,104 @@
 # Discord Packages
+from __future__ import annotations
+from locale import resetlocale 
 import discord
 
 import asyncio
 import inspect
+from typing import List, Callable, Coroutine
 
 from .paginators import TextPaginator
+from .scroller import ScrollClearSettings, Scroller
+
+class SelectorButton(discord.ui.Button):
+    def __init__(self, label, callback: Callable[[discord.Interaction, SelectorButton], Coroutine], style=discord.ButtonStyle.gray, **kwargs):
+        super().__init__(label=label, style=style, **kwargs)
+
+        # The callback we need to supply to disord.py takes only a discord.Interaction
+        # we want to have access to the button that caused that was clicked
+        # so we can update it, i.e. change color
+        def add_button_to_callback(func):
+            async def wrapped_callback(interaction: discord.Interaction):
+                await func(interaction, self)
+            return wrapped_callback
+
+        self.callback = add_button_to_callback(callback)
+
+
+class SelectorItem:
+    def __init__(self, identifier, callback: Callable[[discord.Interaction, SelectorButton], Coroutine]):
+        self.identifier = identifier
+        self.callback = callback
+
+
+class Selector2(TextPaginator, Scroller):
+    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, terminate_on_select: bool = True, max_size=2000, **embed_base):
+        self.match = None
+        if round_titles is None:
+            round_titles = []
+        self.match = None
+        self.terminate_on_select = terminate_on_select
+        self.round_titles = round_titles
+
+        self.max_selections_per_page = 5
+        self.selections = choices
+        self.max_selections = min(len(self.selections), self.max_selections_per_page)
+
+        TextPaginator.__init__(self, max_size=max_size, max_lines=self.max_selections_per_page, **embed_base)
+        for index, selection in enumerate(self.selections, start=1):
+            self.add_line(f"`{index}.` {selection.identifier}")
+        self.close_page()
+
+        Scroller.__init__(self, ctx, self, ScrollClearSettings.OnTimeout)
+
+        # Contains a list of all buttons that can be interacted with, both
+        # currently visible and not.
+        self.buttons = []
+
+        # The list of currently visible buttons, gets cleared upon scroll.
+        self.visible_buttons = []
+
+        # Depending on the selector we might want the result of callbacks 
+        # after we have finished interacting with the scroller
+        self.callback_results = []
+
+        def with_update_view(func):
+            async def wrapped_callback(interaction: discord.Interaction, button: SelectorButton):
+                result = await func(interaction, button)
+                self.callback_results.append(result)
+                self.update_view(interaction)
+                await interaction.response.defer()
+                if terminate_on_select:
+                    await self.stop(True)
+            return wrapped_callback
+
+        for i, choice in enumerate(self.selections):
+            self.buttons.append(SelectorButton(label=i+1, callback=with_update_view(choice.callback), row=0))
+
+    def build_view(self):
+        super().build_view()
+        self.update_buttons()
+
+    def update_view(self, interaction: discord.Interaction):
+        super().update_view(interaction)
+        self.update_buttons()
+
+    def update_buttons(self):
+        for button in self.visible_buttons:
+            self.view.remove_item(item=button)
+
+        self.visible_buttons = []
+        self.current_page_number
+        start = self.current_page_number * self.max_selections_per_page
+        end = min((self.current_page_number + 1) * self.max_selections_per_page, len(self.selections))
+        
+        for button in self.buttons[start:end]:
+            self.view.add_item(item=button)
+            self.visible_buttons.append(button)
+
+    async def start_scrolling(self):
+        message = await super().start_scrolling()
+        return message, self.callback_results
 
 
 class Selector(TextPaginator):
