@@ -1,8 +1,7 @@
 # Discord Packages
 import discord
-import lavalink
 from discord.ext import commands
-from lavalink import Node
+from lavalink import Node, Client
 
 import codecs
 
@@ -19,14 +18,13 @@ class NodeManager(commands.Cog):
         self.settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
-
     async def load_music_cogs(self):
         music_extensions = [
             'musicbot.cogs.music',
         ]
-        
+
         if not hasattr(self.bot, 'lavalink'):
-            self.bot.lavalink = lavalink.Client(self.bot.user.id, player=MixPlayer)
+            self.bot.lavalink = Client(self.bot.user.id, player=MixPlayer)
 
             self.load_nodes_from_file()
 
@@ -200,4 +198,3 @@ async def setup(bot):
     cog = NodeManager(bot)
     await cog.load_music_cogs()
     await bot.add_cog(cog)
-

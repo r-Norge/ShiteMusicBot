@@ -1,6 +1,5 @@
 # Discord Packages
 import discord
-import lavalink
 from discord.ext import commands, tasks
 
 import asyncio
@@ -18,11 +17,13 @@ from ...utils.userinteraction.selector import Selector2, SelectorButton, Selecto
 from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
 
+from lavalink.events import TrackStartEvent, TrackEndEvent, TrackStuckEvent, QueueEndEvent, \
+                            NodeConnectedEvent, PlayerUpdateEvent, NodeChangedEvent, \
+                            NodeDisconnectedEvent
+
+
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
-
-# Discord Packages
-import lavalink.events
 
 
 class Music(commands.Cog):
@@ -63,9 +64,7 @@ class Music(commands.Cog):
                                                              _max=timeformatter.format_ms(maxlength))
                 return embed, False
 
-        # Add thumbnail, turn track into track class
-        thumbnail_url = None #await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
-        track = lavalink.models.AudioTrack(track, ctx.author.id, thumbnail_url=thumbnail_url)
+        track.extra["thumbnail_url"] = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
 
         # Add to player
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
@@ -80,9 +79,8 @@ class Music(commands.Cog):
                             inline=True)
 
         embed.title = '{enqueue.enqueued}'
-        thumbnail_url = None # track.extra["thumbnail_url"]
 
-        if thumbnail_url:
+        if thumbnail_url := track.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
 
         if track.stream:
@@ -107,10 +105,9 @@ class Music(commands.Cog):
             song = f'**[{player.current.title}]({player.current.uri})**'
 
         embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-        thumbnail_url = None #player.current.extra["thumbnail_url"]
         member = ctx.guild.get_member(player.current.requester)
 
-        if thumbnail_url:
+        if thumbnail_url := player.current.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
 
         embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.display_avatar.url)
@@ -177,14 +174,14 @@ class Music(commands.Cog):
         if seconds := time_rx.search(time):
             # Convert to milliseconds, include sign
             milliseconds = int(seconds.group())*1000 * (-1 if time.startswith('-1') else 1)
-    
+
             track_time = player.position + milliseconds
             await player.seek(track_time)
             msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
             await ctx.send(msg)
         else:
             await ctx.send(ctx.localizer.format_str("{seek.missing_amount}"))
-    
+
     @commands.command(name='skip')
     @require_voice_connection()
     @require_playing()
@@ -319,10 +316,9 @@ class Music(commands.Cog):
         # Create a nice embed explaining what happened
         song = f'**[{moved.title}]({moved.uri})**'
         embed = discord.Embed(color=ctx.me.color, description=song, title='{moved.moved}')
-        thumbnail_url = None #moved.extra["thumbnail_url"]
         member = ctx.guild.get_member(moved.requester)
 
-        if thumbnail_url:
+        if thumbnail_url := player.current.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
 
         embed.add_field(name="{moved.local}", value=f"`{pos_initial + 1} → {pos_final + 1}`", inline=True)
@@ -342,6 +338,7 @@ class Music(commands.Cog):
         user_queue = player.user_queue(ctx.author.id, dual=True)
 
         tracks_to_remove = []
+
         async def update_remove_list(tracks_list, track):
             if track in tracks_list:
                 tracks_list.remove(track)
@@ -451,7 +448,9 @@ class Music(commands.Cog):
         message, callback_results = await search_selector.start_scrolling()
 
         if len(callback_results) == 0:
-            return await message.delete()
+            if message:
+                await message.delete()
+            return
 
         song_embed, song_added = callback_results[0]
         if song_added:
@@ -489,7 +488,7 @@ class Music(commands.Cog):
                 await ctx.voice_client.disconnect()
                 await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
                 channel = ctx.guild.get_channel(current_channel)
-                await channel.connect(cls=BasicVoiceClient)#//connect_to(ctx.guild.id, current_channel)
+                await channel.connect(cls=BasicVoiceClient)
 
         if player.current:
             track = player.current
@@ -626,9 +625,8 @@ class Music(commands.Cog):
             return await ctx.send(embed=embed)
         track = history[0]
         description = ctx.localizer.format_str("{history.current}", _title=track.title, _uri=track.uri,
-                _id=track.requester) + '\n\n'
+                                               _id=track.requester) + '\n\n'
         description += ctx.localizer.format_str("{history.previous}", _len=len(history)-1) + '\n'
-        thumbnail_url = None # track.extra["thumbnail_url"]
         for index, track in enumerate(history[1:], start=1):
             description += ctx.localizer.format_str("{history.track}", _index=-index, _title=track.title,
                                                     _uri=track.uri, _id=track.requester) + '\n'
@@ -636,7 +634,7 @@ class Music(commands.Cog):
         embed = discord.Embed(title=ctx.localizer.format_str('{history.title}'), color=ctx.me.color,
                               description=description)
 
-        if thumbnail_url:
+        if thumbnail_url := player.current.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
         await ctx.send(embed=embed)
 
@@ -781,25 +779,25 @@ class Music(commands.Cog):
         self.bot.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
-        if isinstance(event, lavalink.events.TrackEndEvent):
+        if isinstance(event, TrackEndEvent):
             channel = self.bot.get_channel(event.player.fetch('channel'))
             player = self.bot.lavalink.player_manager.get(channel.guild.id)
             player.skip_voters.clear()
 
-        if isinstance(event, lavalink.events.TrackStartEvent):
+        if isinstance(event, TrackStartEvent):
             pass
-        if isinstance(event, lavalink.events.QueueEndEvent):
+        if isinstance(event, QueueEndEvent):
             channel = self.bot.get_channel(event.player.fetch('channel'))
             await self.check_leave_voice(channel.guild)
-        if isinstance(event, lavalink.events.PlayerUpdateEvent):
+        if isinstance(event, PlayerUpdateEvent):
             pass
-        if isinstance(event, lavalink.events.NodeDisconnectedEvent):
+        if isinstance(event, NodeDisconnectedEvent):
             pass
-        if isinstance(event, lavalink.events.NodeConnectedEvent):
+        if isinstance(event, NodeConnectedEvent):
             pass
-        if isinstance(event, lavalink.events.NodeChangedEvent):
+        if isinstance(event, NodeChangedEvent):
             pass
-        if isinstance(event, lavalink.events.TrackStuckEvent):
+        if isinstance(event, TrackStuckEvent):
             pass
 
     @commands.Cog.listener()

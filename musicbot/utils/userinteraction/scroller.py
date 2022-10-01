@@ -76,7 +76,7 @@ class Scroller:
                                         last_page_button, self.stop_button]
             else:
                 self.control_buttons = [self.back_button, self.forward_button, self.stop_button]
-        elif show_cancel_for_single_page: 
+        elif show_cancel_for_single_page:
             self.control_buttons = [self.stop_button]
 
         bot_user = ctx.guild if ctx.guild.me is not None else ctx.bot.user
