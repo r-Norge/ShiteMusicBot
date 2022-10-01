@@ -2,9 +2,9 @@ from __future__ import annotations
 
 # Discord Packages
 import discord
+
 import asyncio
 import inspect
-
 from typing import Callable, Coroutine, List
 
 from .paginators import TextPaginator

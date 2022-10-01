@@ -1,7 +1,7 @@
 # Discord Packages
 import discord
 from discord.ext import commands
-from lavalink import Node, Client
+from lavalink import Client, Node
 
 import codecs
 

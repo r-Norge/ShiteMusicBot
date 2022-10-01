@@ -1,10 +1,13 @@
 # Discord Packages
 import discord
 from discord.ext import commands, tasks
+from lavalink.events import (
+    NodeChangedEvent, NodeConnectedEvent, NodeDisconnectedEvent, PlayerUpdateEvent, QueueEndEvent, TrackEndEvent,
+    TrackStartEvent, TrackStuckEvent)
 
 import asyncio
-import re
 import json
+import re
 import urllib
 
 from bs4 import BeautifulSoup
@@ -16,11 +19,6 @@ from ...utils.userinteraction import ClearOn, QueuePaginator, Scroller, Selector
 from ...utils.userinteraction.selector import Selector2, SelectorButton, SelectorItem
 from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
-
-from lavalink.events import TrackStartEvent, TrackEndEvent, TrackStuckEvent, QueueEndEvent, \
-                            NodeConnectedEvent, PlayerUpdateEvent, NodeChangedEvent, \
-                            NodeDisconnectedEvent
-
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
