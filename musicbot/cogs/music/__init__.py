@@ -15,7 +15,7 @@ from musicbot.utils.userinteraction.scroller import ScrollClear
 from ...utils import checks, thumbnailer, timeformatter
 from ...utils.userinteraction import QueuePaginator, Scroller, Selector, TextPaginator
 from ...utils.userinteraction.selector import Selector2, SelectorButton, SelectorItem
-from .decorators import require_playing, require_queue, require_voice_connection, voteable
+from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
 
 time_rx = re.compile('[0-9]+')
@@ -366,7 +366,7 @@ class Music(commands.Cog):
                 SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
                              add_change_button_color(update_remove_list, tracks_to_remove, track)))
         
-        remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, check_for_stop=True,
+        remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, use_tick_for_stop_emoji=True,
                                     color=ctx.me.color, title='Select songs to remove')
         await remove_selector.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
 
@@ -470,7 +470,7 @@ class Music(commands.Cog):
 
         player.queue.clear()
         await player.stop()
-        await self.voice_client.disconnect()
+        await ctx.voice_client.disconnect()
         embed = discord.Embed(description='{disconnect.disconnected}', color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
@@ -485,9 +485,11 @@ class Music(commands.Cog):
 
         async def recon():
             await player.stop()
-            await self.voice_client.disconnect()
-            await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
-            await self.voice_client.connect()#//connect_to(ctx.guild.id, current_channel)
+            if ctx.voice_client:
+                await ctx.voice_client.disconnect()
+                await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
+                channel = ctx.guild.get_channel(current_channel)
+                await channel.connect(cls=BasicVoiceClient)#//connect_to(ctx.guild.id, current_channel)
 
         if player.current:
             track = player.current
@@ -566,7 +568,7 @@ class Music(commands.Cog):
             await player.stop()
         except Exception:
             self.logger.exception("Error forcedisconnecting")
-        await self.voice_client.disconnect(force=True)
+        await ctx.voice_client.disconnect(force=True)
         embed = discord.Embed(description='{disconnect.disconnected}', color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
@@ -691,147 +693,38 @@ class Music(commands.Cog):
             paginator.add_page_indicator(ctx.localizer)
             await Scroller(ctx, paginator).start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
 
-    @commands.command(name='scrub2')
-    @checks.dj_or(alone=True)
-    @require_voice_connection()
-    @require_playing(require_user_listening=True)
-    async def _scrub2(self, ctx):
-        """ Lists the first 10 search results from a given query. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
-
-        controls = '{scrub.controls}'
-
-        scrubber = [
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, -1000),
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', player.seek, -15),
-            ('\N{DOUBLE VERTICAL BAR}', player.set_pause, True),
-            ('\N{BLACK RIGHT-POINTING TRIANGLE}', player.set_pause, False),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', player.seek, 15),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, 1000),
-        ]
-
-        selection = None
-        arg = None
-
-        def check(reaction, user):
-            if user is None or user.id != ctx.author.id:
-                return False
-
-            if reaction.message.id != msg.id:
-                return False
-
-            for (emoji, func, _arg) in scrubber:
-                if emoji == reaction.emoji:
-                    nonlocal selection
-                    nonlocal arg
-                    selection = func
-                    arg = _arg
-                    return True
-            return False
-
-        embed = discord.Embed(description='{scrub.add}', color=ctx.me.color)
-        embed = ctx.localizer.format_embed(embed)
-        msg = await ctx.send(embed=embed)
-
-        for (emoji, _, _) in scrubber:
-            await msg.add_reaction(emoji)
-
-        embed.description = controls
-        embed = ctx.localizer.format_embed(embed)
-        await msg.edit(embed=embed)
-        scrubbing = True
-        while scrubbing:
-            try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
-            except asyncio.TimeoutError:
-                # PEP8EDIT scrolling = False
-                try:
-                    await msg.delete()
-                    await ctx.message.delete()
-                except (discord.Forbidden, discord.HTTPException):
-                    pass
-                finally:
-                    break
-
-            try:
-                await msg.remove_reaction(reaction, user)
-            except discord.Forbidden:
-                pass
-            if selection is not None:
-                if not isinstance(arg, bool):
-                    arg = player.position + arg * 1000
-                await selection(arg)
-
     @commands.command(name='scrub')
     @checks.dj_or(alone=True)
     @require_voice_connection()
     @require_playing(require_user_listening=True)
     async def _scrub(self, ctx):
-        """ Lists the first 10 search results from a given query. """
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-
+        """ Shows a set of controls which can be used to skip forward or backwards in the song """
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
         controls = '{scrub.controls}'
 
-        scrubber = [
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, -1000),
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', player.seek, -15),
-            ('\N{DOUBLE VERTICAL BAR}', player.set_pause, True),
-            ('\N{BLACK RIGHT-POINTING TRIANGLE}', player.set_pause, False),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', player.seek, 15),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, 1000),
+        def seek_callback(player: MixPlayer, seconds):
+            async def inner(_interaction, _button):
+                newpos = player.position + seconds * 1000
+                return await player.seek(newpos)
+            return inner
+
+        def toggle_pause_callback(player: MixPlayer):
+            async def inner(_interaction, button):
+                should_pause = not player.paused
+                button.style = discord.ButtonStyle.red if should_pause else discord.ButtonStyle.gray
+                return await player.set_pause(should_pause)
+            return inner
+
+        scrubber_controls = [
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, -1000)),
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek_callback(player, -15)),
+            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}', toggle_pause_callback(player)),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek_callback(player, 15)),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
         ]
-
-        selection = None
-        arg = None
-
-        def check(reaction, user):
-            if user is None or user.id != ctx.author.id:
-                return False
-
-            if reaction.message.id != msg.id:
-                return False
-
-            for (emoji, func, _arg) in scrubber:
-                if emoji == reaction.emoji:
-                    nonlocal selection
-                    nonlocal arg
-                    selection = func
-                    arg = _arg
-                    return True
-            return False
-
-        embed = discord.Embed(description='{scrub.add}', color=ctx.me.color)
-        embed = ctx.localizer.format_embed(embed)
-        msg = await ctx.send(embed=embed)
-
-        for (emoji, _, _) in scrubber:
-            await msg.add_reaction(emoji)
-
-        embed.description = controls
-        embed = ctx.localizer.format_embed(embed)
-        await msg.edit(embed=embed)
-        scrubbing = True
-        while scrubbing:
-            try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
-            except asyncio.TimeoutError:
-                # PEP8EDIT scrolling = False
-                try:
-                    await msg.delete()
-                    await ctx.message.delete()
-                except (discord.Forbidden, discord.HTTPException):
-                    pass
-                finally:
-                    break
-
-            try:
-                await msg.remove_reaction(reaction, user)
-            except discord.Forbidden:
-                pass
-            if selection is not None:
-                if not isinstance(arg, bool):
-                    arg = player.position + arg * 1000
-                await selection(arg)
+        scrubber = Selector2(ctx, scrubber_controls, terminate_on_select=False, use_tick_for_stop_emoji=True,
+                                    color=ctx.me.color, title=ctx.localizer.format_str(controls))
+        await scrubber.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
 
     @commands.group(name='loop')
     async def _loop(self, ctx):
@@ -839,7 +732,7 @@ class Music(commands.Cog):
         if ctx.invoked_subcommand is None:
             player = self.bot.lavalink.player_manager.get(ctx.guild.id)
             embed = discord.Embed(color=ctx.me.color, title='Loop status')
-
+    
             if player.looping:
                 embed.description = 'The bot is currently looping: ♾️'
             else:
@@ -919,7 +812,7 @@ class Music(commands.Cog):
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
                 await player.stop()
-                await self.voice_client.disconnect()
+                await guild.voice_client.disconnect()
 
     async def leave_check(self):
         for player_id in self.bot.lavalink.player_manager.players:

@@ -36,7 +36,7 @@ class SelectorItem:
 
 
 class Selector2(TextPaginator, Scroller):
-    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, check_for_stop: bool = False,
+    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, use_tick_for_stop_emoji: bool = False,
                  terminate_on_select: bool = True, max_size=2000, **embed_base):
         self.match = None
         if round_titles is None:
@@ -50,10 +50,13 @@ class Selector2(TextPaginator, Scroller):
 
         TextPaginator.__init__(self, max_size=max_size, max_lines=self.selections_per_page, **embed_base)
         for selection in self.selections:
-            self.add_line(selection.identifier)
+            if (selection.identifier):
+                self.add_line(selection.identifier)
+        if len(self.pages) == 0:
+            self.add_line("Scrub")
         self.close_page()
 
-        Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=check_for_stop, show_cancel_for_single_page=True)
+        Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=use_tick_for_stop_emoji, show_cancel_for_single_page=True)
 
         # Contains a list of all buttons that can be interacted with, both
         # currently visible and not.
