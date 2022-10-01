@@ -53,7 +53,7 @@ class Selector2(TextPaginator, Scroller):
             self.add_line(selection.identifier)
         self.close_page()
 
-        Scroller.__init__(self, ctx, self, check_for_stop=check_for_stop)
+        Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=check_for_stop, show_cancel_for_single_page=True)
 
         # Contains a list of all buttons that can be interacted with, both
         # currently visible and not.

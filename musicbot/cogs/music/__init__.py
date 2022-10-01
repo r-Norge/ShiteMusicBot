@@ -363,7 +363,7 @@ class Music(commands.Cog):
         selector_buttons = []
         for index, (track, _) in enumerate(user_queue, start=1):
             selector_buttons.append(
-                SelectorItem(f'`{index}` [{track.title}]({track.uri})`', str(index),
+                SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
                              add_change_button_color(update_remove_list, tracks_to_remove, track)))
         
         remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, check_for_stop=True,

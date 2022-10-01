@@ -1,10 +1,11 @@
+from __future__ import annotations
 import discord
 from enum import Flag, auto
 
 from lavalink.client import asyncio
 from .paginators import BasePaginator, CantScrollException
 
-from typing import Union
+from typing import Union, List
 
 class ScrollClear(Flag):
     OnTimeout = auto()
@@ -24,7 +25,8 @@ class ScrollerNav(discord.ui.Select):
 
 
 class Scroller:
-    def __init__(self, ctx, paginator, timeout=20.0, check_for_stop: bool = False):
+    def __init__(self, ctx, paginator, timeout=20.0, 
+                 use_tick_for_stop_emoji: bool = False, show_cancel_for_single_page: bool = False):
 
         if not isinstance(paginator, BasePaginator):
             raise TypeError('Paginator needs to be a subclass of BasePaginator.')
@@ -48,14 +50,27 @@ class Scroller:
         self.use_nav_bar = len(self.paginator.pages) > 3
         self.scrolling_done = asyncio.Event()
 
-        stop_emoji = '✔️' if check_for_stop else '❌'  
-        self.interaction_mapping = [
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.first_page),
-            ('\N{BLACK LEFT-POINTING TRIANGLE}', self.previous_page),
-            ('\N{BLACK RIGHT-POINTING TRIANGLE}', self.next_page),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.last_page),
-            (stop_emoji, self.stop),
-        ]
+        stop_emoji = '✔️' if use_tick_for_stop_emoji else '❌'  
+
+        self.control_buttons: List[ScrollerButton] = []
+
+        self.forward_button = ScrollerButton(callback=self.next_page, label='\N{BLACK RIGHT-POINTING TRIANGLE}', row=3)
+        self.back_button = ScrollerButton(self.previous_page,'\N{BLACK LEFT-POINTING TRIANGLE}', row=3)
+        first_page_button = ScrollerButton(self.first_page,'\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
+        last_page_button = ScrollerButton(self.last_page,'\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
+        self.stop_button = ScrollerButton(self.stop, stop_emoji, row=3)
+
+        # We start on the first page, can't go back
+        self.back_button.disabled = True
+        
+        # Determine which buttons should be visible depending on the number of pages
+        if (self.is_scrolling_paginator):
+            if (len(self.paginator.pages) > 2):
+                self.control_buttons = [first_page_button, self.back_button, self.forward_button, last_page_button, self.stop_button]
+            else:
+                self.control_buttons = [self.back_button, self.forward_button, self.stop_button]
+        elif show_cancel_for_single_page: 
+            self.control_buttons = [self.stop_button]
 
         bot_user = ctx.guild if ctx.guild.me is not None else ctx.bot.user
         self.permissions = self.channel.permissions_for(bot_user)
@@ -75,15 +90,16 @@ class Scroller:
         return self.message
 
     def update_view(self, interaction: discord.Interaction):
-        if self.is_scrolling_paginator and self.use_nav_bar:
+        if self.use_nav_bar:
             self.navigator.placeholder = f"Page: {self.current_page_number + 1}/{len(self.paginator.pages)}"
 
-    def build_view(self):
-        if not self.is_scrolling_paginator:
-            return
+        if self.is_scrolling_paginator:
+            self.back_button.disabled = self.current_page_number == 0
+            self.forward_button.disabled = self.current_page_number == len(self.paginator.pages)-1
 
-        for (reaction, callback) in self.interaction_mapping:
-            self.view.add_item(item=ScrollerButton(callback=callback, label=reaction, row=3))
+    def build_view(self):
+        for button in self.control_buttons:
+            self.view.add_item(item=button)
 
         if self.use_nav_bar:
             self.navigator = ScrollerNav(self.navigate, placeholder="Navigate to page", row=4)
@@ -103,7 +119,8 @@ class Scroller:
             # If this fails the message is not accessable either way, which
             # means it is probably deleted
             try:
-                await self.ctx.message.delete()
+                if self.ctx.message:
+                    await self.ctx.message.delete()
             except:
                 pass
         else:
