@@ -1,7 +1,7 @@
 # Discord Packages
 from discord.ext import commands
 
-from ...utils.userinteraction.scroller import Scroller, ClearOn
+from ...utils.userinteraction.scroller import ClearOn, Scroller
 from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
 
 

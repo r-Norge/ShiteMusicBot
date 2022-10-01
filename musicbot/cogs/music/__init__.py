@@ -1,17 +1,19 @@
 # Discord Packages
-from os import remove
 import discord
 import lavalink
-import asyncio
 from discord.ext import commands, tasks
 
+import asyncio
 import re
+import json
+import urllib
 
 from bs4 import BeautifulSoup
+
 from musicbot.utils.mixplayer.player import MixPlayer
 
 from ...utils import checks, thumbnailer, timeformatter
-from ...utils.userinteraction import QueuePaginator, Scroller, Selector, TextPaginator, ClearOn
+from ...utils.userinteraction import ClearOn, QueuePaginator, Scroller, Selector, TextPaginator
 from ...utils.userinteraction.selector import Selector2, SelectorButton, SelectorItem
 from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
@@ -135,33 +137,33 @@ class Music(commands.Cog):
         self.logger.debug("Query: %s" % query)
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         query = query.strip('<>')
-    
+
         if not url_rx.match(query):
             query = f'ytsearch:{query}'
-    
+
         results = await player.node.get_tracks(query)
-    
+
         if not results or not results.tracks:
             return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
-    
+
         embed = discord.Embed(color=ctx.me.color)
-    
+
         if results.load_type == 'PLAYLIST_LOADED':
             numtracks = 0
             for track in results.tracks:
                 _, track_added = await self.enqueue(ctx, track, embed, silent=True)
                 if track_added:
                     numtracks += 1
-    
+
             embed.title = '{playlist_enqued}'
             embed.description = f'{results.playlist_info.name} - {numtracks} {{tracks}}'
         else:
             track = results.tracks[0]
             await self.enqueue(ctx, track, embed)
-    
+
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
-    
+
         if not player.is_playing:
             await player.play()
 
@@ -190,32 +192,32 @@ class Music(commands.Cog):
     async def _skip(self, ctx):
         """ Skips the current track. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-    
+
         await player.skip()
         if player.current:
             embed = self.get_current_song_embed(ctx)
             await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
         else:
             await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
-    
+
     @commands.command(name='skipto')
     @checks.dj_or(alone=True)
     @require_playing(require_user_listening=True)
     async def _skip_to(self, ctx, pos: int = 1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-    
+
         # TODO: Do all queue out of range messages the same way
         if pos < 1:
             return await ctx.send(ctx.localizer.format_str("{skip_to.invalid_pos}"))
         if len(player.queue) < pos:
             return await ctx.send(ctx.localizer.format_str("{skip_to.exceeds_queue}"))
-    
+
         await player.skip(pos - 1)
-    
+
         msg = ctx.localizer.format_str("{skip_to.skipped_to}", _title=player.current.title, _pos=pos)
         await ctx.send(msg)
-    
+
     @commands.command(name='stop')
     @require_voice_connection()
     @require_playing(require_user_listening=True)
@@ -225,7 +227,7 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         player.queue.clear()
         await player.stop()
-    
+
         embed = discord.Embed(color=ctx.me.color, title='{stop}')
         await ctx.send(embed=ctx.localizer.format_embed(embed))
 
@@ -279,9 +281,9 @@ class Music(commands.Cog):
     async def _move(self, ctx):
         """ Moves a song in your queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-    
+
         user_queue = player.user_queue(ctx.author.id, dual=True)
-    
+
         # Setup for selector
         identifiers = []
         for index, temp in enumerate(user_queue):
@@ -363,7 +365,7 @@ class Music(commands.Cog):
             selector_buttons.append(
                 SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
                              add_change_button_color(update_remove_list, tracks_to_remove, track)))
-        
+
         remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, use_tick_for_stop_emoji=True,
                                     color=ctx.me.color, title='Select songs to remove')
         await remove_selector.start_scrolling(ClearOn.AnyExit)
@@ -444,7 +446,7 @@ class Music(commands.Cog):
                                        wrap_in_button_callback(
                                            self.enqueue, ctx, track, discord.Embed(color=ctx.me.color)))
             buttons.append(interaction)
-        
+
         search_selector = Selector2(ctx, buttons, color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
         message, callback_results = await search_selector.start_scrolling()
 
@@ -629,10 +631,10 @@ class Music(commands.Cog):
         thumbnail_url = None # track.extra["thumbnail_url"]
         for index, track in enumerate(history[1:], start=1):
             description += ctx.localizer.format_str("{history.track}", _index=-index, _title=track.title,
-                    _uri=track.uri, _id=track.requester) + '\n'
+                                                    _uri=track.uri, _id=track.requester) + '\n'
 
         embed = discord.Embed(title=ctx.localizer.format_str('{history.title}'), color=ctx.me.color,
-                description=description)
+                              description=description)
 
         if thumbnail_url:
             embed.set_thumbnail(url=thumbnail_url)
@@ -651,7 +653,7 @@ class Music(commands.Cog):
             return await ctx.send('Missing API key')
 
         excluded_words = ['music', 'video', 'version', 'original', 'lyrics', 'lyric',
-                'official', 'live', 'instrumental', 'audio', 'hd']
+                          'official', 'live', 'instrumental', 'audio', 'hd']
 
         query = ' '.join(query)
 
@@ -729,7 +731,8 @@ class Music(commands.Cog):
         scrubber_controls = [
             SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, -1000)),
             SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek_callback(player, -15)),
-            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}', toggle_pause_callback(player)),
+            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}',
+                         toggle_pause_callback(player)),
             SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek_callback(player, 15)),
             SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
         ]
@@ -743,7 +746,7 @@ class Music(commands.Cog):
         if ctx.invoked_subcommand is None:
             player = self.bot.lavalink.player_manager.get(ctx.guild.id)
             embed = discord.Embed(color=ctx.me.color, title='Loop status')
-    
+
             if player.looping:
                 embed.description = 'The bot is currently looping: ♾️'
             else:
@@ -836,10 +839,12 @@ class Music(commands.Cog):
         except Exception as err:
             self.logger.debug("Error in leave_timer loop.\nTraceback: %s" % (err))
 
+
 def wrap_in_button_callback(func, *args):
     async def inner(_interaction, _button):
         return await func(*args)
     return inner
+
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

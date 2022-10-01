@@ -1,12 +1,11 @@
-# Discord Packages
 from __future__ import annotations
-import discord
 
+# Discord Packages
+import discord
 import asyncio
 import inspect
-from typing import List, Callable, Coroutine
 
-from discord.ext.commands import check
+from typing import Callable, Coroutine, List
 
 from .paginators import TextPaginator
 from .scroller import ClearOn, Scroller
@@ -56,7 +55,8 @@ class Selector2(TextPaginator, Scroller):
             self.add_line(default_text)
         self.close_page()
 
-        Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=use_tick_for_stop_emoji, show_cancel_for_single_page=True)
+        Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=use_tick_for_stop_emoji,
+                          show_cancel_for_single_page=True)
 
         # Contains a list of all buttons that can be interacted with, both
         # currently visible and not.
@@ -87,7 +87,7 @@ class Selector2(TextPaginator, Scroller):
             return wrapped_callback
 
         for choice in self.selections:
-            self.buttons.append(SelectorButton(label=choice.button_label, callback=with_update_view(choice.callback), row=0))
+            self.buttons.append(SelectorButton(choice.button_label, with_update_view(choice.callback), row=0))
 
     def build_view(self):
         super().build_view()
@@ -110,7 +110,7 @@ class Selector2(TextPaginator, Scroller):
             self.view.add_item(item=button)
             self.visible_buttons.append(button)
 
-    async def start_scrolling(self, clear_mode: ClearOn=ClearOn.Timeout):
+    async def start_scrolling(self, clear_mode: ClearOn = ClearOn.Timeout):
         message = await super().start_scrolling(clear_mode)
         return message, self.callback_results
 

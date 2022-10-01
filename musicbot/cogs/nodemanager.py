@@ -9,7 +9,7 @@ import codecs
 import yaml
 
 from ..utils.mixplayer import MixPlayer
-from ..utils.userinteraction import Scroller, ClearOn
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 

@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import traceback
 
-from ..utils.userinteraction import Scroller, ClearOn
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 

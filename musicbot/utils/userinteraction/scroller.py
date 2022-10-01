@@ -1,11 +1,14 @@
 from __future__ import annotations
-import discord
-from enum import Flag, auto
 
+# Discord Packages
+import discord
 from lavalink.client import asyncio
+
+from enum import Flag, auto
+from typing import List, Union
+
 from .paginators import BasePaginator, CantScrollException
 
-from typing import Union, List
 
 class ClearOn(Flag):
     Timeout = auto()
@@ -26,8 +29,8 @@ class ScrollerNav(discord.ui.Select):
 
 
 class Scroller:
-    def __init__(self, ctx, paginator, timeout=20.0, 
-                 use_tick_for_stop_emoji: bool = False, show_cancel_for_single_page: bool = False):
+    def __init__(self, ctx, paginator, timeout=20.0, use_tick_for_stop_emoji: bool = False,
+                 show_cancel_for_single_page: bool = False):
 
         if not isinstance(paginator, BasePaginator):
             raise TypeError('Paginator needs to be a subclass of BasePaginator.')
@@ -51,23 +54,26 @@ class Scroller:
         self.use_nav_bar = len(self.paginator.pages) > 3
         self.scrolling_done = asyncio.Event()
 
-        stop_emoji = '✔️' if use_tick_for_stop_emoji else '❌'  
+        stop_emoji = '✔️' if use_tick_for_stop_emoji else '❌'
 
         self.control_buttons: List[ScrollerButton] = []
 
-        self.forward_button = ScrollerButton(callback=self.next_page, label='\N{BLACK RIGHT-POINTING TRIANGLE}', row=3)
-        self.back_button = ScrollerButton(self.previous_page,'\N{BLACK LEFT-POINTING TRIANGLE}', row=3)
-        first_page_button = ScrollerButton(self.first_page,'\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
-        last_page_button = ScrollerButton(self.last_page,'\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
+        self.forward_button = ScrollerButton(self.next_page, '\N{BLACK RIGHT-POINTING TRIANGLE}', row=3)
+        self.back_button = ScrollerButton(self.previous_page, '\N{BLACK LEFT-POINTING TRIANGLE}', row=3)
+        first_page_button = ScrollerButton(self.first_page,
+                                           '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
+        last_page_button = ScrollerButton(self.last_page,
+                                          '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
         self.stop_button = ScrollerButton(self.stop, stop_emoji, row=3)
 
         # We start on the first page, can't go back
         self.back_button.disabled = True
-        
+
         # Determine which buttons should be visible depending on the number of pages
         if (self.is_scrolling_paginator):
             if (len(self.paginator.pages) > 2):
-                self.control_buttons = [first_page_button, self.back_button, self.forward_button, last_page_button, self.stop_button]
+                self.control_buttons = [first_page_button, self.back_button, self.forward_button,
+                                        last_page_button, self.stop_button]
             else:
                 self.control_buttons = [self.back_button, self.forward_button, self.stop_button]
         elif show_cancel_for_single_page: 
@@ -122,7 +128,7 @@ class Scroller:
             try:
                 if self.ctx.message:
                     await self.ctx.message.delete()
-            except:
+            except discord.HTTPException:
                 pass
         else:
             await self.update_message()

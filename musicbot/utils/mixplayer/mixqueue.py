@@ -4,7 +4,7 @@ from lavalink import AudioTrack
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
-from typing import Union, List
+from typing import List, Union
 
 
 def roundrobin(*iterables):
