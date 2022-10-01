@@ -63,7 +63,7 @@ class Errors(commands.Cog):
                 return await send_error_embed('{errors.full_channel}')
 
         if isinstance(err, WrongVoiceChannelError):
-            if(err.original.startswith("You need to be in my voice channel")):
+            if (err.original.startswith("You need to be in my voice channel")):
                 return await send_error_embed(err.channels[0].name, title='{errors.my_channel}')
 
             elif (err.original.startswith('You need to be in the right voice channel')):
