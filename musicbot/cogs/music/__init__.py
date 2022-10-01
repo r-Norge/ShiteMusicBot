@@ -1,4 +1,5 @@
 # Discord Packages
+from os import remove
 import discord
 import lavalink
 import asyncio
@@ -7,8 +8,9 @@ from discord.ext import commands, tasks
 import re
 
 from bs4 import BeautifulSoup
+from musicbot.utils.mixplayer.player import MixPlayer
 
-from musicbot.utils.userinteraction.scroller import ScrollClearSettings
+from musicbot.utils.userinteraction.scroller import ScrollClear
 
 from ...utils import checks, thumbnailer, timeformatter
 from ...utils.userinteraction import QueuePaginator, Scroller, Selector, TextPaginator
@@ -164,8 +166,7 @@ class Music(commands.Cog):
     
         if not player.is_playing:
             await player.play()
-    
-    
+
     @commands.command(name='seek')
     @checks.dj_or(alone=True, track_requester=True)
     @require_voice_connection()
@@ -229,33 +230,29 @@ class Music(commands.Cog):
     
         embed = discord.Embed(color=ctx.me.color, title='{stop}')
         await ctx.send(embed=ctx.localizer.format_embed(embed))
-    
-    
+
     @commands.command(name='now')
     @require_playing()
     async def _now(self, ctx):
         embed = self.get_current_song_embed(ctx, include_time=True)
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
-    
-    
+
     @commands.command(name='queue')
     @require_queue(require_member_queue=True)
     async def _queue(self, ctx, *, member: discord.Member = None):
         """ Shows the player's queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         pagified_queue = QueuePaginator(ctx.localizer, player, color=ctx.me.color, member=member)
-        scroller = Scroller(ctx, pagified_queue, ScrollClearSettings.OnInteractionExit | ScrollClearSettings.OnTimeout)
-        await scroller.start_scrolling()
-    
-    
+        scroller = Scroller(ctx, pagified_queue)
+        await scroller.start_scrolling(ScrollClear.OnInteractionExit | ScrollClear.OnTimeout)
+
     @commands.command(name='myqueue')
     @require_queue(require_author_queue=True)
     async def _myqueue(self, ctx):
         """ Shows your queue. """
         await self._queue(ctx, member=ctx.author)
-    
-    
+
     @commands.command(name='pause')
     @checks.dj_or(alone=True)
     @require_voice_connection()
@@ -340,26 +337,55 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue(require_author_queue=True)
     async def _remove(self, ctx):
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         user_queue = player.user_queue(ctx.author.id, dual=True)
-        functions = [player.remove_user_track]*len(user_queue)
-        arguments = [(ctx.author.id, i) for i in range(len(user_queue))]
-        identifiers = []
 
-        for index, temp in enumerate(user_queue):
-            track, globpos = temp
-            identifiers.append(ctx.localizer.format_str("{queue.usertrack}", _index=index+1,
-                _globalindex=globpos+1, _title=track.title,
-                _uri=track.uri))
+        tracks_to_remove = []
+        async def update_remove_list(tracks_list, track):
+            if track in tracks_list:
+                tracks_list.remove(track)
+            else:
+                tracks_list.append(track)
 
-        selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, color=0xFF0000,
-                            title='Remove song plz')
-        message, _, removed = await selector.start_scrolling()
-        if removed:
-            await message.edit(content=ctx.localizer.format_str("{remove}", _title=removed.title), embed=None)
-        else:
-            await message.delete()
+        # The callback from the selector takes a discord interaction and
+        # the button class. We wrap the track remove callback to handle those
+        # arguments and update button color
+        def add_change_button_color(func, *args):
+            async def inner(_, button: SelectorButton):
+                if button.style == discord.ButtonStyle.red:
+                    button.style = discord.ButtonStyle.gray
+                else:
+                    button.style = discord.ButtonStyle.red
+                return await func(*args)
+            return inner
+
+        selector_buttons = []
+        for index, (track, _) in enumerate(user_queue, start=1):
+            selector_buttons.append(
+                SelectorItem(f'`{index}` [{track.title}]({track.uri})`', str(index),
+                             add_change_button_color(update_remove_list, tracks_to_remove, track)))
+        
+        remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, check_for_stop=True,
+                                    color=ctx.me.color, title='Select songs to remove')
+        await remove_selector.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+
+        # If any tracks were removed create a scroller for navigating them
+        if tracks_to_remove:
+            paginator = TextPaginator(color=ctx.me.color, title="Removed")
+
+            # If the user spent a long time selecting songs the queue might have changed
+            user_queue = player.user_queue(ctx.author.id, dual=False)
+            track_indexes_to_remove = [i for i, track in enumerate(user_queue) if track in tracks_to_remove]
+
+            # Sort in reverse order since songs shift index when deleting
+            for track in sorted(track_indexes_to_remove, reverse=True):
+                if removed_track := player.remove_user_track(ctx.author.id, track):
+                    paginator.add_line(f"{removed_track.title}")
+
+            paginator.close_page()
+            scroller = Scroller(ctx, paginator)
+            await scroller.start_scrolling(ScrollClear.OnInteractionExit | ScrollClear.OnTimeout)
 
     @commands.command(name="DJremove")
     @checks.dj_or()
@@ -398,39 +424,6 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='search2')
-    @require_voice_connection(should_connect=True)
-    async def _search2(self, ctx, *, query):
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
-
-        if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
-            query = 'ytsearch:' + query
-
-        results = await player.node.get_tracks(query)
-
-        embed = discord.Embed(description='{nothing_found}', color=0x36393F)
-        if not results or not results['tracks']:
-            embed = ctx.localizer.format_embed(embed)
-            return await ctx.send(embed=embed)
-
-        buttons = []
-        for track in results['tracks']:
-            duration = timeformatter.format_ms(int(track.duration))
-            interaction = SelectorItem(f'[{track.title}]({track.uri}) `{duration}`',
-                    wrap_in_button_callback(self.enqueue, ctx, track, discord.Embed(color=ctx.me.color)))
-            buttons.append(interaction)
-        
-        search_selector = Selector2(ctx, buttons, color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
-        message, callback_results = await search_selector.start_scrolling()
-
-        song_embed, song_added = callback_results[0]
-        if song_added:
-            embed = ctx.localizer.format_embed(song_embed)
-            await message.edit(embed=embed, view=None)
-
-            if not player.is_playing:
-                await player.play()
-
     @commands.command(name='search')
     @require_voice_connection(should_connect=True)
     async def _search(self, ctx, *, query):
@@ -446,34 +439,27 @@ class Music(commands.Cog):
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
-        tracks = results['tracks']
-        result_count = min(len(tracks), 15)
-
-        # Setup for the selector
-        identifiers = []
-        functions = [self.enqueue]*result_count
-        arguments = [(ctx, tracks[i], discord.Embed(color=ctx.me.color)) for i in range(result_count)]
-
-        for index, track in enumerate(tracks, start=1):
+        buttons = []
+        for i, track in enumerate(results['tracks'], start=1):
             duration = timeformatter.format_ms(int(track.duration))
-            identifiers.append(f'`{index}.` [{track.title}]({track.uri}) `{duration}`')
-            if index == result_count:
-                break
+            interaction = SelectorItem(f'`{i}` [{track.title}]({track.uri}) `{duration}`', str(i),
+                                       wrap_in_button_callback(
+                                           self.enqueue, ctx, track, discord.Embed(color=ctx.me.color)))
+            buttons.append(interaction)
+        
+        search_selector = Selector2(ctx, buttons, color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
+        message, callback_results = await search_selector.start_scrolling()
 
-        search_selector = Selector(ctx, identifiers, functions, arguments, num_selections=5,
-                color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
-        # Let the user scroll through results
-        message, current_page, result = await search_selector.start_scrolling()
+        if len(callback_results) == 0:
+            return await message.delete()
 
-        if result:
-            (embed, added) = result
-            embed = ctx.localizer.format_embed(embed)
-            await message.edit(embed=embed)
+        song_embed, song_added = callback_results[0]
+        if song_added:
+            embed = ctx.localizer.format_embed(song_embed)
+            await message.edit(embed=embed, view=None)
 
             if not player.is_playing:
                 await player.play()
-        else:
-            await message.delete()
 
     @commands.command(name='disconnect')
     @require_voice_connection()
@@ -703,7 +689,78 @@ class Music(commands.Cog):
                 await ctx.send(embed=page)
         else:
             paginator.add_page_indicator(ctx.localizer)
-            await Scroller(ctx, paginator).start_scrolling()
+            await Scroller(ctx, paginator).start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+
+    @commands.command(name='scrub2')
+    @checks.dj_or(alone=True)
+    @require_voice_connection()
+    @require_playing(require_user_listening=True)
+    async def _scrub2(self, ctx):
+        """ Lists the first 10 search results from a given query. """
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        controls = '{scrub.controls}'
+
+        scrubber = [
+            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, -1000),
+            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', player.seek, -15),
+            ('\N{DOUBLE VERTICAL BAR}', player.set_pause, True),
+            ('\N{BLACK RIGHT-POINTING TRIANGLE}', player.set_pause, False),
+            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', player.seek, 15),
+            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', player.seek, 1000),
+        ]
+
+        selection = None
+        arg = None
+
+        def check(reaction, user):
+            if user is None or user.id != ctx.author.id:
+                return False
+
+            if reaction.message.id != msg.id:
+                return False
+
+            for (emoji, func, _arg) in scrubber:
+                if emoji == reaction.emoji:
+                    nonlocal selection
+                    nonlocal arg
+                    selection = func
+                    arg = _arg
+                    return True
+            return False
+
+        embed = discord.Embed(description='{scrub.add}', color=ctx.me.color)
+        embed = ctx.localizer.format_embed(embed)
+        msg = await ctx.send(embed=embed)
+
+        for (emoji, _, _) in scrubber:
+            await msg.add_reaction(emoji)
+
+        embed.description = controls
+        embed = ctx.localizer.format_embed(embed)
+        await msg.edit(embed=embed)
+        scrubbing = True
+        while scrubbing:
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
+            except asyncio.TimeoutError:
+                # PEP8EDIT scrolling = False
+                try:
+                    await msg.delete()
+                    await ctx.message.delete()
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+                finally:
+                    break
+
+            try:
+                await msg.remove_reaction(reaction, user)
+            except discord.Forbidden:
+                pass
+            if selection is not None:
+                if not isinstance(arg, bool):
+                    arg = player.position + arg * 1000
+                await selection(arg)
 
     @commands.command(name='scrub')
     @checks.dj_or(alone=True)

@@ -4,8 +4,9 @@ from enum import Flag, auto
 from lavalink.client import asyncio
 from .paginators import BasePaginator, CantScrollException
 
+from typing import Union
 
-class ScrollClearSettings(Flag):
+class ScrollClear(Flag):
     OnTimeout = auto()
     OnInteractionExit = auto()
 
@@ -23,14 +24,11 @@ class ScrollerNav(discord.ui.Select):
 
 
 class Scroller:
-    def __init__(self, ctx, paginator, clear_mode: ScrollClearSettings, timeout=20.0,
-                 with_nav_bar: bool = True):
+    def __init__(self, ctx, paginator, timeout=20.0, check_for_stop: bool = False):
 
         if not isinstance(paginator, BasePaginator):
             raise TypeError('Paginator needs to be a subclass of BasePaginator.')
 
-        self.clear_mode = clear_mode
-        self.use_nav_bar = with_nav_bar
         self.paginator = paginator
         self.ctx = ctx
 
@@ -40,21 +38,23 @@ class Scroller:
 
         self.bot = ctx.bot
         self.channel = ctx.channel
-        self.message = None
+        self.message: Union[discord.Message, None] = None
 
         # Initialize the view we'll be using for scrolling
         self.view = discord.ui.View(timeout=timeout)
         self.view.on_timeout = self.on_timeout
 
         self.is_scrolling_paginator = len(self.paginator.pages) > 1
+        self.use_nav_bar = len(self.paginator.pages) > 3
         self.scrolling_done = asyncio.Event()
 
+        stop_emoji = '✔️' if check_for_stop else '❌'  
         self.interaction_mapping = [
             ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.first_page),
             ('\N{BLACK LEFT-POINTING TRIANGLE}', self.previous_page),
             ('\N{BLACK RIGHT-POINTING TRIANGLE}', self.next_page),
             ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.last_page),
-            ('❌', self.stop),
+            (stop_emoji, self.stop),
         ]
 
         bot_user = ctx.guild if ctx.guild.me is not None else ctx.bot.user
@@ -66,22 +66,22 @@ class Scroller:
         if not self.permissions.send_messages:
             raise CantScrollException('Bot cannot send messages.')
 
-    async def start_scrolling(self) -> discord.Message:
+    async def start_scrolling(self, clear_mode: ScrollClear) -> discord.Message:
+        self.clear_mode = clear_mode
         self.current_page_number = 0
         self.build_view()
-
-        if not self.is_scrolling_paginator:
-            return await self.channel.send(embed=self.paginator.pages[0])
-
         self.message = await self.channel.send(embed=self.paginator.pages[0], view=self.view)
         await self.scrolling_done.wait()
-
         return self.message
 
     def update_view(self, interaction: discord.Interaction):
-        self.navigator.placeholder = f"Page: {self.current_page_number + 1}/{len(self.paginator.pages)}"
+        if self.is_scrolling_paginator and self.use_nav_bar:
+            self.navigator.placeholder = f"Page: {self.current_page_number + 1}/{len(self.paginator.pages)}"
 
     def build_view(self):
+        if not self.is_scrolling_paginator:
+            return
+
         for (reaction, callback) in self.interaction_mapping:
             self.view.add_item(item=ScrollerButton(callback=callback, label=reaction, row=3))
 
@@ -95,13 +95,19 @@ class Scroller:
         self.is_scrolling_paginator = False
         self.view.stop()
         self.view.clear_items()
-        if (user_stopped and self.clear_mode & ScrollClearSettings.OnInteractionExit or
-                not user_stopped and self.clear_mode & ScrollClearSettings.OnTimeout):
-            await self.message.delete()
-            self.message = None
-            await self.ctx.message.delete()
+        if (user_stopped and self.clear_mode & ScrollClear.OnInteractionExit or
+                not user_stopped and self.clear_mode & ScrollClear.OnTimeout):
+            if self.message:
+                await self.message.delete()
+                self.message = None
+            # If this fails the message is not accessable either way, which
+            # means it is probably deleted
+            try:
+                await self.ctx.message.delete()
+            except:
+                pass
         else:
-            await self.message.edit(embed=self.paginator.pages[self.current_page_number])
+            await self.update_message()
 
         # Notify the start_scrolling function that we're done
         self.scrolling_done.set()
@@ -117,8 +123,12 @@ class Scroller:
         if interaction.message:
             # Update the view before we edit the message
             self.update_view(interaction)
-            await interaction.message.edit(embed=self.paginator.pages[page], view=self.view)
+            await self.update_message()
         await interaction.response.defer()
+
+    async def update_message(self):
+        if self.message:
+            await self.message.edit(embed=self.paginator.pages[self.current_page_number], view=self.view)
 
     async def first_page(self, interaction: discord.Interaction):
         await self._scroll(0, interaction)
@@ -135,7 +145,8 @@ class Scroller:
     async def navigate(self, interaction: discord.Interaction):
         await self._scroll(int(self.navigator.values[0]), interaction)
 
-    async def stop_scrolling(self, _: discord.Interaction):
+    async def stop_scrolling(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         await self.stop(user_stopped=True)
 
     async def on_timeout(self):

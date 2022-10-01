@@ -5,6 +5,7 @@ from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 
 import typing
+from typing import Union
 
 from .mixqueue import MixQueue
 
@@ -13,7 +14,7 @@ class MixPlayer(DefaultPlayer):
     def __init__(self, guild_id: int, node: Node):
         super().__init__(guild_id, node)
 
-        self.queue = MixQueue()
+        self.queue: MixQueue = MixQueue()
 
         self.listeners = set()
         self.voteables = {}
@@ -35,7 +36,7 @@ class MixPlayer(DefaultPlayer):
     def remove_user_queue(self, requester: int):
         self.queue.remove_user_queue(requester)
 
-    def remove_user_track(self, requester: int, pos: int):
+    def remove_user_track(self, requester: int, pos: int) -> Union[None, AudioTrack]:
         """ Removes the song at <pos> from the queue of requester """
         return self.queue.remove_user_track(requester, pos)
 

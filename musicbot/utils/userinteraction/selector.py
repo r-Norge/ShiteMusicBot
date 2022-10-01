@@ -6,8 +6,10 @@ import asyncio
 import inspect
 from typing import List, Callable, Coroutine
 
+from discord.ext.commands import check
+
 from .paginators import TextPaginator
-from .scroller import ScrollClearSettings, Scroller
+from .scroller import ScrollClear, Scroller
 
 
 class SelectorButton(discord.ui.Button):
@@ -16,8 +18,8 @@ class SelectorButton(discord.ui.Button):
         super().__init__(label=label, style=style, **kwargs)
 
         # The callback we need to supply to disord.py takes only a discord.Interaction
-        # we want to have access to the button that caused that was clicked
-        # so we can update it, i.e. change color
+        # we want to have access to the button that was clicked (self)
+        # so we can update or modify it upon it being pressed i.e. change color.
         def add_button_to_callback(func):
             async def wrapped_callback(interaction: discord.Interaction):
                 await func(interaction, self)
@@ -27,13 +29,14 @@ class SelectorButton(discord.ui.Button):
 
 
 class SelectorItem:
-    def __init__(self, identifier, callback: Callable[[discord.Interaction, SelectorButton], Coroutine]):
+    def __init__(self, identifier, button_label, callback: Callable[[discord.Interaction, SelectorButton], Coroutine]):
+        self.button_label = button_label
         self.identifier = identifier
         self.callback = callback
 
 
 class Selector2(TextPaginator, Scroller):
-    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None,
+    def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, check_for_stop: bool = False,
                  terminate_on_select: bool = True, max_size=2000, **embed_base):
         self.match = None
         if round_titles is None:
@@ -42,16 +45,15 @@ class Selector2(TextPaginator, Scroller):
         self.terminate_on_select = terminate_on_select
         self.round_titles = round_titles
 
-        self.max_selections_per_page = 5
+        self.selections_per_page = 5
         self.selections = choices
-        self.max_selections = min(len(self.selections), self.max_selections_per_page)
 
-        TextPaginator.__init__(self, max_size=max_size, max_lines=self.max_selections_per_page, **embed_base)
-        for index, selection in enumerate(self.selections, start=1):
-            self.add_line(f"`{index}.` {selection.identifier}")
+        TextPaginator.__init__(self, max_size=max_size, max_lines=self.selections_per_page, **embed_base)
+        for selection in self.selections:
+            self.add_line(selection.identifier)
         self.close_page()
 
-        Scroller.__init__(self, ctx, self, ScrollClearSettings.OnTimeout)
+        Scroller.__init__(self, ctx, self, check_for_stop=check_for_stop)
 
         # Contains a list of all buttons that can be interacted with, both
         # currently visible and not.
@@ -64,6 +66,8 @@ class Selector2(TextPaginator, Scroller):
         # after we have finished interacting with the scroller
         self.callback_results = []
 
+        # Wrap the provided so that we can both update the view if needed
+        # or terminate the selection process upon interaction
         def with_update_view(func):
             async def wrapped_callback(interaction: discord.Interaction, button: SelectorButton):
                 result = await func(interaction, button)
@@ -72,10 +76,12 @@ class Selector2(TextPaginator, Scroller):
                 await interaction.response.defer()
                 if terminate_on_select:
                     await self.stop(True)
+                else:
+                    await self.update_message()
             return wrapped_callback
 
         for i, choice in enumerate(self.selections):
-            self.buttons.append(SelectorButton(label=i+1, callback=with_update_view(choice.callback), row=0))
+            self.buttons.append(SelectorButton(label=choice.button_label, callback=with_update_view(choice.callback), row=0))
 
     def build_view(self):
         super().build_view()
@@ -91,15 +97,15 @@ class Selector2(TextPaginator, Scroller):
 
         self.visible_buttons = []
         self.current_page_number
-        start = self.current_page_number * self.max_selections_per_page
-        end = min((self.current_page_number + 1) * self.max_selections_per_page, len(self.selections))
+        start = self.current_page_number * self.selections_per_page
+        end = min((self.current_page_number + 1) * self.selections_per_page, len(self.selections))
 
         for button in self.buttons[start:end]:
             self.view.add_item(item=button)
             self.visible_buttons.append(button)
 
-    async def start_scrolling(self):
-        message = await super().start_scrolling()
+    async def start_scrolling(self, clear_mode: ScrollClear=ScrollClear.OnTimeout):
+        message = await super().start_scrolling(clear_mode)
         return message, self.callback_results
 
 
