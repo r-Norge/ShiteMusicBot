@@ -10,10 +10,8 @@ import re
 from bs4 import BeautifulSoup
 from musicbot.utils.mixplayer.player import MixPlayer
 
-from musicbot.utils.userinteraction.scroller import ScrollClear
-
 from ...utils import checks, thumbnailer, timeformatter
-from ...utils.userinteraction import QueuePaginator, Scroller, Selector, TextPaginator
+from ...utils.userinteraction import QueuePaginator, Scroller, Selector, TextPaginator, ClearOn
 from ...utils.userinteraction.selector import Selector2, SelectorButton, SelectorItem
 from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
@@ -245,7 +243,7 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         pagified_queue = QueuePaginator(ctx.localizer, player, color=ctx.me.color, member=member)
         scroller = Scroller(ctx, pagified_queue)
-        await scroller.start_scrolling(ScrollClear.OnInteractionExit | ScrollClear.OnTimeout)
+        await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
 
     @commands.command(name='myqueue')
     @require_queue(require_author_queue=True)
@@ -368,7 +366,7 @@ class Music(commands.Cog):
         
         remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, use_tick_for_stop_emoji=True,
                                     color=ctx.me.color, title='Select songs to remove')
-        await remove_selector.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+        await remove_selector.start_scrolling(ClearOn.AnyExit)
 
         # If any tracks were removed create a scroller for navigating them
         if tracks_to_remove:
@@ -385,7 +383,7 @@ class Music(commands.Cog):
 
             paginator.close_page()
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ScrollClear.OnInteractionExit | ScrollClear.OnTimeout)
+            await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
 
     @commands.command(name="DJremove")
     @checks.dj_or()
@@ -578,7 +576,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     async def _normalize(self, ctx):
         """ Reset the equalizer and volume """
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         await player.set_volume(100)
         await player.bassboost(False)
@@ -589,7 +587,7 @@ class Music(commands.Cog):
 
     @commands.command(name='boost')
     @checks.dj_or(alone=True)
-    async def _boost(self, ctx, boost: bool = None):
+    async def _boost(self, ctx, boost: bool = False):
         """ Set the equalizer to bass boost the music """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
@@ -599,6 +597,19 @@ class Music(commands.Cog):
         embed = discord.Embed(color=ctx.me.color)
         embed.description = '{boost.on}' if player.boosted else '{boost.off}'
 
+        embed = ctx.localizer.format_embed(embed)
+        await ctx.send(embed=embed)
+
+    @commands.command(name='nightcore')
+    @checks.dj_or(alone=True)
+    async def _nightcore(self, ctx, boost: bool = False):
+        """ Set a filter mimicking nightcore the music """
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        await player.nightcoreify(boost)
+
+        embed = discord.Embed(color=ctx.me.color)
+        embed.description = 'Nightcore On' if player.nightcore_enabled else 'Nightcore off'
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
@@ -691,7 +702,7 @@ class Music(commands.Cog):
                 await ctx.send(embed=page)
         else:
             paginator.add_page_indicator(ctx.localizer)
-            await Scroller(ctx, paginator).start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+            await Scroller(ctx, paginator).start_scrolling(ClearOn.AnyExi)
 
     @commands.command(name='scrub')
     @checks.dj_or(alone=True)
@@ -723,8 +734,8 @@ class Music(commands.Cog):
             SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
         ]
         scrubber = Selector2(ctx, scrubber_controls, terminate_on_select=False, use_tick_for_stop_emoji=True,
-                                    color=ctx.me.color, title=ctx.localizer.format_str(controls))
-        await scrubber.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+                             default_text=ctx.localizer.format_str(controls), color=ctx.me.color)
+        await scrubber.start_scrolling(ClearOn.AnyExit)
 
     @commands.group(name='loop')
     async def _loop(self, ctx):

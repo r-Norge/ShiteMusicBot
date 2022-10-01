@@ -1,7 +1,7 @@
 # Discord Packages
 from discord.ext import commands
 
-from ...utils.userinteraction.scroller import Scroller, ScrollClear
+from ...utils.userinteraction.scroller import Scroller, ClearOn
 from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
 
 
@@ -33,4 +33,4 @@ class Help(commands.Cog):
                 paginator = await coghelper(ctx, thing)
 
         scroller = Scroller(ctx, paginator)
-        await scroller.start_scrolling(ScrollClear.OnTimeout | ScrollClear.OnInteractionExit)
+        await scroller.start_scrolling(ClearOn.Timeout | ClearOn.ManualExit)

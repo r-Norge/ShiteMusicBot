@@ -4,7 +4,7 @@ from discord.ext import commands
 
 import traceback
 
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import Scroller, ClearOn
 from .helpformatter import commandhelper
 from .music.music_errors import WrongTextChannelError, WrongVoiceChannelError
 
@@ -29,7 +29,7 @@ class Errors(commands.Cog):
                 isinstance(err, commands.BadArgument)):
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
         if isinstance(err, (commands.CommandNotFound)):
             return

@@ -9,7 +9,7 @@ from typing import List, Callable, Coroutine
 from discord.ext.commands import check
 
 from .paginators import TextPaginator
-from .scroller import ScrollClear, Scroller
+from .scroller import ClearOn, Scroller
 
 
 class SelectorButton(discord.ui.Button):
@@ -37,7 +37,7 @@ class SelectorItem:
 
 class Selector2(TextPaginator, Scroller):
     def __init__(self, ctx, choices: List[SelectorItem], round_titles=None, use_tick_for_stop_emoji: bool = False,
-                 terminate_on_select: bool = True, max_size=2000, **embed_base):
+                 terminate_on_select: bool = True, max_size=2000, default_text=" ", **embed_base):
         self.match = None
         if round_titles is None:
             round_titles = []
@@ -53,7 +53,7 @@ class Selector2(TextPaginator, Scroller):
             if (selection.identifier):
                 self.add_line(selection.identifier)
         if len(self.pages) == 0:
-            self.add_line("Scrub")
+            self.add_line(default_text)
         self.close_page()
 
         Scroller.__init__(self, ctx, self, use_tick_for_stop_emoji=use_tick_for_stop_emoji, show_cancel_for_single_page=True)
@@ -73,6 +73,9 @@ class Selector2(TextPaginator, Scroller):
         # or terminate the selection process upon interaction
         def with_update_view(func):
             async def wrapped_callback(interaction: discord.Interaction, button: SelectorButton):
+                if (interaction.user.id != ctx.author.id):
+                    return await interaction.response.defer()
+
                 result = await func(interaction, button)
                 self.callback_results.append(result)
                 self.update_view(interaction)
@@ -83,7 +86,7 @@ class Selector2(TextPaginator, Scroller):
                     await self.update_message()
             return wrapped_callback
 
-        for i, choice in enumerate(self.selections):
+        for choice in self.selections:
             self.buttons.append(SelectorButton(label=choice.button_label, callback=with_update_view(choice.callback), row=0))
 
     def build_view(self):
@@ -107,7 +110,7 @@ class Selector2(TextPaginator, Scroller):
             self.view.add_item(item=button)
             self.visible_buttons.append(button)
 
-    async def start_scrolling(self, clear_mode: ScrollClear=ScrollClear.OnTimeout):
+    async def start_scrolling(self, clear_mode: ClearOn=ClearOn.Timeout):
         message = await super().start_scrolling(clear_mode)
         return message, self.callback_results
 

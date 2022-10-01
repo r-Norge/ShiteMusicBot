@@ -84,12 +84,12 @@ class Misc(commands.Cog):
         members = len(self.bot.users)
 
         days, hours, minutes, seconds = self.get_uptime()
-        avatar = self.bot.user.avatar_url_as(format=None, static_format='png', size=1024)
+        avatar_url = self.bot.user.display_avatar.replace(static_format='png', size=1024).url
 
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
         embed = discord.Embed(color=ctx.me.color)
-        embed.set_author(name=self.bot.user.name, icon_url=avatar)
-        embed.set_thumbnail(url=avatar)
+        embed.set_author(name=self.bot.user.name, icon_url=avatar_url)
+        embed.set_thumbnail(url=avatar_url)
         embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/'
                             '368118192251469835/vintage1turntable.png')
         embed.add_field(name="{bot.what}",

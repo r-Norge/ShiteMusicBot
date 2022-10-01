@@ -3,7 +3,7 @@ from discord.ext import commands
 
 import traceback
 
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import Scroller, ClearOn
 from .helpformatter import commandhelper
 
 
@@ -19,7 +19,7 @@ class CogManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @_cogmanager.command()
     @commands.is_owner()

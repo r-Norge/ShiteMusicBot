@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 
 from ..utils import checks
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import Scroller, ClearOn
 from .helpformatter import commandhelper
 
 
@@ -26,7 +26,7 @@ class Settings(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @checks.is_admin()
     @commands.guild_only()
@@ -190,7 +190,7 @@ class Settings(commands.Cog):
     async def current_settings(self, ctx):
         embed = discord.Embed(title='{current.title}', color=ctx.me.color)
         embed.description = '{current.description}'
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
 
         prefixes = self.bot.settings.get(ctx.guild, 'prefixes', 'default_prefix')
         embed.add_field(name='{current.prefix}', value=self.format_prefixes(prefixes))

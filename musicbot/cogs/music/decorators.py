@@ -184,7 +184,7 @@ def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
                 embed = discord.Embed(title="Votes",
                                       description=f"{votes} out of {math.ceil(total*threshold/100)} required votes.",
                                       color=ctx.me.color)
-                embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.avatar_url)
+                embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.display_avatar.url)
                 msg = await ctx.send(embed=ctx.localizer.format_embed(embed))
                 await msg.add_reaction('👍')
 

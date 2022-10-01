@@ -3,6 +3,7 @@ import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
+from lavalink.filters import Equalizer, Timescale
 
 import typing
 from typing import Union
@@ -20,6 +21,21 @@ class MixPlayer(DefaultPlayer):
         self.voteables = {}
         self.skip_voters = set()
         self.boosted = False
+        self.nightcore_enabled = False
+        bands = [
+            (0, 0.15),
+            (1, 0.15),
+            (2, 0.25),
+            (3, 0.15),
+            (4, -0.15),
+            (5, -0.1),
+            (6, -0.05)
+        ]
+        self.bass_boost_filter = Equalizer()
+        self.bass_boost_filter.update(bands=bands)
+
+        self.nightcore_filter = Timescale()
+        self.nightcore_filter.update(speed=1.25, pitch=1.25)
 
     def add(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
         """ Adds a track to the queue. """
@@ -84,6 +100,7 @@ class MixPlayer(DefaultPlayer):
         if not track:
             if self.queue.empty:
                 self.boosted = False
+                self.nightcore_enabled = False
                 await self.stop()
                 await self.node._dispatch_event(QueueEndEvent(self))
                 return
@@ -165,21 +182,18 @@ class MixPlayer(DefaultPlayer):
             await self.play()
 
     async def bassboost(self, boost: bool = False):
+        self.boosted = boost
         if boost:
-            gains = [
-                (0, 0.15),
-                (1, 0.15),
-                (2, 0.25),
-                (3, 0.15),
-                (4, -0.15),
-                (5, -0.1),
-                (6, -0.05)
-            ]
-            self.boosted = True
-            await self.set_gains(*gains)
+            await self.set_filter(self.bass_boost_filter)
         else:
-            self.boosted = False
-            await self.reset_equalizer()
+            await self.remove_filter(self.bass_boost_filter)
+
+    async def nightcoreify(self, nightcore: bool = False):
+        self.nightcore_enabled = nightcore
+        if nightcore:
+            await self.set_filter(self.nightcore_filter)
+        else:
+            await self.remove_filter(self.nightcore_filter)
 
     @property
     def looping(self):

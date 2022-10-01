@@ -7,9 +7,10 @@ from .paginators import BasePaginator, CantScrollException
 
 from typing import Union, List
 
-class ScrollClear(Flag):
-    OnTimeout = auto()
-    OnInteractionExit = auto()
+class ClearOn(Flag):
+    Timeout = auto()
+    ManualExit = auto()
+    AnyExit = Timeout | ManualExit
 
 
 class ScrollerButton(discord.ui.Button):
@@ -81,7 +82,7 @@ class Scroller:
         if not self.permissions.send_messages:
             raise CantScrollException('Bot cannot send messages.')
 
-    async def start_scrolling(self, clear_mode: ScrollClear) -> discord.Message:
+    async def start_scrolling(self, clear_mode: ClearOn) -> discord.Message:
         self.clear_mode = clear_mode
         self.current_page_number = 0
         self.build_view()
@@ -111,8 +112,8 @@ class Scroller:
         self.is_scrolling_paginator = False
         self.view.stop()
         self.view.clear_items()
-        if (user_stopped and self.clear_mode & ScrollClear.OnInteractionExit or
-                not user_stopped and self.clear_mode & ScrollClear.OnTimeout):
+        if (user_stopped and self.clear_mode & ClearOn.ManualExit or
+                not user_stopped and self.clear_mode & ClearOn.Timeout):
             if self.message:
                 await self.message.delete()
                 self.message = None
