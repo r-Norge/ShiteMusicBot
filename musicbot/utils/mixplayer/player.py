@@ -3,8 +3,10 @@ import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
+from lavalink.filters import Equalizer, Timescale
 
 import typing
+from typing import Union
 
 from .mixqueue import MixQueue
 
@@ -13,12 +15,27 @@ class MixPlayer(DefaultPlayer):
     def __init__(self, guild_id: int, node: Node):
         super().__init__(guild_id, node)
 
-        self.queue = MixQueue()
+        self.queue: MixQueue = MixQueue()
 
         self.listeners = set()
         self.voteables = {}
         self.skip_voters = set()
         self.boosted = False
+        self.nightcore_enabled = False
+        bands = [
+            (0, 0.15),
+            (1, 0.15),
+            (2, 0.25),
+            (3, 0.15),
+            (4, -0.15),
+            (5, -0.1),
+            (6, -0.05)
+        ]
+        self.bass_boost_filter = Equalizer()
+        self.bass_boost_filter.update(bands=bands)
+
+        self.nightcore_filter = Timescale()
+        self.nightcore_filter.update(speed=1.25, pitch=1.25)
 
     def add(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
         """ Adds a track to the queue. """
@@ -35,7 +52,7 @@ class MixPlayer(DefaultPlayer):
     def remove_user_queue(self, requester: int):
         self.queue.remove_user_queue(requester)
 
-    def remove_user_track(self, requester: int, pos: int):
+    def remove_user_track(self, requester: int, pos: int) -> Union[None, AudioTrack]:
         """ Removes the song at <pos> from the queue of requester """
         return self.queue.remove_user_track(requester, pos)
 
@@ -83,6 +100,7 @@ class MixPlayer(DefaultPlayer):
         if not track:
             if self.queue.empty:
                 self.boosted = False
+                self.nightcore_enabled = False
                 await self.stop()
                 await self.node._dispatch_event(QueueEndEvent(self))
                 return
@@ -90,7 +108,9 @@ class MixPlayer(DefaultPlayer):
                 track = self.queue.pop_first()
 
         self.current = track
-        await self.node._send(op='play', guildId=self.guild_id,
+        if track.track is None:
+            return
+        await self.node._send(op='play', guildId=str(self.guild_id),
                               track=track.track, startTime=start_time)
         await self.node._dispatch_event(TrackStartEvent(self, track))
 
@@ -103,7 +123,7 @@ class MixPlayer(DefaultPlayer):
 
     async def stop(self):
         """ Stops the player. """
-        await self.node._send(op='stop', guildId=self.guild_id)
+        await self.node._send(op='stop', guildId=str(self.guild_id))
         self.current = None
         self.queue.looping = False
         self.clear_votes()
@@ -162,21 +182,18 @@ class MixPlayer(DefaultPlayer):
             await self.play()
 
     async def bassboost(self, boost: bool = False):
+        self.boosted = boost
         if boost:
-            gains = [
-                (0, 0.15),
-                (1, 0.15),
-                (2, 0.25),
-                (3, 0.15),
-                (4, -0.15),
-                (5, -0.1),
-                (6, -0.05)
-            ]
-            self.boosted = True
-            await self.set_gains(*gains)
+            await self.set_filter(self.bass_boost_filter)
         else:
-            self.boosted = False
-            await self.reset_equalizer()
+            await self.remove_filter(self.bass_boost_filter)
+
+    async def nightcoreify(self, nightcore: bool = False):
+        self.nightcore_enabled = nightcore
+        if nightcore:
+            await self.set_filter(self.nightcore_filter)
+        else:
+            await self.remove_filter(self.nightcore_filter)
 
     @property
     def looping(self):

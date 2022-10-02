@@ -4,7 +4,7 @@ from discord.ext import commands
 
 import traceback
 
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 from .music.music_errors import WrongTextChannelError, WrongVoiceChannelError
 
@@ -17,7 +17,7 @@ class Errors(commands.Cog):
     async def base_msg(self, ctx, state: int = 0xFCBA03):
         embed = discord.Embed(color=state)
         embed.title = '{errors.error_occurred}'
-        embed.set_footer(icon_url=ctx.author.avatar_url,
+        embed.set_footer(icon_url=ctx.author.display_avatar.url,
                          text=f'{ctx.author.name}#{ctx.author.discriminator}')
         return embed
 
@@ -29,7 +29,7 @@ class Errors(commands.Cog):
                 isinstance(err, commands.BadArgument)):
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
         if isinstance(err, (commands.CommandNotFound)):
             return
@@ -63,7 +63,7 @@ class Errors(commands.Cog):
                 return await send_error_embed('{errors.full_channel}')
 
         if isinstance(err, WrongVoiceChannelError):
-            if(err.original.startswith("You need to be in my voice channel")):
+            if (err.original.startswith("You need to be in my voice channel")):
                 return await send_error_embed(err.channels[0].name, title='{errors.my_channel}')
 
             elif (err.original.startswith('You need to be in the right voice channel')):
@@ -115,5 +115,5 @@ class Errors(commands.Cog):
                     self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
 
 
-def setup(bot):
-    bot.add_cog(Errors(bot))
+async def setup(bot):
+    await bot.add_cog(Errors(bot))

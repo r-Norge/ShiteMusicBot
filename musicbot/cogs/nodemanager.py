@@ -1,15 +1,14 @@
 # Discord Packages
 import discord
-import lavalink
 from discord.ext import commands
-from lavalink import Node
+from lavalink import Client, Node
 
 import codecs
 
 import yaml
 
 from ..utils.mixplayer import MixPlayer
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
@@ -19,21 +18,22 @@ class NodeManager(commands.Cog):
         self.settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
+    async def load_music_cogs(self):
         music_extensions = [
             'musicbot.cogs.music',
         ]
 
-        if not hasattr(bot, 'lavalink'):
-            bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
+        if not hasattr(self.bot, 'lavalink'):
+            self.bot.lavalink = Client(self.bot.user.id, player=MixPlayer)
 
             self.load_nodes_from_file()
 
-            bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
+            self.bot.add_listener(self.bot.lavalink.voice_update_handler, 'on_socket_response')
 
             for extension in music_extensions:
                 try:
                     self.logger.debug("Loading extension %s" % extension)
-                    self.bot.load_extension(extension)
+                    await self.bot.load_extension(extension)
                 except Exception:
                     self.logger.exception("Loading of extension %s failed" % extension)
 
@@ -115,7 +115,7 @@ class NodeManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @_node.command(name='reload_file')
     @commands.is_owner()
@@ -194,5 +194,7 @@ class NodeManager(commands.Cog):
             await player.change_node(newnode)
 
 
-def setup(bot):
-    bot.add_cog(NodeManager(bot))
+async def setup(bot):
+    cog = NodeManager(bot)
+    await cog.load_music_cogs()
+    await bot.add_cog(cog)

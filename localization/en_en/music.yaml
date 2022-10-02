@@ -55,6 +55,9 @@ volume:
 boost:
   'on': Bass boost is on
   'off': Bass boost is off
+nightcore:
+  'on': Nightcore mode is on
+  'off': Nightcore mode is off
 scrub:
   add: Adding controls
   controls: "{music_controls}"
@@ -62,7 +65,7 @@ scrub:
 enqueue:
   position: position
   playing_in: Playing in
-  enqueued: Song enqueued
+  enqueued: Song queued
   estimated: estimated
   toolong: Track too long. `{_length}>{_max}`
 history:

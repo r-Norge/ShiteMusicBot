@@ -11,6 +11,38 @@ from ...utils.checks import is_dj
 from .music_errors import WrongVoiceChannelError
 
 
+class BasicVoiceClient(discord.VoiceClient):
+    def __init__(self, client: discord.Client, channel: discord.abc.Connectable):
+        self.client = client
+        self.channel = channel
+        if hasattr(self.client, 'lavalink'):
+            self.lavalink = self.client.lavalink
+        else:
+            raise Exception("client did not have defined lavalink before connect")
+
+    async def on_voice_server_update(self, data):
+        await self.lavalink.voice_update_handler({'t': 'VOICE_SERVER_UPDATE', 'd': data})
+
+    async def on_voice_state_update(self, data):
+        await self.lavalink.voice_update_handler({'t': 'VOICE_STATE_UPDATE', 'd': data})
+
+    async def connect(self, *, timeout: float, reconnect: bool, self_deaf: bool = False,
+                      self_mute: bool = False) -> None:
+        await self.channel.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
+
+    async def disconnect(self, *, force: bool = False) -> None:
+        player = self.lavalink.player_manager.get(self.channel.guild.id)
+
+        # no need to disconnect if we are not connected
+        if not force and not player.is_connected:
+            return
+
+        # None means disconnect
+        await self.channel.guild.change_voice_state(channel=None)
+        player.channel_id = None
+        self.cleanup()
+
+
 def require_voice_connection(should_connect=False):
     """
     Checks if the bot is in a valid voice channel for the command
@@ -45,7 +77,7 @@ def require_voice_connection(should_connect=False):
                             'You need to be in the right voice channel', channels=voice_channels)
 
                 player.store('channel', ctx.channel.id)
-                await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+                await ctx.author.voice.channel.connect(cls=BasicVoiceClient)
 
             elif int(player.channel_id) != ctx.author.voice.channel.id:
                 bot_channel = self.bot.get_channel(int(player.channel_id))
@@ -152,7 +184,7 @@ def voteable(requester_override=False, DJ_override=False, react_to_vote=False):
                 embed = discord.Embed(title="Votes",
                                       description=f"{votes} out of {math.ceil(total*threshold/100)} required votes.",
                                       color=ctx.me.color)
-                embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.avatar_url)
+                embed.set_footer(text=f'{{requested_by}} {ctx.author.name}', icon_url=ctx.author.display_avatar.url)
                 msg = await ctx.send(embed=ctx.localizer.format_embed(embed))
                 await msg.add_reaction('👍')
 

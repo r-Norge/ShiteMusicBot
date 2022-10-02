@@ -4,6 +4,7 @@ from lavalink import AudioTrack
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
+from typing import List, Union
 
 
 def roundrobin(*iterables):
@@ -22,7 +23,7 @@ def roundrobin(*iterables):
 
 class MixQueue:
     def __init__(self):
-        self.queues = OrderedDict()
+        self.queues: OrderedDict[int, List[AudioTrack]] = OrderedDict()
         self.priority_queue = []
         self._history = deque(maxlen=11)  # 10 + current
         self.looping = False
@@ -131,7 +132,7 @@ class MixQueue:
             else:
                 self.queues.pop(requester)
 
-    def remove_user_track(self, requester: int, pos: int):
+    def remove_user_track(self, requester: int, pos: int) -> Union[None, AudioTrack]:
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
