@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Discord Packages
 import discord
-from lavalink.client import asyncio
 
+import asyncio
 from enum import Flag, auto
 from typing import List, Union
 
@@ -88,21 +88,31 @@ class Scroller:
         if not self.permissions.send_messages:
             raise CantScrollException('Bot cannot send messages.')
 
-    async def start_scrolling(self, clear_mode: ClearOn) -> discord.Message:
+    async def start_scrolling(self, clear_mode: ClearOn,
+                              message: Union[discord.Message, None] = None,
+                              start_page: int = 0) -> discord.Message:
         self.clear_mode = clear_mode
-        self.current_page_number = 0
+        self.page_number = start_page
         self.build_view()
-        self.message = await self.channel.send(embed=self.paginator.pages[0], view=self.view)
+        self.update_view()
+        if message:
+            self.message = message
+            await self.message.edit(embed=self.current_page_embed, view=self.view)
+        else:
+            self.message = await self.channel.send(embed=self.current_page_embed, view=self.view)
         await self.scrolling_done.wait()
         return self.message
 
-    def update_view(self, interaction: discord.Interaction):
+    def update_view_on_interaction(self, interaction: discord.Interaction):
+        self.update_view()
+
+    def update_view(self):
         if self.use_nav_bar:
-            self.navigator.placeholder = f"Page: {self.current_page_number + 1}/{len(self.paginator.pages)}"
+            self.navigator.placeholder = f"Page: {self.page_number + 1}/{len(self.paginator.pages)}"
 
         if self.is_scrolling_paginator:
-            self.back_button.disabled = self.current_page_number == 0
-            self.forward_button.disabled = self.current_page_number == len(self.paginator.pages)-1
+            self.back_button.disabled = self.page_number == 0
+            self.forward_button.disabled = self.page_number == len(self.paginator.pages)-1
 
     def build_view(self):
         for button in self.control_buttons:
@@ -114,10 +124,11 @@ class Scroller:
             for (i, _) in enumerate(self.paginator.pages):
                 self.navigator.add_option(label=str(i+1), value=str(i))
 
-    async def stop(self, user_stopped: bool):
+    async def stop(self, user_stopped: bool, clear_scroller_view: bool = True):
         self.is_scrolling_paginator = False
         self.view.stop()
-        self.view.clear_items()
+        if clear_scroller_view:
+            self.view.clear_items()
         if (user_stopped and self.clear_mode & ClearOn.ManualExit or
                 not user_stopped and self.clear_mode & ClearOn.Timeout):
             if self.message:
@@ -131,7 +142,8 @@ class Scroller:
             except discord.HTTPException:
                 pass
         else:
-            await self.update_message()
+            if clear_scroller_view:
+                await self.update_message()
 
         # Notify the start_scrolling function that we're done
         self.scrolling_done.set()
@@ -142,17 +154,17 @@ class Scroller:
 
         if page < 0 or page >= len(self.paginator.pages):
             return
-        self.current_page_number = page
+        self.page_number = page
 
         if interaction.message:
             # Update the view before we edit the message
-            self.update_view(interaction)
+            self.update_view_on_interaction(interaction)
             await self.update_message()
         await interaction.response.defer()
 
     async def update_message(self):
         if self.message:
-            await self.message.edit(embed=self.paginator.pages[self.current_page_number], view=self.view)
+            await self.message.edit(embed=self.current_page_embed, view=self.view)
 
     async def first_page(self, interaction: discord.Interaction):
         await self._scroll(0, interaction)
@@ -161,10 +173,10 @@ class Scroller:
         await self._scroll(len(self.paginator.pages) - 1, interaction)
 
     async def next_page(self, interaction: discord.Interaction):
-        await self._scroll(self.current_page_number + 1, interaction)
+        await self._scroll(self.page_number + 1, interaction)
 
     async def previous_page(self, interaction: discord.Interaction):
-        await self._scroll(self.current_page_number - 1, interaction)
+        await self._scroll(self.page_number - 1, interaction)
 
     async def navigate(self, interaction: discord.Interaction):
         await self._scroll(int(self.navigator.values[0]), interaction)
@@ -175,3 +187,7 @@ class Scroller:
 
     async def on_timeout(self):
         await self.stop(user_stopped=False)
+
+    @property
+    def current_page_embed(self):
+        return self.paginator.pages[self.page_number]

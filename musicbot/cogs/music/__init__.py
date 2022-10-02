@@ -12,11 +12,12 @@ import urllib
 
 from bs4 import BeautifulSoup
 
+# Bot Utilities
 from musicbot.utils.mixplayer.player import MixPlayer
-
 from ...utils import checks, thumbnailer, timeformatter
-from ...utils.userinteraction import ClearOn, QueuePaginator, Scroller, Selector, TextPaginator
-from ...utils.userinteraction.selector import Selector2, SelectorButton, SelectorItem
+from ...utils.userinteraction.paginators import QueuePaginator, TextPaginator
+from ...utils.userinteraction.scroller import ClearOn, Scroller
+from ...utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
 from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import WrongTextChannelError
 
@@ -63,6 +64,7 @@ class Music(commands.Cog):
                 return embed, False
 
         track.extra["thumbnail_url"] = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
+        track.requester = ctx.author.id
 
         # Add to player
         track, pos_global, pos_local = player.add(requester=ctx.author.id, track=track)
@@ -90,25 +92,27 @@ class Music(commands.Cog):
         return embed, True
 
     def get_current_song_embed(self, ctx, include_time=False):
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
+        if not player.current:
+            return
+
+        song = f'**[{player.current.title}]({player.current.uri})**'
         if include_time:
             position = timeformatter.format_ms(player.position)
             if player.current.stream:
                 duration = '{live}'
             else:
                 duration = timeformatter.format_ms(player.current.duration)
-            song = f'**[{player.current.title}]({player.current.uri})**\n({position}/{duration})'
-        else:
-            song = f'**[{player.current.title}]({player.current.uri})**'
+            song += f'\n({position}/{duration})'
 
         embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
-        member = ctx.guild.get_member(player.current.requester)
 
         if thumbnail_url := player.current.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
 
-        embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.display_avatar.url)
+        if member := ctx.guild.get_member(player.current.requester):
+            embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.display_avatar.url)
 
         embed = ctx.localizer.format_embed(embed)
         return embed
@@ -189,11 +193,8 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         await player.skip()
-        if player.current:
-            embed = self.get_current_song_embed(ctx)
-            await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
-        else:
-            await ctx.send(ctx.localizer.format_str("{skip.skipped}"))
+        embed = self.get_current_song_embed(ctx)
+        await ctx.send(ctx.localizer.format_str("{skip.skipped}"), embed=embed)
 
     @commands.command(name='skipto')
     @checks.dj_or(alone=True)
@@ -229,9 +230,9 @@ class Music(commands.Cog):
     @commands.command(name='now')
     @require_playing()
     async def _now(self, ctx):
-        embed = self.get_current_song_embed(ctx, include_time=True)
-        embed = ctx.localizer.format_embed(embed)
-        await ctx.send(embed=embed)
+        if embed := self.get_current_song_embed(ctx, include_time=True):
+            embed = ctx.localizer.format_embed(embed)
+            await ctx.send(embed=embed)
 
     @commands.command(name='queue')
     @require_queue(require_member_queue=True)
@@ -275,57 +276,63 @@ class Music(commands.Cog):
     @require_queue(require_author_queue=True)
     async def _move(self, ctx):
         """ Moves a song in your queue. """
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        user_queue = player.user_queue(ctx.author.id, dual=True)
+        # We create a new selector for each selection
+        def move_selector(ctx, queue, title, first: bool):
+            async def return_track(track):
+                return track
 
-        # Setup for selector
-        identifiers = []
-        for index, temp in enumerate(user_queue):
-            track, globpos = temp
-            identifiers.append(ctx.localizer.format_str("{queue.usertrack}", _index=index+1,
-                                                        _globalindex=globpos+1, _title=track.title,
-                                                        _uri=track.uri))
+            choices = []
+            for index, (track, _) in enumerate(queue, start=1):
+                blank = " " * 6
+                if first:
+                    prefix = f'`{blank}`\n`{index:<6}`'
+                else:
+                    prefix = f'`{index:<3}-> `\n`{blank}`'
+                label = f'{prefix} [{track.title}]({track.uri})'
+                selection = SelectorItem(label, str(index), wrap_in_button_callback(return_track, track))
+                choices.append(selection)
 
-        def ret_first_arg(*args):
-            return args[0]
+            return Selector(ctx, choices, select_mode=SelectMode.SpanningMultiSelect, use_tick_for_stop_emoji=True,
+                            color=ctx.me.color, title=ctx.localizer.format_str(title))
 
-        functions = [ret_first_arg]*len(user_queue)
-        arguments = [(i,) for i in range(len(user_queue))]
+        message = None
+        page = 0
+        while True:
+            # Prompt the user for which track to move
+            selector = move_selector(ctx, player.user_queue(ctx.author.id, dual=True), "{moved.choose_pos}", True)
+            message, track_to_move = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            page = selector.page_number
 
-        # Set the different titles for the different selections
-        round_titles = ["{moved.choose_song}", "{moved.choose_pos}"]
-        round_titles = [ctx.localizer.format_str(i) for i in round_titles]
+            if not track_to_move:
+                break
 
-        selector = Selector(ctx, identifiers, functions, arguments, num_selections=5, round_titles=round_titles,
-                            color=ctx.me.color, title=ctx.localizer.format_str("{moved.choose}"))
+            # Prompt the user for where to move it
+            selector = move_selector(ctx, player.user_queue(ctx.author.id, dual=True), "{moved.choose_song}", False)
+            message, track_to_replace = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            page = selector.page_number
 
-        # Get the initial and final position
-        message, page, selections = await selector.start_scrolling()
+            if not track_to_replace:
+                break
 
-        try:
-            pos_initial, pos_final = selections[0], selections[1]
-        except (IndexError, TypeError):
-            return await message.delete()
+            # At this point the user has chosen two songs, we will move the first song to be in front of the second
+            # one in the queue. Find the index of both songs in the current queue
 
-        # Move the track
-        moved = player.move_user_track(ctx.author.id, pos_initial, pos_final)
+            # Keep updating the user queue in case it changes while the user is selecting songs
+            user_queue = player.user_queue(ctx.author.id, dual=True)
+            user_queue_identifiers = [track for (track, _) in user_queue]
+            try:
+                pos_initial = user_queue_identifiers.index(track_to_move[0])
+                pos_final = user_queue_identifiers.index(track_to_replace[0])
+                player.move_user_track(ctx.author.id, pos_initial, pos_final)
+            except ValueError:
+                # Track not found in queue. Queue could have changed during selection
+                # if a song was skipped or the current song finished
+                pass
 
-        # Create a nice embed explaining what happened
-        song = f'**[{moved.title}]({moved.uri})**'
-        embed = discord.Embed(color=ctx.me.color, description=song, title='{moved.moved}')
-        member = ctx.guild.get_member(moved.requester)
-
-        if thumbnail_url := player.current.extra["thumbnail_url"]:
-            embed.set_thumbnail(url=thumbnail_url)
-
-        embed.add_field(name="{moved.local}", value=f"`{pos_initial + 1} → {pos_final + 1}`", inline=True)
-        embed.add_field(name="{moved.global}", value=f"`{player.queue._loc_to_glob(ctx.author.id, pos_initial) + 1}\
-                → {player.queue._loc_to_glob(ctx.author.id, pos_final) + 1}`", inline=True)
-        embed.set_footer(text=f'{{requested_by}} {member.display_name}', icon_url=member.display_avatar.url)
-        embed = ctx.localizer.format_embed(embed)
-
-        await message.edit(embed=embed)
+        if message:
+            await message.delete()
 
     @commands.command(name='remove')
     @require_voice_connection()
@@ -361,8 +368,8 @@ class Music(commands.Cog):
                 SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
                              add_change_button_color(update_remove_list, tracks_to_remove, track)))
 
-        remove_selector = Selector2(ctx, selector_buttons, terminate_on_select=False, use_tick_for_stop_emoji=True,
-                                    color=ctx.me.color, title='Select songs to remove')
+        remove_selector = Selector(ctx, selector_buttons, select_mode=SelectMode.MultiSelect,
+                                   use_tick_for_stop_emoji=True, color=ctx.me.color, title='Select songs to remove')
         await remove_selector.start_scrolling(ClearOn.AnyExit)
 
         # If any tracks were removed create a scroller for navigating them
@@ -442,7 +449,8 @@ class Music(commands.Cog):
                                            self.enqueue, ctx, track, discord.Embed(color=ctx.me.color)))
             buttons.append(interaction)
 
-        search_selector = Selector2(ctx, buttons, color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
+        search_selector = Selector(ctx, buttons, select_mode=SelectMode.SingleSelect,
+                                   color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
         message, callback_results = await search_selector.start_scrolling()
 
         if len(callback_results) == 0:
@@ -732,8 +740,8 @@ class Music(commands.Cog):
             SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek_callback(player, 15)),
             SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
         ]
-        scrubber = Selector2(ctx, scrubber_controls, terminate_on_select=False, use_tick_for_stop_emoji=True,
-                             default_text=ctx.localizer.format_str(controls), color=ctx.me.color)
+        scrubber = Selector(ctx, scrubber_controls, select_mode=SelectMode.MultiSelect, use_tick_for_stop_emoji=True,
+                            default_text=ctx.localizer.format_str(controls), color=ctx.me.color)
         await scrubber.start_scrolling(ClearOn.AnyExit)
 
     @commands.group(name='loop')
