@@ -26,7 +26,7 @@ class CogManager(commands.Cog):
     async def load(self, ctx, *, module):
         """Loads a module."""
         try:
-            await self.bot.load_extension(f'cogs.{module}')
+            await self.bot.load_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} loaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -38,7 +38,7 @@ class CogManager(commands.Cog):
         if module == "cogmanager":
             return await ctx.send('Unloading this cog is not allowed')
         try:
-            await self.bot.unload_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} unloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -48,8 +48,8 @@ class CogManager(commands.Cog):
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
-            await self.bot.unload_extension(f'cogs.{module}')
-            await self.bot.load_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'musicbot.cogs.{module}')
+            await self.bot.load_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} reloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -60,7 +60,7 @@ class CogManager(commands.Cog):
         """Reloads all extensions"""
         try:
             for extension in self.bot.extensions:
-                if extension == 'cogs.cogmanager':
+                if extension == 'musicbot.cogs.cogmanager':
                     continue
                 await self.bot.unload_extension(f'{extension}')
                 await self.bot.load_extension(f'{extension}')
@@ -73,7 +73,7 @@ class CogManager(commands.Cog):
     async def _shutdown(self, ctx):
         """Logs out and stops."""
         self.bot.lavalink.player_manager.players.clear()
-        await self.bot.logout()
+        await self.bot.close()
 
 
 async def setup(bot):
