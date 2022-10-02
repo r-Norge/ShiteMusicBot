@@ -616,7 +616,7 @@ class Music(commands.Cog):
         await player.nightcoreify(boost)
 
         embed = discord.Embed(color=ctx.me.color)
-        embed.description = 'Nightcore On' if player.nightcore_enabled else 'Nightcore off'
+        embed.description = '{nightcore.on}' if player.nightcore_enabled else '{nightcore.off}'
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 

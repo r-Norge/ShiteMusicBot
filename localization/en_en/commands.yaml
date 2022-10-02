@@ -78,6 +78,10 @@ boost:
   aliases:        [boost, bassboost]
   args:           <True/False>
   description:    'Turns on or off bass boost'
+nightcore:
+  aliases:        [nightcore]
+  args:           <True/False>
+  description:    'Turns on or off nightcore mode'
 history:
   aliases:        [history, h]
   description:    'Shows the last 10 songs played.'
