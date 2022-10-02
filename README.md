@@ -1,21 +1,24 @@
-# WIP - Shite Music Bot
+# Shite Music Bot
+A discord music bot you can self host
 
-[![Build Status](https://jenkins.roxedus.net/buildStatus/icon?job=MusicBot%2Fdev)](https://jenkins.roxedus.net/job/MusicBot/job/dev/)
-[![MicroBadger](https://images.microbadger.com/badges/image/rnorge/music:dev-amd64.svg)](https://microbadger.com/images/rnorge/music:dev-amd64 "Get your own image badge on microbadger.com")
 
 ## Features
 
 - Translations, get the bot in your preferred langauge! Works for both commands and replies.
 - Round Robin style queue, you won't have to wait forever for your songs to play.
+- Nice interactive menus
 - Noice per server customization options, including per server localization.
 - Toit embeds.
-- Lyrics command that sometimes gives the correct lyrics
 - DJ roles
+- Lyrics command that sometimes gives the correct lyrics
+
+### Requirements
+- Python 3.10 or greater
 
 ### Setup
 
 1. Change or copy data/config.yaml.example to config.yaml
-2. Create or find a [lavalink](https://github.com/Frederikam/Lavalink) server you can use.
+2. Create or find a [lavalink](https://github.com/Freyacodes/Lavalink) server you can use.
 3. Add your bot token and lavalink server to the bot settings in your config.yaml.
 4. Edit any other settings you want.
 5. (Optional but recommended) Create a virtual environment and activate it.
@@ -24,7 +27,7 @@
 
 ### Docker
 
-### Compose Example
+#### Compose Example
 
 ````yaml
 version: '3'
