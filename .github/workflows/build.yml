@@ -45,17 +45,6 @@ jobs:
           echo "::set-output name=username::$(echo ${_username} | cut -d/ -f1 | tr '[:upper:]' '[:lower:]')"
           echo "::set-output name=repo::$(echo ${_repo} | tr '[:upper:]' '[:lower:]')"
 
-      - name: Bump TAG
-        if: github.ref == 'refs/heads/master'
-        id: tagger
-        run: |
-          version=$(grep -i bot_version musicbot/utils/bot_version.py | cut -d" " -f3 | tr -d \")
-          a=(${version//./ })
-          ((a[2]++))
-          new_version=$(echo "${a[0]}.${a[1]}.${a[2]}")
-          sed -i "s/${version}/${new_version}/g" musicbot/utils/bot_version.py
-          echo "::set-output name=tag::${new_version}"
-
       - name: Push changed files, and tags
         if: github.ref == 'refs/heads/master'
         uses: EndBug/add-and-commit@v4
