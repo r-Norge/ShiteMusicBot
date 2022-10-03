@@ -24,6 +24,12 @@ jobs:
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
 
+      - name: Run tests
+        run: |
+          pip install pytest
+          pip install -r requirements.txt
+          pytest
+
   build-and-push:
     needs: flake8
     runs-on: ubuntu-latest
