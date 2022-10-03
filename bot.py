@@ -86,12 +86,14 @@ class Bot(commands.Bot):
             except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 
-        self.logger.info("")
         if self.user:
-            self.logger.info(f'Logged in as: {self.user.name}' +
-                             f' in {len(self.guilds)} servers.')
-        self.logger.info(f'Version: {discord.__version__}\n')
-        self.logger.debug("Bot Ready\n\n\n")
+            info = f'Logged in as: {self.user.name} in {len(self.guilds)} servers.'
+            border = "="*len(info)
+            self.logger.info(border)
+            self.logger.info(info)
+            self.logger.info(f'Version: {discord.__version__}')
+            self.logger.info(border)
+        self.logger.debug("Bot Ready")
 
         self.session = aiohttp.ClientSession(loop=self.loop)
         await self.change_presence(activity=discord.Game(type=0,
