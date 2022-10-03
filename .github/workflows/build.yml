@@ -27,6 +27,7 @@ jobs:
       - name: Run tests
         run: |
           pip install pytest
+          pip install -r requirements.txt
           pytest
 
   build-and-push:
