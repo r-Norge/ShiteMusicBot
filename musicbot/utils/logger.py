@@ -29,13 +29,10 @@ class ConsoleFormatter(logging.Formatter):
 
 class BotLogger(object):
     def __init__(self, debug=None, data_location=None):
-
         self.log_location = data_location
-        self.log_level = debug
 
-        if self.log_level:
+        if debug:
             self.log_level = logging.DEBUG
-
         else:
             self.log_level = logging.INFO
 
