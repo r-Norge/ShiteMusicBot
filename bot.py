@@ -86,9 +86,11 @@ class Bot(commands.Bot):
             except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 
-        print(f'\nLogged in as: {self.user.name}' +
-              f' in {len(self.guilds)} servers.')
-        print(f'Version: {discord.__version__}\n')
+        self.logger.info("")
+        if self.user:
+            self.logger.info(f'Logged in as: {self.user.name}' +
+                             f' in {len(self.guilds)} servers.')
+        self.logger.info(f'Version: {discord.__version__}\n')
         self.logger.debug("Bot Ready\n\n\n")
 
         self.session = aiohttp.ClientSession(loop=self.loop)
@@ -102,7 +104,7 @@ class Bot(commands.Bot):
         except Exception as e:
             tb = e.__traceback__
             traceback.print_tb(tb)
-            print(e)
+            self.logger.error(e)
 
 
 def run_bot(datadir, debug: bool = False):

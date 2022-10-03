@@ -57,8 +57,9 @@ async def coghelper(ctx, cog, ignore_subcommands=True):
             if cmd_dict:
                 paginator.add_command_field(cmd_dict)
         except Exception as e:
-            print(e)
-            print("Help failed for command: ", cmd)
+            logger = ctx.bot.logger.getChild("helpformat")
+            logger.exception(e)
+            logger.error("Help failed for command: ", cmd)
     paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 

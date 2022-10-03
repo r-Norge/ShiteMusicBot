@@ -1,6 +1,7 @@
 # Discord Packages
 from lavalink import AudioTrack
 
+import logging
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
@@ -28,6 +29,8 @@ class MixQueue:
         self._history = deque(maxlen=11)  # 10 + current
         self.looping = False
         self.loop_offset = 0
+        self.logger = logging.getLogger("musicbot").getChild("Queue")
+        self.logger = self.logger.getChild("Queue")
 
     def __str__(self):
         tmp = ''
@@ -91,9 +94,9 @@ class MixQueue:
                     self._history.append(next_track)
                     return next_track
                 except IndexError as e:
-                    print(e)
-                    print(self.loop_offset)
-                    print(len(self))
+                    self.logger.error(e)
+                    self.logger.error(self.loop_offset)
+                    self.logger.error(len(self))
                     self.loop_offset = min(self.loop_offset, len(self)-1)
             else:
                 next_track = self.queues[self.first_queue].pop(0)
