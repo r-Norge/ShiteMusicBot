@@ -65,7 +65,9 @@ class MixPlayer(DefaultPlayer):
         self.queue.shuffle_user_queue(requester)
 
     def user_queue(self, user: int, dual: bool = False):
-        return self.queue.get_user_queue(user, dual)
+        if dual:
+            return self.queue.get_user_queue_with_index(user)
+        return self.queue.get_user_queue(user)
 
     def global_queue(self):
         return self.queue.get_queue()
