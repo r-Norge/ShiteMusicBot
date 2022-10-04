@@ -4,11 +4,13 @@ from discord.ext import commands, tasks
 from lavalink.events import (
     NodeChangedEvent, NodeConnectedEvent, NodeDisconnectedEvent, PlayerUpdateEvent, QueueEndEvent, TrackEndEvent,
     TrackStartEvent, TrackStuckEvent)
+from lavalink.models import AudioTrack
 
 import asyncio
 import json
 import re
 import urllib
+from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -32,8 +34,7 @@ class Music(commands.Cog):
 
         self.bot = bot
         self.leave_timer.start()
-        self.logger = self.bot.main_logger.bot_logger.getChild("Errors")
-        bot.lavalink.add_event_hook(self.track_hook)
+        self.bot.lavalink.add_event_hook(self.track_hook)
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -279,12 +280,12 @@ class Music(commands.Cog):
         player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         # We create a new selector for each selection
-        def move_selector(ctx, queue, title, first: bool):
+        def move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
             async def return_track(track):
                 return track
 
             choices = []
-            for index, (track, _) in enumerate(queue, start=1):
+            for index, track in enumerate(queue, start=1):
                 blank = " " * 6
                 if first:
                     prefix = f'`{blank}`\n`{index:<6}`'
@@ -301,7 +302,7 @@ class Music(commands.Cog):
         page = 0
         while True:
             # Prompt the user for which track to move
-            selector = move_selector(ctx, player.user_queue(ctx.author.id, dual=True), "{moved.choose_pos}", True)
+            selector = move_selector(ctx, player.user_queue(ctx.author.id), "{moved.choose_pos}", True)
             message, track_to_move = await selector.start_scrolling(ClearOn.Timeout, message, page)
             page = selector.page_number
 
@@ -309,7 +310,7 @@ class Music(commands.Cog):
                 break
 
             # Prompt the user for where to move it
-            selector = move_selector(ctx, player.user_queue(ctx.author.id, dual=True), "{moved.choose_song}", False)
+            selector = move_selector(ctx, player.user_queue(ctx.author.id), "{moved.choose_song}", False)
             message, track_to_replace = await selector.start_scrolling(ClearOn.Timeout, message, page)
             page = selector.page_number
 
@@ -320,11 +321,10 @@ class Music(commands.Cog):
             # one in the queue. Find the index of both songs in the current queue
 
             # Keep updating the user queue in case it changes while the user is selecting songs
-            user_queue = player.user_queue(ctx.author.id, dual=True)
-            user_queue_identifiers = [track for (track, _) in user_queue]
+            user_queue = player.user_queue(ctx.author.id)
             try:
-                pos_initial = user_queue_identifiers.index(track_to_move[0])
-                pos_final = user_queue_identifiers.index(track_to_replace[0])
+                pos_initial = user_queue.index(track_to_move[0])
+                pos_final = user_queue.index(track_to_replace[0])
                 player.move_user_track(ctx.author.id, pos_initial, pos_final)
             except ValueError:
                 # Track not found in queue. Queue could have changed during selection
@@ -340,7 +340,7 @@ class Music(commands.Cog):
     async def _remove(self, ctx):
         player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        user_queue = player.user_queue(ctx.author.id, dual=True)
+        user_queue: List[AudioTrack] = player.user_queue(ctx.author.id)
 
         tracks_to_remove = []
 
@@ -363,7 +363,7 @@ class Music(commands.Cog):
             return inner
 
         selector_buttons = []
-        for index, (track, _) in enumerate(user_queue, start=1):
+        for index, track in enumerate(user_queue, start=1):
             selector_buttons.append(
                 SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
                              add_change_button_color(update_remove_list, tracks_to_remove, track)))
@@ -377,13 +377,18 @@ class Music(commands.Cog):
             paginator = TextPaginator(color=ctx.me.color, title="Removed")
 
             # If the user spent a long time selecting songs the queue might have changed
-            user_queue = player.user_queue(ctx.author.id, dual=False)
+            user_queue = player.user_queue(ctx.author.id)
             track_indexes_to_remove = [i for i, track in enumerate(user_queue) if track in tracks_to_remove]
 
             # Sort in reverse order since songs shift index when deleting
+            tracks_removed = []
             for track in sorted(track_indexes_to_remove, reverse=True):
                 if removed_track := player.remove_user_track(ctx.author.id, track):
-                    paginator.add_line(f"{removed_track.title}")
+                    tracks_removed.append(f"{removed_track.title}")
+
+            # We want to display the removed tracks in the original queue order, so reverse the list once again
+            for removed in reversed(tracks_removed):
+                paginator.add_line(removed)
 
             paginator.close_page()
             scroller = Scroller(ctx, paginator)
