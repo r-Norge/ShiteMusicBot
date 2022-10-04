@@ -4,7 +4,7 @@ from __future__ import annotations
 import discord
 
 from enum import Enum, auto
-from typing import Callable, Coroutine, List, Union
+from typing import Callable, Coroutine, List, Optional
 
 from .paginators import TextPaginator
 from .scroller import ClearOn, Scroller
@@ -117,7 +117,7 @@ class Selector(TextPaginator, Scroller):
             self.currently_visible_buttons.append(button)
 
     async def start_scrolling(self, clear_mode: ClearOn = ClearOn.Timeout,
-                              message: Union[discord.Message, None] = None,
+                              message: Optional[discord.Message] = None,
                               start_page: int = 0):
         message = await super().start_scrolling(clear_mode, message, start_page)
         return message, self.callback_results

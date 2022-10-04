@@ -5,7 +5,7 @@ import discord
 
 import asyncio
 from enum import Flag, auto
-from typing import List, Union
+from typing import List, Optional
 
 from .paginators import BasePaginator, CantScrollException
 
@@ -44,7 +44,7 @@ class Scroller:
 
         self.bot = ctx.bot
         self.channel = ctx.channel
-        self.message: Union[discord.Message, None] = None
+        self.message: Optional[discord.Message] = None
 
         # Initialize the view we'll be using for scrolling
         self.view = discord.ui.View(timeout=timeout)
@@ -89,7 +89,7 @@ class Scroller:
             raise CantScrollException('Bot cannot send messages.')
 
     async def start_scrolling(self, clear_mode: ClearOn,
-                              message: Union[discord.Message, None] = None,
+                              message: Optional[discord.Message] = None,
                               start_page: int = 0) -> discord.Message:
         self.clear_mode = clear_mode
         self.page_number = start_page

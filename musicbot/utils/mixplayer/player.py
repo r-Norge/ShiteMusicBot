@@ -5,8 +5,7 @@ from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 from lavalink.filters import Equalizer, Timescale
 
-import typing
-from typing import Union
+from typing import Dict, List, Optional, Set, Tuple
 
 from .mixqueue import MixQueue
 
@@ -15,13 +14,13 @@ class MixPlayer(DefaultPlayer):
     def __init__(self, guild_id: int, node: Node):
         super().__init__(guild_id, node)
 
-        self.queue: MixQueue = MixQueue()
+        self.queue: MixQueue[AudioTrack] = MixQueue()
 
-        self.listeners = set()
-        self.voteables = {}
-        self.skip_voters = set()
-        self.boosted = False
-        self.nightcore_enabled = False
+        self.listeners: Set[int] = set()
+        self.voteables: Dict[int, Set[int]] = {}
+        self.skip_voters: Set[int] = set()
+        self.boosted: bool = False
+        self.nightcore_enabled: bool = False
         bands = [
             (0, 0.15),
             (1, 0.15),
@@ -31,17 +30,17 @@ class MixPlayer(DefaultPlayer):
             (5, -0.1),
             (6, -0.05)
         ]
-        self.bass_boost_filter = Equalizer()
+        self.bass_boost_filter: lavalink.Filter = Equalizer()
         self.bass_boost_filter.update(bands=bands)
 
-        self.nightcore_filter = Timescale()
+        self.nightcore_filter: lavalink.Filter = Timescale()
         self.nightcore_filter.update(speed=1.25, pitch=1.25)
 
-    def add(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
+    def add(self, requester: int, track: AudioTrack, pos: Optional[int] = None) -> Tuple[AudioTrack, int, int]:
         """ Adds a track to the queue. """
         return self.queue.add_track(requester, track, pos)
 
-    def add_next(self, requester: int, track: typing.Union[dict, AudioTrack], pos: int = None):
+    def add_priority(self, track: AudioTrack):
         """ Adds a track to beginning of the queue """
         self.queue.add_next_track(track)
 
@@ -52,11 +51,11 @@ class MixPlayer(DefaultPlayer):
     def remove_user_queue(self, requester: int):
         self.queue.remove_user_queue(requester)
 
-    def remove_user_track(self, requester: int, pos: int) -> Union[None, AudioTrack]:
+    def remove_user_track(self, requester: int, pos: int) -> Optional[AudioTrack]:
         """ Removes the song at <pos> from the queue of requester """
         return self.queue.remove_user_track(requester, pos)
 
-    def remove_global_track(self, pos: int):
+    def remove_global_track(self, pos: int) -> Optional[AudioTrack]:
         """ Removes the song at <pos> in the global queue """
         return self.queue.remove_global_track(pos)
 
@@ -64,18 +63,20 @@ class MixPlayer(DefaultPlayer):
         """ Randomly reorders the queue of requester """
         self.queue.shuffle_user_queue(requester)
 
-    def user_queue(self, user: int, dual: bool = False):
-        if dual:
-            return self.queue.get_user_queue_with_index(user)
+    def user_queue(self, user: int) -> List[AudioTrack]:
         return self.queue.get_user_queue(user)
 
-    def global_queue(self):
+    def user_queue_with_global_index(self, user: int) -> List[Tuple[AudioTrack, int]]:
+        return self.queue.get_user_queue_with_index(user)
+
+    def global_queue(self) -> List[AudioTrack]:
         return self.queue.get_queue()
 
-    def get_history(self):
+    def get_history(self) -> List[AudioTrack]:
         return self.queue.history
 
-    def queue_duration(self, include_current: bool = False, member: discord.Member = None, end_pos: int = None):
+    def queue_duration(self, include_current: bool = False,
+                       member: Optional[discord.Member] = None, end_pos: Optional[int] = None):
         duration = 0
         queue = self.user_queue(member.id) if member else self.queue
 
@@ -84,14 +85,13 @@ class MixPlayer(DefaultPlayer):
                 break
             duration += int(track.duration)
 
-        remaining = self.current.duration - self.position
         if include_current:
             if self.current:
-                remaining = self.current.duration - self.position
+                remaining = self.current.duration - int(self.position)
                 return lavalink.utils.format_time(duration + remaining)
         return lavalink.utils.format_time(duration)
 
-    async def play(self, track: AudioTrack = None, start_time: int = 0):
+    async def play(self, track: Optional[AudioTrack] = None, start_time: int = 0):
 
         self.current = None
         self.last_update = 0
@@ -107,10 +107,12 @@ class MixPlayer(DefaultPlayer):
                 await self.node._dispatch_event(QueueEndEvent(self))
                 return
             else:
+                # At this point track will not be None, as the queue is not empty
                 track = self.queue.pop_first()
 
         self.current = track
-        if track.track is None:
+        if track is None or track.track is None:
+            # Ignore, if the queue was empty we would have dispatched the event already
             return
         await self.node._send(op='play', guildId=str(self.guild_id),
                               track=track.track, startTime=start_time)
@@ -131,7 +133,7 @@ class MixPlayer(DefaultPlayer):
         self.clear_votes()
 
     def update_listeners(self, member, voice_state):
-        if self.is_connected:
+        if self.channel_id is not None:
             vc = int(self.channel_id)
             if voice_state.channel is None or voice_state.channel.id != vc:
                 self.listeners.discard(member)
@@ -153,7 +155,7 @@ class MixPlayer(DefaultPlayer):
             self.voteables[category].add(member)
 
     def remove_member_votes(self, member):
-        for category, votes in self.voteables.items():
+        for _, votes in self.voteables.items():
             votes.discard(member)
 
     def get_voters(self, category):
@@ -162,7 +164,7 @@ class MixPlayer(DefaultPlayer):
         return self.voteables[category]
 
     def clear_votes(self):
-        for category, votes in self.voteables.items():
+        for _, votes in self.voteables.items():
             votes.clear()
 
     def enable_looping(self, looping):
@@ -179,7 +181,7 @@ class MixPlayer(DefaultPlayer):
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             self.skip_voters.clear()
-            for category, votes in self.voteables.items():
+            for _, votes in self.voteables.items():
                 votes.clear()
             await self.play()
 

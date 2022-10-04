@@ -2,7 +2,7 @@ import logging
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
-from typing import Generic, Iterable, Iterator, List, Tuple, TypeVar, Union
+from typing import Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar
 
 # Would like to ensure the T has a "requester" attribute, but don't know if that is possible
 T = TypeVar('T')
@@ -80,7 +80,7 @@ class MixQueue(Generic[T]):
         combined = zip(queue, pos)
         return list(combined)
 
-    def pop_first(self) -> Union[T, None]:
+    def pop_first(self) -> Optional[T]:
         if self.priority_queue:
             next_track = self.priority_queue.pop(0)
             self._history.append(next_track)
@@ -110,7 +110,7 @@ class MixQueue(Generic[T]):
         except KeyError:
             pass
 
-    def add_track(self, requester: int, track: T, pos: Union[int, None] = None) -> Tuple[T, int, int]:
+    def add_track(self, requester: int, track: T, pos: Optional[int] = None) -> Tuple[T, int, int]:
         user_queue = self.queues.get(requester)
         if user_queue is None:
             self.queues[requester] = [track]
@@ -138,7 +138,7 @@ class MixQueue(Generic[T]):
             else:
                 self.queues.pop(requester)
 
-    def remove_user_track(self, requester: int, pos: int) -> Union[None, T]:
+    def remove_user_track(self, requester: int, pos: int) -> Optional[T]:
         user_queue = self.queues.get(requester)
         if user_queue is not None:
             if pos < len(user_queue):
@@ -149,7 +149,7 @@ class MixQueue(Generic[T]):
                 self._clear_empty()
                 return track
 
-    def remove_global_track(self, pos: int) -> Union[T, None]:
+    def remove_global_track(self, pos: int) -> Optional[T]:
         # Get the actual index of the song
         index = list(self).index(self.get_queue()[pos])
 
@@ -217,7 +217,7 @@ class MixQueue(Generic[T]):
                     globpos += 1
         return globpos
 
-    def _glob_to_loc(self, pos: int) -> Tuple[Union[T, None], Union[int, None]]:
+    def _glob_to_loc(self, pos: int) -> Tuple[Optional[T], Optional[int]]:
         try:
             song = next(islice(self, pos, pos + 1))
         except (ValueError, StopIteration):
@@ -234,7 +234,7 @@ class MixQueue(Generic[T]):
         return None, None
 
     @property
-    def first_queue(self) -> Union[int, None]:
+    def first_queue(self) -> Optional[int]:
         try:
             return list(self.queues.keys())[0]
         except IndexError:
