@@ -78,6 +78,10 @@ boost:
   aliases:        [bassforsterker, forsterkbass]
   args:           ''
   description:    'Skrur av/på bassforsterkeren'
+nightcore:
+  aliases:        [natt, nattkjernemodus, natteravn]
+  args:           <True/False>
+  description:    'Skrur av/på nattkjernemodus'
 history:
   aliases:        [historikk, avspillingshistorikk, h]
   description:    'Viser en liste over de 10 siste avspilte sangene.'
@@ -88,6 +92,12 @@ lyrics:
 scrub:
   aliases:        [kontroller]
   description:    'Gir deg en kontroller som du kan styre musikken med.'
+reconnect:
+  aliases:        [rc]
+  description:    'Kobler båtten av, så på'
+forcedisconnect:
+  aliases:        [fd]
+  description:    'Tvinger båtten til å koble av'
 forceplay:
   aliases:        [tvingspill, ts]
   args:           '<sang>'   # This is just a cosmetic representation of the arguments.
@@ -115,7 +125,7 @@ uptime:
   description:     'Viser hvor lenge båtten har kjørt.'
 ping:
   aliases:        [ping]
-  description:    'Sjekker responstiden til båtten.'        
+  description:    'Sjekker responstiden til båtten.'
 guilds:
   aliases:        [tenarar]
   description:    'Sender en liste over tenarane som båtten er medlem av'
@@ -125,6 +135,24 @@ reloadlocale:
 reloadalias:
   aliases:        [reloadalias]
   description:    'Laster inn aliaser og hjelp på nytt.'
+
+# NodeManager
+node:
+  aliases: [node]
+  description:      'Håndterer noder for serveren.'
+  sub_commands:
+    add:
+      aliases:      [ny]
+      description:  'Legger til en ny node.'
+    list:
+      aliases:      [liste, noder]
+      description:  'Lister noder.'
+    remove:
+      aliases:      [fjern]
+      description:  'Fjerner noder.'
+    reload_file:
+      aliases:      [last_fil]
+      description:  'Leser innstillingsfilen og legger til nye noder.'
 
 # Settings
 settings:
@@ -201,3 +229,4 @@ cogmanager:
     shutdown:
       aliases:          [shutdown]
       description:      'Stopper båtten.'
+      
