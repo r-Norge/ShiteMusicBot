@@ -30,7 +30,7 @@ Each user has their own queue and the bot mixes them together for fair time shar
 - Python 3.10 or greater
 - A [lavalink](https://github.com/Freyacodes/Lavalink) server
 
-### Setup
+## Setup
 
 1. Change or copy data/config.yaml.example to config.yaml
     - If using docker, the config file will be moved into `/data` on the first run.
@@ -69,7 +69,7 @@ Each user has their own queue and the bot mixes them together for fair time shar
         - `docker compose run -d`
 6. Make sure the bot responds, by invoking the info command. `@ShiteMusicBot info`, substitute `ShiteMusicBot` with the name of your bot.
 
-#### Docker Compose Example
+### Docker Compose Example
 
 #### Self-hosted lavalink
 
