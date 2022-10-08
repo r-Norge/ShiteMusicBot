@@ -2,7 +2,9 @@
 from discord.ext import commands
 
 from typing import Optional
+
 from .localizer.localizerwrapper import LocalizerWrapper
+
 
 class LocalizedContext(commands.Context):
     def __init__(self, **kwargs):

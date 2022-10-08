@@ -89,8 +89,3 @@ class TestDictMapper():
                    }
                }
         assert d == expected
-
-
-@patch
-class TestSettingsManager:
-    def test_
