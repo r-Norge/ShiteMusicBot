@@ -24,6 +24,16 @@ jobs:
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4.2.0
+        with:
+          python-version: 3.10.7
+
       - name: Run tests
         run: |
           pip install pytest
