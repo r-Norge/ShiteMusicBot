@@ -1,67 +1,111 @@
+# Shite Music Bot
+
 A discord music bot you can host yourself!
 
 ## Features
 
 - Round Robin style queue, you won't have to wait forever for your songs to play.
 - Interactive menus
-- Translations, get the bot in your preferred langauge! Works for both commands and replies.
+- Translations, get the bot in your preferred language! Works for both commands and replies.
 - Noice per server customization options, including per server localization.
 - Toit embeds.
-- DJ roles
+- DJ roles. Grants members in the role some more control over the queue.
+- Sound-manipulation features, bass boost and nightcore.
 - Lyrics command that sometimes gives the correct lyrics
 
-##### Fair queue behavior
+### Fair queue behavior
+
 Each user has their own queue and the bot mixes them together for fair time sharing.
-![Round robin queue](https://i.imgur.com/Zmgd7gn.gif)
 
+![Round robin queue](.github/assets/mixqueue.gif)
 
-##### Interactive menus
-![a](https://i.imgur.com/N0Dnnw6.png)
-![b](https://i.imgur.com/DtibGuO.png)
+### Interactive menus
 
+![a](.github/assets/queue.png)
 
-### Requirements
+![b](.github/assets/search.png)
+
+## Requirements
+
 - Python 3.10 or greater
+- A [lavalink](https://github.com/Freyacodes/Lavalink) server
 
 ### Setup
 
 1. Change or copy data/config.yaml.example to config.yaml
-2. Create or find a [lavalink](https://github.com/Freyacodes/Lavalink) server you can use.
-3. Add your bot token and lavalink server to the bot settings in your config.yaml.
-4. Edit any other settings you want.
-5. (Optional but recommended) Create a virtual environment and activate it.
-6. install requirements `python -m pip install -r requirements.txt`
-7. run the bot `python bot.py` :)
+    - If using docker, the config file will be moved into `/data` on the first run.
+2. Configure Lavalink
+    - When self-hosting:
+        - Get a `application.yml` file from your lavalink distribution, to provide lavalink.
+        - Secure the instance by changing the password.
+        - This bot is written with the Youtube, Soundcloud, Bandcamp and Vimeo source in mind. Others might work
+    - Self-hosted and hosted:
+        - Configure the bot to connect to your nodes.
+        - If you wish to pre-seed the bot with lavalink nodes, you can do so in `data/config.yml`
 
-### Docker
+          ```yml
+          lavalink nodes:
+            - host: localhost
+              port: 2333
+              password: youshallnotpass
+              region: eu
+              name: main
+          ```
 
-#### Compose Example
+3. Add your bot token `config.yaml`.
+4. Prepare your environment:
+    - Native install:
+        - (Recommended) Create a virtual environment and activate it.
+            - `python3 -m pip venv .venv && . .venv/bin/activate`
+        - Install requirements `python3 -m pip install -r requirements.txt`
+    - Docker Compose:
+        - Copy the example that fits your needs
+        - Change the volume path(s) to store persistent data on your host.
+        - `docker compose pull`
+5. Run the bot:
+    - Native install:
+        - `python3 bot.py`
+    - Docker Compose:
+        - `docker compose run -d`
+6. Make sure the bot responds, by invoking the info command. `@ShiteMusicBot info`, substitute `ShiteMusicBot` with the name of your bot.
 
-````yaml
+#### Docker Compose Example
+
+#### Self-hosted lavalink
+
+```yaml
 version: '3'
 networks:
   internal:
     driver: bridge
 
 services:
-    backbone:
+    lavalink:
         hostname: lavalink
         image: fredboat/lavalink:dev
-        ports:
-        - 2333:2333
         networks:
-            internal:
-                aliases:
-                  - lavalink
+          - internal
         volumes:
-          - /compose/BottStack/lavalink/application.yml:/opt/Lavalink/application.yml
+          - ./application.yml:/opt/Lavalink/application.yml
     bot:
-        container_name: ProdMaster
+        container_name: ShiteMusicBot
         image: rnorge/music
         networks:
           - internal
         command: python3 bot.py
         volumes:
-          - /compose/BottStack/ProdBetaMaster/script:/diks
-          - /compose/BottStack/ProdBetaMaster/data:/app/data
-````
+          - ./data:/app/data
+```
+
+#### Hosted lavalink
+
+```yaml
+version: '3'
+services:
+    bot:
+        container_name: ShiteMusicBot
+        image: rnorge/music
+        command: python3 bot.py
+        volumes:
+          - ./data:/app/data
+```
