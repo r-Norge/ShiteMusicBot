@@ -1,16 +1,24 @@
-# Shite Music Bot
-A discord music bot you can self host
-
+A discord music bot you can host yourself!
 
 ## Features
 
-- Translations, get the bot in your preferred langauge! Works for both commands and replies.
 - Round Robin style queue, you won't have to wait forever for your songs to play.
-- Nice interactive menus
+- Interactive menus
+- Translations, get the bot in your preferred langauge! Works for both commands and replies.
 - Noice per server customization options, including per server localization.
 - Toit embeds.
 - DJ roles
 - Lyrics command that sometimes gives the correct lyrics
+
+##### Fair queue behavior
+Each user has their own queue and the bot mixes them together for fair time sharing.
+![Round robin queue](https://i.imgur.com/Zmgd7gn.gif)
+
+
+##### Interactive menus
+![a](https://i.imgur.com/N0Dnnw6.png)
+![b](https://i.imgur.com/DtibGuO.png)
+
 
 ### Requirements
 - Python 3.10 or greater
