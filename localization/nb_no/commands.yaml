@@ -146,7 +146,7 @@ node:
       description:  'Legger til en ny node.'
     list:
       aliases:      [liste, noder]
-      description:  'Lister noder.'
+      description:  'Viser en liste over konfigurerte noder.'
     remove:
       aliases:      [fjern]
       description:  'Fjerner noder.'
