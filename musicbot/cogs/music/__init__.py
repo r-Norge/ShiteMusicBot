@@ -16,7 +16,8 @@ from bs4 import BeautifulSoup
 
 # Bot Utilities
 from musicbot.utils.mixplayer.player import MixPlayer
-from ...utils import checks, thumbnailer, timeformatter
+from ...utils import checks, timeformatter
+from ...utils.thumbnailer import Thumbnailer
 from ...utils.userinteraction.paginators import QueuePaginator, TextPaginator
 from ...utils.userinteraction.scroller import ClearOn, Scroller
 from ...utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
@@ -32,7 +33,8 @@ class Music(commands.Cog):
         self.bot = bot
         self.logger = self.bot.main_logger.bot_logger.getChild("Music")
 
-        self.bot = bot
+        self.thumbnailer = Thumbnailer(bot=self.bot)
+
         self.leave_timer.start()
         self.bot.lavalink.add_event_hook(self.track_hook)
 
@@ -64,7 +66,7 @@ class Music(commands.Cog):
                                                              _max=timeformatter.format_ms(maxlength))
                 return embed, False
 
-        track.extra["thumbnail_url"] = await thumbnailer.ThumbNailer.identify(self, track.identifier, track.uri)
+        track.extra["thumbnail_url"] = await self.thumbnailer.identify(track.identifier, track.uri)
         track.requester = ctx.author.id
 
         # Add to player
@@ -682,7 +684,7 @@ class Music(commands.Cog):
 
         try:
             url = 'https://api.genius.com/search?' + urllib.parse.urlencode(
-                    {'access_token': genius_access_token, 'q': query})
+                {'access_token': genius_access_token, 'q': query})
             result = await get_site_content(url)
             response = json.loads(result)
             song_id = response['response']['hits'][0]['result']['id']
