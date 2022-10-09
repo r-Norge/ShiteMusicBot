@@ -1,14 +1,16 @@
 # Discord Packages
 from discord.ext import commands
 
+from bot import MusicBot
+
 from ...utils.userinteraction.scroller import ClearOn, Scroller
 from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
 
 
 class Help(commands.Cog):
     """Help command"""
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
 
     @commands.command(hidden=True)
     async def help(self, ctx):  # Takes no args because reasons(using the view directly)

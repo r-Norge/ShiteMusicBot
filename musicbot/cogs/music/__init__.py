@@ -1,5 +1,7 @@
 # Discord Packages
 import discord
+import lavalink
+from discord import VoiceChannel
 from discord.ext import commands, tasks
 from lavalink.events import (
     NodeChangedEvent, NodeConnectedEvent, NodeDisconnectedEvent, PlayerUpdateEvent, QueueEndEvent, TrackEndEvent,
@@ -14,6 +16,8 @@ from typing import List, Optional
 
 from bs4 import BeautifulSoup
 
+from bot import MusicBot
+
 # Bot Utilities
 from musicbot.utils.mixplayer.player import MixPlayer
 from ...utils import checks, timeformatter
@@ -21,22 +25,26 @@ from ...utils.thumbnailer import Thumbnailer
 from ...utils.userinteraction.paginators import QueuePaginator, TextPaginator
 from ...utils.userinteraction.scroller import ClearOn, Scroller
 from ...utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
-from .decorators import BasicVoiceClient, require_playing, require_queue, require_voice_connection, voteable
-from .music_errors import WrongTextChannelError
+from .decorators import require_playing, require_queue, require_voice_connection, voteable
+from .music_errors import MusicError, WrongTextChannelError
+from .voice_client import BasicVoiceClient
 
 time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 
 
 class Music(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.logger = self.bot.main_logger.bot_logger.getChild("Music")
 
         self.thumbnailer = Thumbnailer(bot=self.bot)
 
         self.leave_timer.start()
-        self.bot.lavalink.add_event_hook(self.track_hook)
+        if self.bot.lavalink is None:
+            raise MusicError("Lavalink is not yet initialized")
+        self.lavalink: lavalink.Client = self.bot.lavalink
+        self.lavalink.add_event_hook(self.track_hook)
 
     async def cog_check(self, ctx):
         if not ctx.guild:
@@ -50,10 +58,17 @@ class Music(commands.Cog):
         """ Ensures a valid player exists whenever a command is run """
         # Creates a new only if one doesn't exist, ensures a valid player for all checks.
         if ctx.guild:
-            self.bot.lavalink.player_manager.create(ctx.guild.id)
+            self.lavalink.player_manager.create(ctx.guild.id)
+
+    def get_player(self, guild: discord.Guild) -> MixPlayer:
+        player: Optional[MixPlayer] = self.lavalink.player_manager.get(guild.id)
+        if player is None:
+            self.logger.error(f"Tried to get player for guild {guild.id} but got None")
+            raise MusicError(f"Tried to get player for guild {guild.id} but got None")
+        return player
 
     async def enqueue(self, ctx, track, embed, silent=False, check_max_length=True) -> tuple[discord.Embed, bool]:
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         # Only add tracks that don't exceed the max track length
         if maxlength := self.max_track_length(ctx.guild, player):
@@ -96,7 +111,7 @@ class Music(commands.Cog):
         return embed, True
 
     def get_current_song_embed(self, ctx, include_time=False):
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         if not player.current:
             return
@@ -138,7 +153,7 @@ class Music(commands.Cog):
     async def _play(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
         self.logger.debug("Query: %s" % query)
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         query = query.strip('<>')
 
         if not url_rx.match(query):
@@ -176,7 +191,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     async def _seek(self, ctx, *, time: str):
         """ Seeks to a given position in a track. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         if seconds := time_rx.search(time):
             # Convert to milliseconds, include sign
             milliseconds = int(seconds.group())*1000 * (-1 if time.startswith('-1') else 1)
@@ -194,7 +209,7 @@ class Music(commands.Cog):
     @voteable(requester_override=True, react_to_vote=True)
     async def _skip(self, ctx):
         """ Skips the current track. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         await player.skip()
         embed = self.get_current_song_embed(ctx)
@@ -205,7 +220,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     async def _skip_to(self, ctx, pos: int = 1):
         """ Plays the queue from a specific point. Disregards tracks before the pos. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         # TODO: Do all queue out of range messages the same way
         if pos < 1:
@@ -227,7 +242,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _stop(self, ctx):
         """ Stops the player and clears its queue. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         player.queue.clear()
         await player.stop()
 
@@ -245,7 +260,7 @@ class Music(commands.Cog):
     @require_queue(require_member_queue=True)
     async def _queue(self, ctx, *, member: Optional[discord.Member] = None):
         """ Shows the player's queue. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         pagified_queue = QueuePaginator(ctx.localizer, player, color=ctx.me.color, member=member)
         scroller = Scroller(ctx, pagified_queue)
         await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
@@ -262,7 +277,7 @@ class Music(commands.Cog):
     @require_playing()
     async def _pause(self, ctx):
         """ Pauses/Resumes the current track. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         await player.set_pause(not player.paused)
         if player.paused:
             await ctx.send(ctx.localizer.format_str("{resume.paused}"))
@@ -274,7 +289,7 @@ class Music(commands.Cog):
     @require_queue(require_author_queue=True)
     async def _shuffle(self, ctx):
         """ Shuffles your queue. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         player.shuffle_user_queue(ctx.author)
         await ctx.send(ctx.localizer.format_str("{shuffle}"))
 
@@ -283,7 +298,7 @@ class Music(commands.Cog):
     @require_queue(require_author_queue=True)
     async def _move(self, ctx):
         """ Moves a song in your queue. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         # We create a new selector for each selection
         def move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
@@ -344,7 +359,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue(require_author_queue=True)
     async def _remove(self, ctx):
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         user_queue: List[AudioTrack] = player.user_queue(ctx.author)
 
@@ -406,7 +421,7 @@ class Music(commands.Cog):
     @require_queue()
     async def _djremove(self, ctx, pos: int, member: Optional[discord.Member] = None):
         """ Remove a song from either the global queue or a users queue"""
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         # TODO: add way to allow "member" as regular arg in require_queue() instead of only kwargs
         queue = player.user_queue(member) if member else player.queue
@@ -419,11 +434,13 @@ class Music(commands.Cog):
                 removed = player.remove_user_track(member, pos - 1)
 
             if removed:
-                requester = self.bot.get_user(removed.requester)
-                await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title,
-                                                        _user=requester.display_name))
+                if requester := self.bot.get_user(removed.requester):
+                    await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title,
+                                                            _user=requester.display_name))
+                else:
+                    self.logger.error(f"Did not get a valid user for track requester {removed.requester}")
             else:
-                self.logger.error("Did not remove a track when trying to remove index {pos}, despite bounds check")
+                self.logger.error(f"Did not remove a track when trying to remove index {pos}, despite bounds check")
         else:
             await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(queue)))
 
@@ -433,7 +450,7 @@ class Music(commands.Cog):
     @require_queue(require_member_queue=True)
     async def _user_queue_remove(self, ctx, *, member: discord.Member):
         """ Remove a song from either the global queue or a users queue"""
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         player.remove_user_queue(member)
 
         embed = discord.Embed(description="{dj_remove_user}", color=ctx.me.color)
@@ -444,7 +461,7 @@ class Music(commands.Cog):
     @commands.command(name='search')
     @require_voice_connection(should_connect=True)
     async def _search(self, ctx, *, query):
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         self.logger.debug("Query: %s" % query)
         if not query.startswith('ytsearch:') and not query.startswith('scsearch:'):
@@ -487,7 +504,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         player.queue.clear()
         await player.stop()
@@ -501,7 +518,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _reconnect(self, ctx):
         """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         current_channel = player.channel_id
 
         async def recon():
@@ -526,7 +543,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     async def _volume(self, ctx, volume: Optional[int] = None):
         """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         if not volume:
             return await ctx.send(f'🔈 | {player.volume}%')
@@ -547,7 +564,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _forceplay(self, ctx, *, query: str):
         """ Searches and plays a song from a given query. """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         query = query.strip('<>')
 
         if not url_rx.match(query):
@@ -584,7 +601,7 @@ class Music(commands.Cog):
     async def _forcedisconnect(self, ctx):
         """ Attempts to force disconnect the bot without checking if it is connected initially. """
         try:
-            player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+            player = self.get_player(ctx.guild)
             player.queue.clear()
             await player.stop()
         except Exception as e:
@@ -600,7 +617,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     async def _normalize(self, ctx):
         """ Reset the equalizer and volume """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         await player.set_volume(100)
         await player.bassboost(False)
@@ -613,7 +630,7 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True)
     async def _boost(self, ctx, boost: bool = False):
         """ Set the equalizer to bass boost the music """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         if boost is not None:
             await player.bassboost(boost)
@@ -628,7 +645,7 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True)
     async def _nightcore(self, ctx, boost: bool = False):
         """ Set a filter mimicking nightcore the music """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         await player.nightcoreify(boost)
 
@@ -640,7 +657,7 @@ class Music(commands.Cog):
     @commands.command(name='history')
     async def _history(self, ctx):
         """ Show the last 10 songs played """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         history = player.get_history()
         if not history:
             embed = discord.Embed(description='{history.empty}', color=ctx.me.color)
@@ -667,7 +684,7 @@ class Music(commands.Cog):
     async def _lyrics(self, ctx, *query: str):
 
         # TODO:
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
 
         genius_access_token = self.bot.APIkeys.get('genius', None)
 
@@ -734,7 +751,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     async def _scrub(self, ctx):
         """ Shows a set of controls which can be used to skip forward or backwards in the song """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         controls = '{scrub.controls}'
 
         def seek_callback(player: MixPlayer, seconds):
@@ -766,7 +783,7 @@ class Music(commands.Cog):
     async def _loop(self, ctx):
         # This is done using subcommands to have separate vote counts for starting and stopping.
         if ctx.invoked_subcommand is None:
-            player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+            player = self.get_player(ctx.guild)
             embed = discord.Embed(color=ctx.me.color, title='Loop status')
 
             if player.looping:
@@ -780,7 +797,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _loop_start(self, ctx):
         """ Set the equalizer to bass boost the music """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         player.enable_looping(True)
         embed = discord.Embed(color=ctx.me.color)
         embed.description = 'Looping turned on'
@@ -792,7 +809,7 @@ class Music(commands.Cog):
     @voteable(DJ_override=True, react_to_vote=True)
     async def _loop_stop(self, ctx):
         """ Set the equalizer to bass boost the music """
-        player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.get_player(ctx.guild)
         player.enable_looping(False)
         embed = discord.Embed(color=ctx.me.color)
         embed.description = 'Looping turned off'
@@ -800,19 +817,21 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     async def cog_unload(self):
-        self.bot.lavalink._event_hooks.clear()
+        self.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
         if isinstance(event, TrackEndEvent):
-            channel = self.bot.get_channel(event.player.fetch('channel'))
-            player: MixPlayer = self.bot.lavalink.player_manager.get(channel.guild.id)
-            player.skip_voters.clear()
+            if channel := self.bot.get_channel(event.player.fetch('channel')):
+                if isinstance(channel, VoiceChannel):
+                    player = self.get_player(channel.guild)
+                    player.skip_voters.clear()
 
         if isinstance(event, TrackStartEvent):
             pass
         if isinstance(event, QueueEndEvent):
-            channel = self.bot.get_channel(event.player.fetch('channel'))
-            await self.check_leave_voice(channel.guild)
+            if channel := self.bot.get_channel(event.player.fetch('channel')):
+                if isinstance(channel, VoiceChannel):
+                    await self.check_leave_voice(channel.guild)
         if isinstance(event, PlayerUpdateEvent):
             pass
         if isinstance(event, NodeDisconnectedEvent):
@@ -827,16 +846,18 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, _: discord.VoiceState, after: discord.VoiceState):
         """ Updates listeners when the bot or a user changes voice state """
+        if self.bot.user is None:
+            return  # Bot not logged in
         if member.id == self.bot.user.id and after.channel is not None:
             voice_channel = after.channel
-            player: MixPlayer = self.bot.lavalink.player_manager.get(member.guild.id)
+            player = self.get_player(member.guild)
             player.clear_listeners()
             for member in voice_channel.members:
                 if not member.bot:
                     player.update_listeners(member, member.voice)
 
         if not member.bot:
-            player: MixPlayer = self.bot.lavalink.player_manager.get(member.guild.id)
+            player = self.get_player(member.guild)
             if player is not None:
                 player.update_listeners(member, after)
                 await self.check_leave_voice(member.guild)
@@ -844,7 +865,7 @@ class Music(commands.Cog):
     async def check_leave_voice(self, guild: discord.Guild):
         """ Checks if the bot should leave the voice channel """
         # TODO, disconnect timer?
-        player: MixPlayer = self.bot.lavalink.player_manager.get(guild.id)
+        player = self.get_player(guild)
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
                 await player.stop()
@@ -852,8 +873,9 @@ class Music(commands.Cog):
                     await voice_client.disconnect(force=False)
 
     async def leave_check(self):
-        for player_id in self.bot.lavalink.player_manager.players:
-            await self.check_leave_voice(self.bot.get_guild(player_id))
+        for player_id in self.lavalink.player_manager.players:
+            if guild := self.bot.get_guild(player_id):
+                await self.check_leave_voice(guild)
 
     @tasks.loop(seconds=10.0)
     async def leave_timer(self):

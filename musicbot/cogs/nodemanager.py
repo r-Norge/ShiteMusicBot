@@ -1,11 +1,14 @@
 # Discord Packages
 import discord
+import lavalink
 from discord.ext import commands
-from lavalink import Client, Node
 
 import codecs
 
 import yaml
+
+from bot import MusicBot
+from musicbot.cogs.music.music_errors import MusicError
 
 # Bot Utilities
 from musicbot.utils.settingsmanager import Settings
@@ -15,8 +18,8 @@ from .helpformatter import commandhelper
 
 
 class NodeManager(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.settings: Settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
@@ -25,8 +28,8 @@ class NodeManager(commands.Cog):
             'musicbot.cogs.music',
         ]
 
-        if not hasattr(self.bot, 'lavalink'):
-            self.bot.lavalink = Client(self.bot.user.id, player=MixPlayer)
+        if self.bot.lavalink is None and self.bot.user:
+            self.bot.lavalink = lavalink.Client(self.bot.user.id, player=MixPlayer)
 
             self.load_nodes_from_file()
 
@@ -38,6 +41,9 @@ class NodeManager(commands.Cog):
                     await self.bot.load_extension(extension)
                 except Exception:
                     self.logger.exception("Loading of extension %s failed" % extension)
+        else:
+            self.logger.error("Failed to initialize lavalink client")
+            raise MusicError("Failed to initialize lavalink client")
 
     def load_nodes_from_file(self):
         with codecs.open(f"{self.bot.datadir}/config.yaml", 'r', encoding='utf8') as f:
@@ -45,6 +51,9 @@ class NodeManager(commands.Cog):
 
             name_cache = []
             new_nodes = []
+
+            if self.bot.lavalink is None:
+                return new_nodes
 
             for node in self.bot.lavalink.node_manager.nodes:
                 name_cache.append(node.name)
@@ -93,7 +102,7 @@ class NodeManager(commands.Cog):
                 embed.add_field(name=f'{await self._regioner(n.region)} **Name:** {n.name}',
                                 value=f'**Host:** {n.host}\n **Port:** {n.port}')
 
-        if isinstance(node, Node):
+        if isinstance(node, lavalink.Node):
             embed.add_field(name=f'{await self._regioner(node.region)} **Name:** {node.name}',
                             value=f'**Host:** {node.host}\n **Port:** {node.port}')
 
