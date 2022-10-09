@@ -2,12 +2,12 @@ from time import perf_counter
 
 from bs4 import BeautifulSoup as bs4
 
-from bot import Bot
+from bot import MusicBot
 
 
 class Thumbnailer(object):
-    def __init__(self, bot: Bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.logger = self.bot.main_logger.bot_logger.getChild("Thumbnailer")
 
     async def get_html(self, url: str):
