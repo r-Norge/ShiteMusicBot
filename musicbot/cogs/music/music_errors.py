@@ -10,7 +10,7 @@ class MusicError(CommandError):
         super().__init__(message)
 
 
-class PlayerNotAvailable(MusicError):
+class PlayerNotAvailableError(MusicError):
     def __init__(self, message: str, inner_error: Optional[Exception] = None):
         super().__init__(message, inner_error=inner_error)
 
