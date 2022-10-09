@@ -3,13 +3,15 @@ from discord.ext import commands
 
 import traceback
 
+from bot import MusicBot
+
 from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
 class CogManager(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.settings = self.bot.settings
 
     @commands.group(name='cogmanager', hidden=True)

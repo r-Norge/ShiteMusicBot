@@ -7,6 +7,8 @@ import asyncio
 from enum import Flag, auto
 from typing import List, Optional
 
+from bot import MusicBot
+
 from .paginators import BasePaginator, CantScrollException
 
 
@@ -42,7 +44,7 @@ class Scroller:
         if not self.paginator.pages:
             raise Exception("Paginator contained no pages to display")  # TODO: proper error
 
-        self.bot = ctx.bot
+        self.bot: MusicBot = ctx.bot
         self.channel = ctx.channel
         self.message: Optional[discord.Message] = None
 

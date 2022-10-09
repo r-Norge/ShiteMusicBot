@@ -2,14 +2,16 @@
 import discord
 from discord.ext import commands
 
+from bot import MusicBot
+
 from ..utils import checks
 from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
 class Settings(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.settings = self.bot.settings
 
     def format_prefixes(self, prefixes):

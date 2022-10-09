@@ -6,12 +6,14 @@ from lavalink import __version__ as LavalinkVersion
 import platform
 import time
 
+from bot import MusicBot
+
 from ..utils import bot_version
 
 
 class Misc(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
 
     def get_uptime(self):
         now = time.time()
