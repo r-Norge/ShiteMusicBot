@@ -26,7 +26,7 @@ from ...utils.userinteraction.paginators import QueuePaginator, TextPaginator
 from ...utils.userinteraction.scroller import ClearOn, Scroller
 from ...utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
 from .decorators import require_playing, require_queue, require_voice_connection, voteable
-from .music_errors import MusicError, WrongTextChannelError
+from .music_errors import MusicError, PlayerNotAvailableError, WrongTextChannelError
 from .voice_client import BasicVoiceClient
 
 time_rx = re.compile('[0-9]+')
@@ -64,7 +64,7 @@ class Music(commands.Cog):
         player: Optional[MixPlayer] = self.lavalink.player_manager.get(guild.id)
         if player is None:
             self.logger.error(f"Tried to get player for guild {guild.id} but got None")
-            raise MusicError(f"Tried to get player for guild {guild.id} but got None")
+            raise PlayerNotAvailableError(f"Tried to get player for guild {guild.id} but got None")
         return player
 
     async def enqueue(self, ctx, track, embed, silent=False, check_max_length=True) -> tuple[discord.Embed, bool]:
@@ -850,17 +850,22 @@ class Music(commands.Cog):
             return  # Bot not logged in
         if member.id == self.bot.user.id and after.channel is not None:
             voice_channel = after.channel
-            player = self.get_player(member.guild)
+            try:
+                player = self.get_player(member.guild)
+            except PlayerNotAvailableError:  # This is expected if we have not created a player for the guild yet
+                return
             player.clear_listeners()
             for member in voice_channel.members:
                 if not member.bot:
                     player.update_listeners(member, member.voice)
 
         if not member.bot:
-            player = self.get_player(member.guild)
-            if player is not None:
-                player.update_listeners(member, after)
-                await self.check_leave_voice(member.guild)
+            try:
+                player = self.get_player(member.guild)
+            except PlayerNotAvailableError:  # This is expected if we have not created a player for the guild yet
+                return
+            player.update_listeners(member, after)
+            await self.check_leave_voice(member.guild)
 
     async def check_leave_voice(self, guild: discord.Guild):
         """ Checks if the bot should leave the voice channel """
