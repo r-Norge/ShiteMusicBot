@@ -47,16 +47,18 @@ class NodeManager(commands.Cog):
             for node in self.bot.lavalink.node_manager.nodes:
                 name_cache.append(node.name)
 
+            self.logger.debug("BEFORE")
             for node in conf['lavalink nodes'] + self.settings.get('lavalink', 'nodes', []):
                 if node['name'] in name_cache:
                     continue
-                name_cache.append(node['name'])
 
                 self.bot.lavalink.add_node(**node)
+
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
                     node['name'], node['host'],
                     node['port'], node['region'],))
                 new_nodes.append({**node})
+                name_cache.append(node['name'])
             return new_nodes
 
     async def _regioner(self, region):
@@ -163,7 +165,7 @@ class NodeManager(commands.Cog):
                 embed.title = 'Removed node from bot'
                 await ctx.send(embed=embed)
                 self.bot.lavalink.node_manager.remove_node(_node)
-                self.logger.info("Removed Lavalink node: %s" % _node.host)
+                self.logger.info("Removed Lavalink node: %s, %s" % (_node.name, _node.host))
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
                                                 n in self.bot.lavalink.node_manager.nodes])
