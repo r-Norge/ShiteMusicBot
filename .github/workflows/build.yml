@@ -2,7 +2,7 @@ name: Test And Build BOT
 on: [push, pull_request]
 
 jobs:
-  flake8:
+  lint:
     runs-on: ubuntu-latest
     env:
       CheckFiles: "bot.py musicbot/"
@@ -24,14 +24,27 @@ jobs:
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
 
-      - name: Run tests
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4.2.0
+        with:
+          python-version: 3.10.7
+
+      - name: Install dependencies 
         run: |
           pip install pytest
           pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
           pytest
 
   build-and-push:
-    needs: flake8
+    needs: [lint, test]
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true'
     env:
