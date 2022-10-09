@@ -16,7 +16,7 @@ class QueuePaginator(TextPaginator):
         duration = player.queue_duration(member=member, include_current=include_current)
 
         if member:
-            member_queue = player.user_queue_with_global_index(member.id)
+            member_queue = player.user_queue_with_global_index(member)
             title = localizer.format_str("{queue.userqueue}",
                                          _user=member.display_name, _length=len(member_queue), _duration=duration)
 

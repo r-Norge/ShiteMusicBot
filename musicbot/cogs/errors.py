@@ -2,7 +2,7 @@
 import discord
 from discord.ext import commands
 
-import traceback
+import sys
 
 from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
@@ -62,6 +62,13 @@ class Errors(commands.Cog):
             elif (err.original == 'The channel is currently full'):
                 return await send_error_embed('{errors.full_channel}')
 
+        # Regular command invoke errors
+        if isinstance(err, commands.UserInputError):
+            if self.bot.debug:
+                self.logger.debug("User input error")
+                self.logger.debug(err)
+            return
+
         if isinstance(err, WrongVoiceChannelError):
             if (err.original.startswith("You need to be in my voice channel")):
                 return await send_error_embed(err.channels[0].name, title='{errors.my_channel}')
@@ -103,16 +110,15 @@ class Errors(commands.Cog):
         else:
             # Log all exceptions if the bot is in debug mode
             if self.bot.debug:
-                tb = err.__traceback__
-                traceback.print_tb(tb)
-                self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
+                self.logger.error("Got error in command %s" % ctx.command)
+                self.logger.exception(err.with_traceback(sys.exc_info()[2]))
 
             else:
                 to_log = (RuntimeError, commands.CheckFailure, commands.CommandInvokeError,
                           commands.NoPrivateMessage)
 
                 if isinstance(err, to_log):
-                    self.logger.debug("Error running command: %s\nTraceback: %s" % (ctx.command, err))
+                    self.logger.info("Error running command: %s\nTraceback: %s" % (ctx.command, err))
 
 
 async def setup(bot):

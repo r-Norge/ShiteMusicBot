@@ -136,7 +136,7 @@ def require_queue(require_member_queue=False, require_author_queue=False):
             if require_member_queue:
                 try:
                     if member := kwargs['member']:  # Ignore if member is None
-                        user_queue = player.user_queue(member.id)
+                        user_queue = player.user_queue(member)
                         if not user_queue:
                             embed = discord.Embed(description='{queue.user_empty}', color=ctx.me.color)
                             embed = ctx.localizer.format_embed(embed, _user=member.display_name)
@@ -145,7 +145,7 @@ def require_queue(require_member_queue=False, require_author_queue=False):
                     raise Exception("require_member_error can only be used on commands with a member keyword argument")
 
             if require_author_queue:
-                user_queue = player.user_queue(ctx.author.id)
+                user_queue = player.user_queue(ctx.author)
                 if not user_queue:
                     embed = discord.Embed(description='{my_queue}', color=ctx.me.color)
                     embed = ctx.localizer.format_embed(embed)

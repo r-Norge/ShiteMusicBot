@@ -62,8 +62,8 @@ class TestMixQueue():
     def test_priority_queue(self):
         queue = self.setup_baisc_queue()
 
-        queue.add_next_track("priority_item1")
-        queue.add_next_track("priority_item2")
+        queue.add_priorty_queue_track("priority_item1")
+        queue.add_priorty_queue_track("priority_item2")
 
         assert queue.pop_first() == "priority_item1"
         assert queue.pop_first() == "priority_item2"

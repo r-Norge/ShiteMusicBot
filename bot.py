@@ -106,7 +106,7 @@ class Bot(commands.Bot):
         except Exception as e:
             tb = e.__traceback__
             traceback.print_tb(tb)
-            self.logger.error(e)
+            self.logger.exception(e)
 
 
 def run_bot(datadir, debug: bool = False):
