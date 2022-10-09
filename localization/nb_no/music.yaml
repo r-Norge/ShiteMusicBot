@@ -55,6 +55,9 @@ volume:
 boost:
   'on': Bassforsterkeren er på
   'off': Bassforsterkeren er av
+nightcore:
+  'on': Nattkjernemodus er på
+  'off': Nattkjernemodus er av
 scrub:
   add: Legger til kontrollere
   controls: "{music_controls}"
