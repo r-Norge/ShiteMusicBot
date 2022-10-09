@@ -7,6 +7,8 @@ import codecs
 
 import yaml
 
+# Bot Utilities
+from musicbot.utils.settingsmanager import Settings
 from ..utils.mixplayer import MixPlayer
 from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
@@ -15,7 +17,7 @@ from .helpformatter import commandhelper
 class NodeManager(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.settings = self.bot.settings
+        self.settings: Settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
     async def load_music_cogs(self):
