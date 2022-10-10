@@ -63,7 +63,6 @@ class Music(commands.Cog):
     def get_player(self, guild: discord.Guild) -> MixPlayer:
         player: Optional[MixPlayer] = self.lavalink.player_manager.get(guild.id)
         if player is None:
-            self.logger.error(f"Tried to get player for guild {guild.id} but got None")
             raise PlayerNotAvailableError(f"Tried to get player for guild {guild.id} but got None")
         return player
 
