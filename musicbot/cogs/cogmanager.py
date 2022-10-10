@@ -74,7 +74,8 @@ class CogManager(commands.Cog):
     @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
-        self.bot.lavalink.player_manager.players.clear()
+        if lavalink := self.bot.lavalink:
+            lavalink.player_manager.players.clear()
         await self.bot.close()
 
 

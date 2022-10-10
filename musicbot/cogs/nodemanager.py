@@ -4,6 +4,7 @@ import lavalink
 from discord.ext import commands
 
 import codecs
+from typing import Optional
 
 import yaml
 
@@ -30,6 +31,7 @@ class NodeManager(commands.Cog):
 
         if self.bot.lavalink is None and self.bot.user:
             self.bot.lavalink = lavalink.Client(self.bot.user.id, player=MixPlayer)
+            self.lavalink = self.bot.lavalink
 
             self.load_nodes_from_file()
 
@@ -52,10 +54,7 @@ class NodeManager(commands.Cog):
             name_cache = []
             new_nodes = []
 
-            if self.bot.lavalink is None:
-                return new_nodes
-
-            for node in self.bot.lavalink.node_manager.nodes:
+            for node in self.lavalink.node_manager.nodes:
                 name_cache.append(node.name)
 
             self.logger.debug("BEFORE")
@@ -63,7 +62,7 @@ class NodeManager(commands.Cog):
                 if node['name'] in name_cache:
                     continue
 
-                self.bot.lavalink.add_node(**node)
+                self.lavalink.add_node(**node)
 
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
                     node['name'], node['host'],
@@ -140,24 +139,24 @@ class NodeManager(commands.Cog):
 
     @_node.command(name='add')
     @commands.is_owner()
-    async def _add(self, ctx, host, port, password, region, name=None):
-        if name in [n.name for n in self.bot.lavalink.node_manager.nodes]:
+    async def _add(self, ctx, host: str, port: int, password: str, region, name: Optional[str] = None):
+        if name in [n.name for n in self.lavalink.node_manager.nodes]:
             return await ctx.send("A node with that name already exists")
 
-        self.bot.lavalink.add_node(host, port, password, region, name=name)
+        self.lavalink.add_node(host, port, password, region, name=name)
         self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (host, port, region, name,))
         embed = await self._node_presenter(ctx, {'host': host, 'port': port, 'password': password,
                                                  'region': region, 'name': name})
         embed.title = 'Added new node!'
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
-                                                n in self.bot.lavalink.node_manager.nodes])
+                                                n in self.lavalink.node_manager.nodes])
         await ctx.send(embed=embed)
 
     @_node.command(name='list')
     @commands.is_owner()
     async def list_nodes(self, ctx):
-        embed = await self._node_presenter(ctx, self.bot.lavalink.node_manager.nodes)
+        embed = await self._node_presenter(ctx, self.lavalink.node_manager.nodes)
         embed.title = 'Lavalink nodes attatched to this bot:'
         await ctx.send(embed=embed)
 
@@ -165,8 +164,8 @@ class NodeManager(commands.Cog):
     @commands.is_owner()
     async def _remove(self, ctx, node):
         sent_feedback = False
-        for _node in self.bot.lavalink.node_manager.nodes:
-            if len(self.bot.lavalink.node_manager.nodes) <= 1:
+        for _node in self.lavalink.node_manager.nodes:
+            if len(self.lavalink.node_manager.nodes) <= 1:
                 await ctx.send('Cannot remove the last node')
                 sent_feedback = True
                 break
@@ -175,11 +174,11 @@ class NodeManager(commands.Cog):
                 embed = await self._node_presenter(ctx, _node)
                 embed.title = 'Removed node from bot'
                 await ctx.send(embed=embed)
-                self.bot.lavalink.node_manager.remove_node(_node)
+                self.lavalink.node_manager.remove_node(_node)
                 self.logger.info("Removed Lavalink node: %s, %s" % (_node.name, _node.host))
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
-                                                n in self.bot.lavalink.node_manager.nodes])
+                                                n in self.lavalink.node_manager.nodes])
 
         if not sent_feedback:
             await ctx.send('No node found')
@@ -187,7 +186,7 @@ class NodeManager(commands.Cog):
     @_node.command(name='change')
     @commands.is_owner()
     async def _nodechange(self, ctx, node=None):
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return
@@ -198,7 +197,7 @@ class NodeManager(commands.Cog):
 
         else:
             newnode = None
-            for _node in self.bot.lavalink.node_manager.nodes:
+            for _node in self.lavalink.node_manager.nodes:
                 if (_node.name or _node.host) == node:
                     newnode = _node
 
