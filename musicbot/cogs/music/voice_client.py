@@ -7,10 +7,13 @@ from musicbot.cogs.music.music_errors import MusicError
 
 class BasicVoiceClient(discord.VoiceClient):
     def __init__(self, client: MusicBot, channel: discord.VoiceChannel):
-        self.music_bot = client
+        # Needs to be named client in order for base class to work
+        # in most cases lavalink handles disconnects, but if we force it then we'll get an error.
+        # during self.cleanup()
+        self.client = client
         self.channel = channel
-        if self.music_bot.lavalink:
-            self.lavalink = self.music_bot.lavalink
+        if self.client.lavalink:
+            self.lavalink = self.client.lavalink
         else:
             raise MusicError("client did not have defined lavalink before connect")
 

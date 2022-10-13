@@ -105,7 +105,7 @@ class Scroller:
         await self.scrolling_done.wait()
         return self.message
 
-    def update_view_on_interaction(self, interaction: discord.Interaction):
+    def update_view_on_interaction(self, _: discord.Interaction):
         self.update_view()
 
     def update_view(self):
