@@ -54,7 +54,7 @@ remove:
   description:    'Fjerner en sang fra personlige køen din.'
 DJremove:
   aliases:        [DJfjern, djfjern]
-  args:           '<posisjon>'
+  args:           '<servermedlem>'
   description:    'Fjerner en sang fra køen.'
 removeuser:
   aliases:        [fjernbruker]
@@ -229,4 +229,4 @@ cogmanager:
     shutdown:
       aliases:          [shutdown]
       description:      'Stopper båtten.'
-      
+

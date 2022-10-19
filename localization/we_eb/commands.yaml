@@ -54,7 +54,7 @@ remove:
   description:    'Wemoves a sonyg fwom youw queue.'
 DJremove:
   aliases:        [DJwemove, djwemove]
-  args:           '<pos>'
+  args:           '<member>'
   description:    'Wemoves a sonyg fwom the gwobaw queue.'
 removeuser:
   aliases:        [wemoveusew]

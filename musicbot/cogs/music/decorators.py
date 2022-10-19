@@ -22,7 +22,6 @@ def require_voice_connection(should_connect=False):
         @functools.wraps(func)
         async def ensure_voice_inner(self, ctx, *command_args, **kwargs):
             """ This check ensures that the bot and command author are in the same voicechannel. """
-
             player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
             if not player:
                 raise music_errors.MusicError("ensure voice could not get lavalink player")

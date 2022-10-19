@@ -5,7 +5,7 @@ import discord
 
 import asyncio
 from enum import Flag, auto
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from bot import MusicBot
 
@@ -66,7 +66,7 @@ class Scroller:
                                            '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
         last_page_button = ScrollerButton(self.last_page,
                                           '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', row=3)
-        self.stop_button = ScrollerButton(self.stop, stop_emoji, row=3)
+        self.stop_button = ScrollerButton(self.stop_scrolling, stop_emoji, row=3)
 
         # We start on the first page, can't go back
         self.back_button.disabled = True
@@ -92,9 +92,9 @@ class Scroller:
 
     async def start_scrolling(self, clear_mode: ClearOn,
                               message: Optional[discord.Message] = None,
-                              start_page: int = 0) -> discord.Message:
+                              start_page: int = 0) -> Tuple[discord.Message, bool]:
         self.clear_mode = clear_mode
-        self.page_number = start_page
+        self.page_number = min(start_page, len(self.paginator.pages))
         self.build_view()
         self.update_view()
         if message:
@@ -103,7 +103,7 @@ class Scroller:
         else:
             self.message = await self.channel.send(embed=self.current_page_embed, view=self.view)
         await self.scrolling_done.wait()
-        return self.message
+        return self.message, self.timed_out
 
     def update_view_on_interaction(self, _: discord.Interaction):
         self.update_view()
@@ -126,13 +126,14 @@ class Scroller:
             for (i, _) in enumerate(self.paginator.pages):
                 self.navigator.add_option(label=str(i+1), value=str(i))
 
-    async def stop(self, user_stopped: bool, clear_scroller_view: bool = True):
+    async def stop(self, was_timeout: bool, clear_scroller_view: bool = True):
         self.is_scrolling_paginator = False
         self.view.stop()
         if clear_scroller_view:
             self.view.clear_items()
-        if (user_stopped and self.clear_mode & ClearOn.ManualExit or
-                not user_stopped and self.clear_mode & ClearOn.Timeout):
+        self.timed_out = was_timeout
+        if (not was_timeout and self.clear_mode & ClearOn.ManualExit or
+                was_timeout and self.clear_mode & ClearOn.Timeout):
             if self.message:
                 await self.message.delete()
                 self.message = None
@@ -185,10 +186,10 @@ class Scroller:
 
     async def stop_scrolling(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        await self.stop(user_stopped=True)
+        await self.stop(was_timeout=False)
 
     async def on_timeout(self):
-        await self.stop(user_stopped=False)
+        await self.stop(was_timeout=True)
 
     @property
     def current_page_embed(self):

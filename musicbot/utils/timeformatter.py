@@ -1,3 +1,7 @@
+# Discord Packages
+import lavalink
+
+
 def format_ms(milliseconds):
     seconds = int(milliseconds)/1000
     formatted = ''
@@ -17,3 +21,7 @@ def unformat_ms(formatted):
     if len(hms) == 3:
         seconds += hms[2] * 3600
     return seconds * 1000
+
+
+def format_track_duration(track: lavalink.AudioTrack) -> str:
+    return '{live}' if track.stream else format_ms(track.duration)

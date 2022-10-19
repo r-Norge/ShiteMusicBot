@@ -84,9 +84,9 @@ class Selector(TextPaginator, Scroller):
 
                 match self.selector_mode:
                     case SelectMode.SingleSelect:
-                        await self.stop(True, clear_scroller_view=True)
+                        await self.stop(was_timeout=False, clear_scroller_view=True)
                     case SelectMode.SpanningMultiSelect:
-                        await self.stop(True, clear_scroller_view=False)
+                        await self.stop(was_timeout=False, clear_scroller_view=False)
                     case _:
                         await self.update_message()
 
@@ -119,5 +119,5 @@ class Selector(TextPaginator, Scroller):
     async def start_scrolling(self, clear_mode: ClearOn = ClearOn.Timeout,
                               message: Optional[discord.Message] = None,
                               start_page: int = 0):
-        message = await super().start_scrolling(clear_mode, message, start_page)
-        return message, self.callback_results
+        message, timed_out = await super().start_scrolling(clear_mode, message, start_page)
+        return message, timed_out, self.callback_results
