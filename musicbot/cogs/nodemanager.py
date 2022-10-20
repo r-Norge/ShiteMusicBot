@@ -57,7 +57,6 @@ class NodeManager(commands.Cog):
             for node in self.lavalink.node_manager.nodes:
                 name_cache.append(node.name)
 
-            self.logger.debug("BEFORE")
             for node in conf['lavalink nodes'] + self.settings.get('lavalink', 'nodes', []):
                 if node['name'] in name_cache:
                     continue

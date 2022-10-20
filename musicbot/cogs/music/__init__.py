@@ -12,7 +12,7 @@ import asyncio
 import json
 import re
 import urllib.parse as urlparse
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from bs4 import BeautifulSoup
 
@@ -66,20 +66,19 @@ class Music(commands.Cog):
             raise PlayerNotAvailableError(f"Tried to get player for guild {guild.id} but got None")
         return player
 
-    async def enqueue(self, ctx, track, embed, silent=False, check_max_length=True) -> tuple[discord.Embed, bool]:
+    async def enqueue(self, ctx, track: AudioTrack, embed, standalone: bool = False,
+                      check_max_length: bool = True) -> bool:
         player = self.get_player(ctx.guild)
 
+        track_duration_str = timeformatter.format_track_duration(track)
+
         # Only add tracks that don't exceed the max track length
-        if maxlength := self.max_track_length(ctx.guild, player):
-            if track.duration > maxlength and check_max_length:
-                if track.stream:
-                    length = '{live}'
-                else:
-                    length = timeformatter.format_ms(track.duration)
-                embed.description = ctx.localizer.format_str("{enqueue.toolong}",
-                                                             _length=length,
-                                                             _max=timeformatter.format_ms(maxlength))
-                return embed, False
+        maxlength = self.max_track_length(ctx.guild, player)
+        if (track.stream or track.duration > maxlength) and check_max_length:
+            embed.description = ctx.localizer.format_str("{enqueue.toolong}",
+                                                         _length=track_duration_str,
+                                                         _max=timeformatter.format_ms(maxlength))
+            return False
 
         track.extra["thumbnail_url"] = await self.thumbnailer.identify(track.identifier, track.uri)
         track.requester = ctx.author.id
@@ -87,7 +86,7 @@ class Music(commands.Cog):
         # Add to player
         track, pos_global, pos_local = player.add(requester=ctx.author, track=track)
 
-        if player.current is not None and not silent:
+        if player.current is not None and not standalone:
             if player.current.stream:
                 until_play = '--:--'
             else:
@@ -101,13 +100,8 @@ class Music(commands.Cog):
         if thumbnail_url := track.extra["thumbnail_url"]:
             embed.set_thumbnail(url=thumbnail_url)
 
-        if track.stream:
-            duration = '{live}'
-        else:
-            duration = timeformatter.format_ms(int(track.duration))
-        embed.description = f'[{track.title}]({track.uri})\n**{duration}**'
-
-        return embed, True
+        embed.description = f'[{track.title}]({track.uri})\n**{track_duration_str}**'
+        return True
 
     def get_current_song_embed(self, ctx, include_time=False):
         player = self.get_player(ctx.guild)
@@ -118,10 +112,7 @@ class Music(commands.Cog):
         song = f'**[{player.current.title}]({player.current.uri})**'
         if include_time:
             position = timeformatter.format_ms(player.position)
-            if player.current.stream:
-                duration = '{live}'
-            else:
-                duration = timeformatter.format_ms(player.current.duration)
+            duration = timeformatter.format_track_duration(player.current)
             song += f'\n({position}/{duration})'
 
         embed = discord.Embed(color=ctx.me.color, description=song, title='{now}')
@@ -135,22 +126,20 @@ class Music(commands.Cog):
         embed = ctx.localizer.format_embed(embed)
         return embed
 
-    def max_track_length(self, guild, player):
-        if maxlength := self.bot.settings.get(guild, 'duration.max', None):
-            is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
-            listeners = max(1, len(player.listeners))  # Avoid division by 0
+    def max_track_length(self, guild, player) -> float:
+        # Numeric constants
+        minimum_dynamic_length = 10
+        minutes_to_milliseconds = 60 * 1000
+        configured_max = self.bot.settings.get(guild, 'duration.max', float('inf'))
+        is_dynamic = self.bot.settings.get(guild, 'duration.is_dynamic', 'default_duration_type')
+        listeners = max(1, len(player.listeners))  # Avoid division by 0
 
-            if maxlength > 10 and is_dynamic:
-                return max(maxlength*60*1000/listeners, 60*10*1000)
-            else:
-                return maxlength*60*1000
+        if configured_max > minimum_dynamic_length and is_dynamic:
+            return minutes_to_milliseconds * max(configured_max/listeners, minimum_dynamic_length)
         else:
-            return None
+            return minutes_to_milliseconds * configured_max
 
-    @commands.command(name='play')
-    @require_voice_connection(should_connect=True)
-    async def _play(self, ctx, *, query: str):
-        """ Searches and plays a song from a given query. """
+    async def _search_and_play_query(self, ctx, query: str, check_max_length: bool):
         self.logger.debug("Query: %s" % query)
         player = self.get_player(ctx.guild)
         query = query.strip('<>')
@@ -158,7 +147,7 @@ class Music(commands.Cog):
         if not url_rx.match(query):
             query = f'ytsearch:{query}'
 
-        results = await player.node.get_tracks(query)
+        results: lavalink.LoadResult = await player.node.get_tracks(query)
 
         if not results or not results.tracks:
             return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
@@ -166,23 +155,35 @@ class Music(commands.Cog):
         embed = discord.Embed(color=ctx.me.color)
 
         if results.load_type == 'PLAYLIST_LOADED':
-            numtracks = 0
-            for track in results.tracks:
-                _, track_added = await self.enqueue(ctx, track, embed, silent=True)
-                if track_added:
-                    numtracks += 1
-
-            embed.title = '{playlist_enqued}'
-            embed.description = f'{results.playlist_info.name} - {numtracks} {{tracks}}'
+            tracks = [track for track in results.tracks if
+                      await self.enqueue(ctx, track, embed, True, check_max_length)]
+            if tracks:
+                embed.title = '{playlist_enqued}'
+                embed.description = f'{results.playlist_info.name} - {len(tracks)} {{tracks}}'
+            else:
+                # TODO: This really means no tracks passed the max_length requirement
+                return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
         else:
-            track = results.tracks[0]
-            await self.enqueue(ctx, track, embed)
+            await self.enqueue(ctx, results.tracks[0], embed, check_max_length=check_max_length)
 
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
         if not player.is_playing:
             await player.play()
+
+    @commands.command(name='play')
+    @require_voice_connection(should_connect=True)
+    async def _play(self, ctx, *, query: str):
+        """ Searches and plays a song from a given query. """
+        await self._search_and_play_query(ctx, query, check_max_length=True)
+
+    @commands.command(name='forceplay')
+    @require_voice_connection(should_connect=True)
+    @voteable(DJ_override=True, react_to_vote=True)
+    async def _forceplay(self, ctx, *, query: str):
+        """ Searches and plays a song from a given query, ignoring configured max duration. """
+        await self._search_and_play_query(ctx, query, check_max_length=False)
 
     @commands.command(name='seek')
     @checks.dj_or(alone=True, track_requester=True)
@@ -300,7 +301,7 @@ class Music(commands.Cog):
         player = self.get_player(ctx.guild)
 
         # We create a new selector for each selection
-        def move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
+        def build_move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
             async def return_track(track):
                 return track
 
@@ -322,19 +323,19 @@ class Music(commands.Cog):
         page = 0
         while True:
             # Prompt the user for which track to move
-            selector = move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_pos}", True)
-            message, track_to_move = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            selector = build_move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_pos}", True)
+            message, timed_out, track_to_move = await selector.start_scrolling(ClearOn.Timeout, message, page)
             page = selector.page_number
 
-            if not track_to_move:
+            if not track_to_move or timed_out:
                 break
 
             # Prompt the user for where to move it
-            selector = move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_song}", False)
-            message, track_to_replace = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            selector = build_move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_song}", False)
+            message, timed_out, track_to_replace = await selector.start_scrolling(ClearOn.Timeout, message, page)
             page = selector.page_number
 
-            if not track_to_replace:
+            if not track_to_replace or timed_out:
                 break
 
             # At this point the user has chosen two songs, we will move the first song to be in front of the second
@@ -354,17 +355,19 @@ class Music(commands.Cog):
         if message:
             await message.delete()
 
-    @commands.command(name='remove')
-    @require_voice_connection()
-    @require_queue(require_author_queue=True)
-    async def _remove(self, ctx):
+    async def _interactive_remove(self, ctx, queue: List[AudioTrack]):
+        """
+        Helper function for creating an interactive selector over a given queue
+        in which will remove the selected tracks on exit.
+        """
         player = self.get_player(ctx.guild)
-
-        user_queue: List[AudioTrack] = player.user_queue(ctx.author)
 
         tracks_to_remove = []
 
-        async def update_remove_list(tracks_list, track):
+        async def update_remove_list(tracks_list, track: AudioTrack):
+            # It seems duplicate songs still don't satisfy equality
+            # which meas remove is sufficient to preserve order
+            # of similar items
             if track in tracks_list:
                 tracks_list.remove(track)
             else:
@@ -383,65 +386,55 @@ class Music(commands.Cog):
             return inner
 
         selector_buttons = []
-        for index, track in enumerate(user_queue, start=1):
+        # Build each selection from the queue, a visible string and a callback.
+        for index, track in enumerate(queue, start=1):
+            requester = self.bot.get_user(track.requester)
             selector_buttons.append(
-                SelectorItem(f'`{index}` [{track.title}]({track.uri})', str(index),
-                             add_change_button_color(update_remove_list, tracks_to_remove, track)))
+                SelectorItem(f'`{index}` [{track.title}]({track.uri}) - {requester.mention if requester else ""}',
+                             str(index), add_change_button_color(update_remove_list, tracks_to_remove, track)))
 
         remove_selector = Selector(ctx, selector_buttons, select_mode=SelectMode.MultiSelect,
                                    use_tick_for_stop_emoji=True, color=ctx.me.color, title='Select songs to remove')
-        await remove_selector.start_scrolling(ClearOn.AnyExit)
+        _, timed_out, _ = await remove_selector.start_scrolling(ClearOn.AnyExit)
 
         # If any tracks were removed create a scroller for navigating them
-        if tracks_to_remove:
+        if tracks_to_remove and not timed_out:
             paginator = TextPaginator(color=ctx.me.color, title="Removed")
 
-            # If the user spent a long time selecting songs the queue might have changed
-            user_queue = player.user_queue(ctx.author)
-            track_indexes_to_remove = [i for i, track in enumerate(user_queue) if track in tracks_to_remove]
+            tracks_removed: List[Tuple[int, str]] = []
+            for track in tracks_to_remove:
+                if remove_result := player.remove_track(track):
+                    (position, removed_track) = remove_result
+                    if requester := self.bot.get_user(removed_track.requester):
+                        tracks_removed.append((position, f"{removed_track.title} - {requester.mention}"))
 
-            # Sort in reverse order since songs shift index when deleting
-            tracks_removed = []
-            for track in sorted(track_indexes_to_remove, reverse=True):
-                if removed_track := player.remove_user_track(ctx.author, track):
-                    tracks_removed.append(f"{removed_track.title}")
-
-            # We want to display the removed tracks in the original queue order, so reverse the list once again
-            for removed in reversed(tracks_removed):
-                paginator.add_line(removed)
+            # remove_track returns the global queue index of the track,
+            # so we display the removed tracks in "queue order"
+            for removed in sorted(tracks_removed, key=lambda x: x[0]):
+                paginator.add_line(removed[1])
 
             paginator.close_page()
             scroller = Scroller(ctx, paginator)
             await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
 
+    @commands.command(name='remove')
+    @require_voice_connection()
+    @require_queue(require_author_queue=True)
+    async def _remove(self, ctx):
+        """ Remove a song from your queue. """
+        player = self.get_player(ctx.guild)
+        return await self._interactive_remove(ctx, player.user_queue(ctx.author))
+
     @commands.command(name="DJremove")
     @checks.dj_or()
     @require_voice_connection()
     @require_queue()
-    async def _djremove(self, ctx, pos: int, member: Optional[discord.Member] = None):
+    async def _djremove(self, ctx, member: Optional[discord.Member] = None):
         """ Remove a song from either the global queue or a users queue"""
         player = self.get_player(ctx.guild)
-
         # TODO: add way to allow "member" as regular arg in require_queue() instead of only kwargs
-        queue = player.user_queue(member) if member else player.queue
-
-        # TODO: Do all queue out of range messages the same way
-        if pos <= len(queue) and pos >= 1:
-            if member is None:
-                removed = player.remove_global_track(pos - 1)
-            else:
-                removed = player.remove_user_track(member, pos - 1)
-
-            if removed:
-                if requester := self.bot.get_user(removed.requester):
-                    await ctx.send(ctx.localizer.format_str("{dj_removed}", _title=removed.title,
-                                                            _user=requester.display_name))
-                else:
-                    self.logger.error(f"Did not get a valid user for track requester {removed.requester}")
-            else:
-                self.logger.error(f"Did not remove a track when trying to remove index {pos}, despite bounds check")
-        else:
-            await ctx.send(ctx.localizer.format_str("{out_of_range}", _len=len(queue)))
+        queue = player.user_queue(member) if member else player.global_queue()
+        return await self._interactive_remove(ctx, queue)
 
     @commands.command(name='removeuser')
     @checks.dj_or(alone=True)
@@ -468,35 +461,32 @@ class Music(commands.Cog):
 
         results = await player.node.get_tracks(query)
 
-        embed = discord.Embed(description='{nothing_found}', color=0x36393F)
         if not results or not results['tracks']:
+            embed = discord.Embed(description='{nothing_found}', color=0x36393F)
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
+        # This is the base embed that will be modified by the selector
+        embed = discord.Embed(color=ctx.me.color)
         buttons = []
         for i, track in enumerate(results['tracks'], start=1):
             duration = timeformatter.format_ms(int(track.duration))
             interaction = SelectorItem(f'`{i}` [{track.title}]({track.uri}) `{duration}`', str(i),
                                        wrap_in_button_callback(
-                                           self.enqueue, ctx, track, discord.Embed(color=ctx.me.color)))
+                                           self.enqueue, ctx, track, embed))
             buttons.append(interaction)
 
         search_selector = Selector(ctx, buttons, select_mode=SelectMode.SingleSelect,
                                    color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
-        message, callback_results = await search_selector.start_scrolling()
+        message, timed_out, _ = await search_selector.start_scrolling(ClearOn.Timeout)
 
-        if len(callback_results) == 0:
-            if message:
-                await message.delete()
+        if timed_out:
             return
 
-        song_embed, song_added = callback_results[0]
-        if song_added:
-            embed = ctx.localizer.format_embed(song_embed)
-            await message.edit(embed=embed, view=None)
+        await message.edit(embed=ctx.localizer.format_embed(embed), view=None)
 
-            if not player.is_playing:
-                await player.play()
+        if not player.is_playing:
+            await player.play()
 
     @commands.command(name='disconnect')
     @require_voice_connection()
@@ -520,7 +510,7 @@ class Music(commands.Cog):
         player = self.get_player(ctx.guild)
         current_channel = player.channel_id
 
-        async def recon():
+        async def inner_reconnect():
             await player.stop()
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
@@ -531,11 +521,11 @@ class Music(commands.Cog):
         if player.current:
             track = player.current
             start_time = player.position
-            await recon()
+            await inner_reconnect()
             if track:
                 await player.play(track, start_time=int(start_time))
         else:
-            await recon()
+            await inner_reconnect()
 
     @commands.command(name='volume')
     @checks.dj_or(alone=True, track_requester=True)
@@ -557,43 +547,6 @@ class Music(commands.Cog):
         embed = discord.Embed(description="{volume.set_to}", color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed, _volume=player.volume)
         await ctx.send(embed=embed)
-
-    @commands.command(name='forceplay')
-    @require_voice_connection(should_connect=True)
-    @voteable(DJ_override=True, react_to_vote=True)
-    async def _forceplay(self, ctx, *, query: str):
-        """ Searches and plays a song from a given query. """
-        player = self.get_player(ctx.guild)
-        query = query.strip('<>')
-
-        if not url_rx.match(query):
-            query = f'ytsearch:{query}'
-
-        results = await player.node.get_tracks(query)
-
-        if not results or not results.tracks:
-            return await ctx.send(ctx.localizer.format_str("{nothing_found}"))
-
-        embed = discord.Embed(color=ctx.me.color)
-
-        if results.load_type == 'PLAYLIST_LOADED':
-            numtracks = 0
-            for track in results.tracks:
-                _, track_added = await self.enqueue(ctx, track, embed, silent=True, check_max_length=False)
-                if track_added:
-                    numtracks += 1
-
-            embed.title = '{playlist_enqued}'
-            embed.description = f'{results.playlist_info.name} - {numtracks} {{tracks}}'
-        else:
-            track = results.tracks[0]
-            await self.enqueue(ctx, track, embed, check_max_length=False)
-
-        embed = ctx.localizer.format_embed(embed)
-        await ctx.send(embed=embed)
-
-        if not player.is_playing:
-            await player.play()
 
     @commands.command(name='forcedisconnect')
     @checks.dj_or(alone=True)
@@ -620,6 +573,7 @@ class Music(commands.Cog):
 
         await player.set_volume(100)
         await player.bassboost(False)
+        await player.nightcoreify(False)
 
         embed = discord.Embed(description='{volume.reset}', color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed)

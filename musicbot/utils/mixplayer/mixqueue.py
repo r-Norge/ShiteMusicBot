@@ -153,6 +153,19 @@ class MixQueue(Generic[T]):
                 self._clear_empty()
                 return track
 
+    def remove_track(self, track: T) -> Optional[Tuple[int, T]]:
+        """
+        Removes a track by identity
+        """
+        for queue in self.queues.values():
+            for i, t in enumerate(queue):
+                if t is track:
+                    global_pos = self._loc_to_glob(t.requester, i)
+                    removed = queue.pop(i)
+                    self._clear_empty()
+                    return global_pos, removed
+        return None
+
     def remove_global_track(self, pos: int) -> Optional[T]:
         # Get the actual index of the song
         index = list(self).index(self.get_queue()[pos])

@@ -71,6 +71,9 @@ class MixPlayer(DefaultPlayer):
             self.logger.info(f"Track {track.title} for requester {requester.display_name} removed.")
             return track
 
+    def remove_track(self, track: AudioTrack) -> Optional[Tuple[int, AudioTrack]]:
+        return self.queue.remove_track(track)
+
     def remove_global_track(self, pos: int) -> Optional[AudioTrack]:
         """ Removes the song at <pos> in the global queue """
         return self.queue.remove_global_track(pos)
@@ -213,7 +216,7 @@ class MixPlayer(DefaultPlayer):
                 votes.clear()
             await self.play()
 
-    async def bassboost(self, boost: bool = False):
+    async def bassboost(self, boost: bool):
         self.boosted = boost
         if boost:
             await self.set_filter(self.bass_boost_filter)
@@ -221,7 +224,7 @@ class MixPlayer(DefaultPlayer):
             self.logger.info("Disabling bass boost")
             await self.remove_filter(self.bass_boost_filter)
 
-    async def nightcoreify(self, nightcore: bool = False):
+    async def nightcoreify(self, nightcore: bool):
         self.nightcore_enabled = nightcore
         if nightcore:
             self.logger.info("Enabling nightcore mode")

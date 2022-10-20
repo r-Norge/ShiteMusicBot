@@ -50,11 +50,11 @@ move:
   description:    'Moves a track in your queue.'
 remove:
   aliases:        [rem]
-  args:           '<pos>'
+  args:           '<member>'
   description:    'Removes a song from your queue.'
 DJremove:
   aliases:        [DJremove, djremove]
-  args:           '<pos>'
+  args:           '<member>'
   description:    'Removes a song from the global queue.'
 removeuser:
   aliases:        [removeuser]
