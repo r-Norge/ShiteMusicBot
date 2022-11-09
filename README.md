@@ -52,9 +52,11 @@ Each user has their own queue and the bot mixes them together for fair time shar
               name: main
           ```
 
-3. Add your bot token `config.yaml`.
+3. Add your bot token to `config.yaml`.
 4. Prepare your environment:
     - Native install:
+        - Clone, and enter the repository.
+            - `git clone https://github.com/r-Norge/ShiteMusicBot.git && cd ShiteMusicBot`
         - (Recommended) Create a virtual environment and activate it.
             - `python3 -m pip venv .venv && . .venv/bin/activate`
         - Install requirements `python3 -m pip install -r requirements.txt`
