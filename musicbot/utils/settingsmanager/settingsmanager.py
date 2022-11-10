@@ -4,6 +4,7 @@ import discord
 import codecs
 import locale as localee
 import os
+from typing import Any
 
 import yaml
 
@@ -53,7 +54,7 @@ class Settings():
         with codecs.open(self._SETTINGS_PATH, 'w', encoding='utf8') as f:
             yaml.dump(self.settings, f, indent=2)
 
-    def get(self, identifier, setting, default=''):
+    def get(self, identifier, setting, default: Any = '') -> Any:
         """ Gets a value from the settings if a default return value is specified
         it will return the default if no setting is found. If that default is an
         attribute of the settings class, the value of the attribute will get returned."""

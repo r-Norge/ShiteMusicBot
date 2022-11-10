@@ -1,3 +1,6 @@
+# Discord Packages
+from lavalink.models import AudioTrack
+
 import logging
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
@@ -5,7 +8,7 @@ from random import shuffle
 from typing import Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar
 
 # Would like to ensure the T has a "requester" attribute, but don't know if that is possible
-T = TypeVar('T')
+T = TypeVar('T', bound=AudioTrack)
 QueueType = List[T]
 
 
@@ -31,7 +34,6 @@ class MixQueue(Generic[T]):
         self.looping = False
         self.loop_offset = 0
         self.logger = logging.getLogger("musicbot").getChild("Queue")
-        self.logger = self.logger.getChild("Queue")
 
     def __str__(self) -> str:
         tmp = ''
@@ -96,9 +98,9 @@ class MixQueue(Generic[T]):
                     self._history.append(next_track)
                     return next_track
                 except IndexError as e:
-                    self.logger.error(e)
-                    self.logger.error(self.loop_offset)
-                    self.logger.error(len(self))
+                    self.logger.error(f"Failed to get the next track in looping mode: loop offset {self.loop_offset}." +
+                                      " Queue length: {len(self)}")
+                    self.logger.exception(e)
                     self.loop_offset = min(self.loop_offset, len(self)-1)
             else:
                 if first_queue := self.first_queue:
@@ -123,12 +125,13 @@ class MixQueue(Generic[T]):
             localpos = pos
 
         # Return info about track position
-        return track, self._loc_to_glob(requester, localpos), localpos
+        global_position = self._loc_to_glob(requester, localpos)
+        return track, global_position, localpos
 
-    def add_next_track(self, track: T) -> None:
+    def add_priorty_queue_track(self, track: T) -> None:
         self.priority_queue.append(track)
 
-    def remove_user_queue(self, requester: int) -> None:
+    def remove_user_queue(self, requester: int) -> QueueType:
         user_queue = self.queues.get(requester, [])
         if user_queue:
             if self.looping:
@@ -137,6 +140,7 @@ class MixQueue(Generic[T]):
                     self.remove_user_track(requester, pos)
             else:
                 self.queues.pop(requester)
+        return user_queue
 
     def remove_user_track(self, requester: int, pos: int) -> Optional[T]:
         user_queue = self.queues.get(requester)
@@ -148,6 +152,19 @@ class MixQueue(Generic[T]):
                 track = user_queue.pop(pos)
                 self._clear_empty()
                 return track
+
+    def remove_track(self, track: T) -> Optional[Tuple[int, T]]:
+        """
+        Removes a track by identity
+        """
+        for queue in self.queues.values():
+            for i, t in enumerate(queue):
+                if t is track:
+                    global_pos = self._loc_to_glob(t.requester, i)
+                    removed = queue.pop(i)
+                    self._clear_empty()
+                    return global_pos, removed
+        return None
 
     def remove_global_track(self, pos: int) -> Optional[T]:
         # Get the actual index of the song
@@ -172,6 +189,7 @@ class MixQueue(Generic[T]):
                 queue.insert(final, track)
                 return track
             except IndexError:
+                self.logger.debug(f"Got invalid index when moving track from {initial} to {final}")
                 pass
 
     def shuffle_user_queue(self, requester: int) -> None:
@@ -180,17 +198,19 @@ class MixQueue(Generic[T]):
             shuffle(queue)
 
     def enable_looping(self, looping: bool) -> None:
-        if (not self.looping) and looping:  # Not enabled and turning on
+        if (not self.looping) and looping:  # Enable only if not already enabled
             self.looping = looping
             self.loop_offset = 0
-        elif self.looping and not looping:  # Enabled to turning off
-            tmp = [track for track in self.get_queue()]
-            for key, _ in self.queues.items():
-                self.queues = OrderedDict()
+            self.logger.debug("Looping enabled")
+        elif self.looping and not looping:  # Disable only if enabled
+            # Copy queue in current (looping) state
+            queue_copy = [track for track in self.get_queue()]
+            self.queues = OrderedDict()
             self.looping = looping
-            for track in tmp:
+            for track in queue_copy:
                 self.add_track(track.requester, track)
             self.loop_offset = 0
+            self.logger.debug("Looping disabled, queue reordered")
 
     # Switches the order of user queues
     def _shift_queues(self) -> None:
@@ -217,9 +237,9 @@ class MixQueue(Generic[T]):
                     globpos += 1
         return globpos
 
-    def _glob_to_loc(self, pos: int) -> Tuple[Optional[T], Optional[int]]:
+    def _glob_to_loc(self, pos: int) -> Tuple[Optional[int], Optional[int]]:
         try:
-            song = next(islice(self, pos, pos + 1))
+            song: T = next(islice(self, pos, pos + 1))
         except (ValueError, StopIteration):
             return None, None
         user_queue = self.queues.get(song.requester, [])

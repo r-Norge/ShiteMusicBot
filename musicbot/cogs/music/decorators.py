@@ -1,46 +1,16 @@
 # Discord Packages
 import discord
-from discord.ext import commands
 
 import asyncio
 import functools
 import inspect
 import math
 
+# Bot Utilities
+from musicbot.utils.mixplayer.player import MixPlayer
 from ...utils.checks import is_dj
-from .music_errors import WrongVoiceChannelError
-
-
-class BasicVoiceClient(discord.VoiceClient):
-    def __init__(self, client: discord.Client, channel: discord.abc.Connectable):
-        self.client = client
-        self.channel = channel
-        if hasattr(self.client, 'lavalink'):
-            self.lavalink = self.client.lavalink
-        else:
-            raise Exception("client did not have defined lavalink before connect")
-
-    async def on_voice_server_update(self, data):
-        await self.lavalink.voice_update_handler({'t': 'VOICE_SERVER_UPDATE', 'd': data})
-
-    async def on_voice_state_update(self, data):
-        await self.lavalink.voice_update_handler({'t': 'VOICE_STATE_UPDATE', 'd': data})
-
-    async def connect(self, *, timeout: float, reconnect: bool, self_deaf: bool = False,
-                      self_mute: bool = False) -> None:
-        await self.channel.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
-
-    async def disconnect(self, *, force: bool = False) -> None:
-        player = self.lavalink.player_manager.get(self.channel.guild.id)
-
-        # no need to disconnect if we are not connected
-        if not force and not player.is_connected:
-            return
-
-        # None means disconnect
-        await self.channel.guild.change_voice_state(channel=None)
-        player.channel_id = None
-        self.cleanup()
+from . import music_errors
+from .voice_client import BasicVoiceClient
 
 
 def require_voice_connection(should_connect=False):
@@ -52,37 +22,39 @@ def require_voice_connection(should_connect=False):
         @functools.wraps(func)
         async def ensure_voice_inner(self, ctx, *command_args, **kwargs):
             """ This check ensures that the bot and command author are in the same voicechannel. """
+            player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
+            if not player:
+                raise music_errors.MusicError("ensure voice could not get lavalink player")
 
-            player = self.bot.lavalink.player_manager.get(ctx.guild.id)
             if not ctx.author.voice or not ctx.author.voice.channel:
-                raise commands.CommandInvokeError('Join a voicechannel first.')
+                raise music_errors.UserNotConnectedError('Join a voicechannel first.')
 
             if not player.is_connected:
                 if not should_connect:
-                    raise commands.CommandInvokeError('Not connected.')
+                    raise music_errors.BotNotConnectedError('Not connected.')
 
                 user_voice_channel = ctx.author.voice.channel
                 permissions = user_voice_channel.permissions_for(ctx.me)
 
                 if not permissions.connect or not permissions.speak:  # Check user limit too?
-                    raise commands.CommandInvokeError('I need the `CONNECT` and `SPEAK` permissions.')
+                    raise music_errors.MissingPermissionsError('I need the `CONNECT` and `SPEAK` permissions.')
 
                 if (len(user_voice_channel.members) == user_voice_channel.user_limit) and not permissions.administrator:
-                    raise commands.CommandInvokeError('The channel is currently full')
+                    raise music_errors.VoiceChannelFullError('The channel is currently full', user_voice_channel)
 
                 # Check against music channel restrictions in bot settings
                 if voice_channels := self.bot.settings.get(ctx.guild, 'channels.music', []):
                     if user_voice_channel.id not in voice_channels:
-                        raise WrongVoiceChannelError(
+                        raise music_errors.WrongVoiceChannelError(
                             'You need to be in the right voice channel', channels=voice_channels)
 
                 player.store('channel', ctx.channel.id)
                 await ctx.author.voice.channel.connect(cls=BasicVoiceClient)
 
-            elif int(player.channel_id) != ctx.author.voice.channel.id:
+            elif player.channel_id and int(player.channel_id) != ctx.author.voice.channel.id:
                 bot_channel = self.bot.get_channel(int(player.channel_id))
-                raise WrongVoiceChannelError(
-                    'You need to be in my voice channel', channels=[bot_channel])
+                raise music_errors.UserInDifferentVoiceChannelError('You need to be in my voice channel',
+                                                                    channel=bot_channel)
 
             await func(self, ctx, *command_args, **kwargs)
 
@@ -102,10 +74,10 @@ def require_playing(require_user_listening=False):
             if player := self.bot.lavalink.player_manager.get(ctx.guild.id):
 
                 if not player.is_playing:
-                    raise commands.CommandInvokeError('Not playing')
+                    raise music_errors.RequirePlayingError('Not playing')
 
                 if require_user_listening and (ctx.author not in player.listeners):
-                    raise commands.CommandInvokeError('Not listening')
+                    raise music_errors.RequireListeningError('Not listening')
 
             else:
                 raise Exception('Player object does not yet exist')
@@ -136,7 +108,7 @@ def require_queue(require_member_queue=False, require_author_queue=False):
             if require_member_queue:
                 try:
                     if member := kwargs['member']:  # Ignore if member is None
-                        user_queue = player.user_queue(member.id)
+                        user_queue = player.user_queue(member)
                         if not user_queue:
                             embed = discord.Embed(description='{queue.user_empty}', color=ctx.me.color)
                             embed = ctx.localizer.format_embed(embed, _user=member.display_name)
@@ -145,7 +117,7 @@ def require_queue(require_member_queue=False, require_author_queue=False):
                     raise Exception("require_member_error can only be used on commands with a member keyword argument")
 
             if require_author_queue:
-                user_queue = player.user_queue(ctx.author.id)
+                user_queue = player.user_queue(ctx.author)
                 if not user_queue:
                     embed = discord.Embed(description='{my_queue}', color=ctx.me.color)
                     embed = ctx.localizer.format_embed(embed)

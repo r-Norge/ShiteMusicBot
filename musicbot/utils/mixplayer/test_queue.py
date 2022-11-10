@@ -62,8 +62,8 @@ class TestMixQueue():
     def test_priority_queue(self):
         queue = self.setup_baisc_queue()
 
-        queue.add_next_track("priority_item1")
-        queue.add_next_track("priority_item2")
+        queue.add_priorty_queue_track("priority_item1")
+        queue.add_priorty_queue_track("priority_item2")
 
         assert queue.pop_first() == "priority_item1"
         assert queue.pop_first() == "priority_item2"
@@ -121,3 +121,28 @@ class TestMixQueue():
             assert item == queue.pop_first()
 
         assert list(queue) == []
+
+    def test_remove_by_identity(self):
+        queue = MixQueue()
+        queue.add_track(1, TrackMock(1, "a"))
+        queue.add_track(1, TrackMock(1, "a"))
+        queue.add_track(1, TrackMock(1, "b"))
+        queue.add_track(1, TrackMock(1, "a"))
+        queue.add_track(1, TrackMock(1, "b"))
+        queue.add_track(1, TrackMock(1, "a"))
+        queue.add_track(1, TrackMock(1, "b"))
+        queue.add_track(1, TrackMock(1, "b"))
+
+        assert queue.remove_track(TrackMock(1, "a")) is None
+        to_remove = queue.get_user_queue(1)[3]
+
+        first_remove = queue.remove_track(to_remove)
+        assert first_remove is not None
+        pos, removed = first_remove
+        assert to_remove is removed
+        assert pos == 3
+        assert queue.remove_track(to_remove) is None
+
+        queue_after_id_remove = self.list_to_requests(["1a", "1a", "1b", "1b", "1a", "1b", "1b"])
+        for item in queue_after_id_remove:
+            assert item == queue.pop_first()

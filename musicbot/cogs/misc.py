@@ -6,12 +6,14 @@ from lavalink import __version__ as LavalinkVersion
 import platform
 import time
 
+from bot import MusicBot
+
 from ..utils import bot_version
 
 
 class Misc(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
 
     def get_uptime(self):
         now = time.time()
@@ -50,14 +52,14 @@ class Misc(commands.Cog):
         Info about the music player
         """
         embed = discord.Embed(title='{music.title}', color=ctx.me.color)
-        lavalink = self.bot.lavalink
 
         listeners = 0
-        for guild, player in lavalink.player_manager.players.items():
-            listeners += len(player.listeners)
+        if lavalink := self.bot.lavalink:
+            for _, player in lavalink.player_manager.players.items():
+                listeners += len(player.listeners)
 
-        embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')
-        embed.add_field(name='{music.listeners}', value=f'{listeners}')
+            embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')
+            embed.add_field(name='{music.listeners}', value=f'{listeners}')
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 

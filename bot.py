@@ -1,5 +1,6 @@
 # Discord Packages
 import discord
+import lavalink
 from discord.ext import commands
 from discord.flags import MemberCacheFlags
 
@@ -8,6 +9,7 @@ import os
 import time
 import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
+from typing import Optional
 
 import aiohttp
 import yaml
@@ -35,7 +37,7 @@ def _get_prefix(bot, message):
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
-class Bot(commands.Bot):
+class MusicBot(commands.Bot):
     def __init__(self, datadir, debug: bool = False):
         intents = discord.Intents.all()
         super().__init__(command_prefix=_get_prefix,
@@ -55,6 +57,7 @@ class Bot(commands.Bot):
         self.main_logger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
         self.logger.debug("Debug: %s" % debug)
+        self.lavalink: Optional[lavalink.Client] = None
 
     async def on_message(self, message):
         if message.author.bot:
@@ -106,11 +109,11 @@ class Bot(commands.Bot):
         except Exception as e:
             tb = e.__traceback__
             traceback.print_tb(tb)
-            self.logger.error(e)
+            self.logger.exception(e)
 
 
 def run_bot(datadir, debug: bool = False):
-    bot = Bot(datadir, debug=debug)
+    bot = MusicBot(datadir, debug=debug)
     bot.run()
 
 
