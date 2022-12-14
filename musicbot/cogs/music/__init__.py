@@ -9,7 +9,6 @@ from lavalink.events import (
 from lavalink.models import AudioTrack
 
 import asyncio
-import json
 import re
 import urllib.parse as urlparse
 from typing import List, Optional, Tuple
@@ -635,68 +634,102 @@ class Music(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.command(name='lyrics')
     async def _lyrics(self, ctx, *query: str):
-
-        # TODO:
-        player = self.get_player(ctx.guild)
-
-        genius_access_token = self.bot.APIkeys.get('genius', None)
-
-        if genius_access_token is None:
+        """ Search for lyrics of a song """
+        # Check for API key
+        if not (genius_access_token := self.bot.APIkeys.get('genius')):
             return await ctx.send('Missing API key')
 
-        excluded_words = ['music', 'video', 'version', 'original', 'lyrics', 'lyric',
-                          'official', 'live', 'instrumental', 'audio', 'hd']
+        # Extract all arguments into a single string
+        query = ' '.join(query)
 
-        query_as_string = ' '.join(query)
+        # If no query is given, use the current playing song
+        if not query:
+            player = self.get_player(ctx.guild)
+            if not player.is_playing:
+                return await ctx.send('No song is currently playing')
+            query = player.current.title
 
-        if not query_as_string and player.is_playing and player.current:
-            query_as_string = player.current.title
-            query_as_string = re.sub(r'[-()_\[\]]', '', query_as_string)
-            filtered_words = [word for word in query_as_string.split() if word.lower() not in excluded_words]
-            query_as_string = ' '.join(filtered_words)
+        # Filter out unwanted words to improve chances of finding the correct song
+        stopwords = ['music', 'video', 'version', 'original', 'lyrics', 'lyric',
+                     'official', 'live', 'instrumental', 'audio', 'hd']
+        query = ' '.join([word for word in query.split() if word.lower() not in stopwords])
 
-        async def get_site_content(url):
-            async with self.bot.session.get(url) as resp:
-                response = await resp.read()
-            return response.decode('utf-8')
-
+        # Send a message to indicate that the bot is searching for the lyrics
+        # Unfortunately, the Genius API does not provide the lyrics directly, so we have to scrape the website
+        # This is a bit slow, so we send a message to indicate that the bot is searching
         embed = discord.Embed(description=':mag_right:')
         status_msg = await ctx.send(embed=embed)
 
+        # Define an internal function to make requests to the Genius API
+        async def get_site_content(url: str, scrape: bool = False) -> Optional[dict | str]:
+            header = {} if scrape else {'Authorization': f'Bearer {genius_access_token}'}
+            async with self.bot.session.get(url, headers=header) as r:
+                if r.status != 200:
+                    embed = discord.Embed(description=':x: Request failed', color=0xFF0000)
+                    await status_msg.edit(embed=embed)
+                    return
+                if scrape:
+                    return await r.text()
+                return await r.json()
+
+        # Query the song
+        url = 'https://api.genius.com/search?' + urlparse.urlencode({'q': query})
+        response = await get_site_content(url)
+        if not response:
+            return
+
+        # Select top song result
         try:
-            url = 'https://api.genius.com/search?' + urlparse.urlencode(
-                {'access_token': genius_access_token, 'q': query_as_string})
-            result = await get_site_content(url)
-            response = json.loads(result)
-            song_id = response['response']['hits'][0]['result']['id']
-        except Exception:
-            embed = discord.Embed(description=':x:', color=0xFF0000)
+            song = {}
+            for hit in response['response']['hits']:
+                if hit['type'] == 'song':
+                    song = hit['result']
+                    break
+            song_url = song['url']
+        except KeyError:
+            embed = discord.Embed(description=':x: Could not find the queried song', color=0xFF0000)
             return await status_msg.edit(embed=embed)
 
-        result = await get_site_content(f'https://api.genius.com/songs/{song_id}?access_token={genius_access_token}')
-        song = json.loads(result)['response']['song']
+        # Scrape the lyrics from the song page
+        response = await get_site_content(song_url, scrape=True)
+        if not response:
+            return
 
-        response = await get_site_content(song['url'])
+        # Find the lyrics in our scraped data
         scraped_data = BeautifulSoup(response, 'html.parser')
-        lyrics = scraped_data.find(class_='lyrics').get_text()
+        lyrics = scraped_data.findAll('div')
+        for div in lyrics:
+            if div.has_attr('data-lyrics-container'):
+                lyrics_div = div
+                break  # We found the lyrics, so we can stop searching
 
+        # Replace <br> tags with newlines and remove HTML tags
+        # This is a bit hacky, but it works
+        lyrics = re.sub(r'<br\s*/>', '\n', str(lyrics_div))
+        lyrics = re.sub(r'<\/*\w+.*>', '', lyrics)
+
+        # Construct the output embed
         paginator = TextPaginator(max_size=2000, max_lines=50, color=0xFFFF64)
         for line in lyrics.split('\n'):
             paginator.add_line(line)
 
-        await status_msg.delete()
-
-        paginator.pages[0].url = song['url']
-        paginator.pages[0].title = song['full_title']
-        paginator.pages[0].set_thumbnail(url=song['header_image_thumbnail_url'])
+        # Set metadata on the first page
+        paginator.pages[0].url = song_url
+        paginator.pages[0].title = song.get('full_title', '*Unknown title*')
+        paginator.pages[0].set_thumbnail(url=song.get('header_image_thumbnail_url', 'https://i.imgur.com/NmCTsoF.png'))
         paginator.pages[0].set_author(name='Genius', icon_url='https://i.imgur.com/NmCTsoF.png')
 
+        # Send the output
         if len(paginator.pages) < 4:
             for page in paginator.pages:
                 await ctx.send(embed=page)
         else:
             paginator.add_page_indicator(ctx.localizer)
             await Scroller(ctx, paginator).start_scrolling(ClearOn.AnyExit)
+
+        # Since we are using a paginator, we need to delete the status message
+        # because the final output may consist of multiple pages
+        await status_msg.delete()
 
     @commands.command(name='scrub')
     @checks.dj_or(alone=True)
