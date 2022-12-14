@@ -637,7 +637,7 @@ class Music(commands.Cog):
         """ Search for lyrics of a song """
         # Check for API key
         if not (genius_access_token := self.bot.APIkeys.get('genius')):
-            return await ctx.send('Missing API key')
+            return await ctx.send('{errors.missing_api_key}')
 
         # Extract all arguments into a single string
         query = ' '.join(query)
@@ -646,7 +646,7 @@ class Music(commands.Cog):
         if not query:
             player = self.get_player(ctx.guild)
             if not player.is_playing:
-                return await ctx.send('No song is currently playing')
+                return await ctx.send('{nothing_playing}')
             query = player.current.title
 
         # Filter out unwanted words to improve chances of finding the correct song
@@ -665,7 +665,7 @@ class Music(commands.Cog):
             header = {} if scrape else {'Authorization': f'Bearer {genius_access_token}'}
             async with self.bot.session.get(url, headers=header) as r:
                 if r.status != 200:
-                    embed = discord.Embed(description=':x: Request failed', color=0xFF0000)
+                    embed = discord.Embed(description="{errors.error_occurred}", color=0xFF0000)
                     await status_msg.edit(embed=embed)
                     return
                 if scrape:
@@ -687,7 +687,7 @@ class Music(commands.Cog):
                     break
             song_url = song['url']
         except KeyError:
-            embed = discord.Embed(description=':x: Could not find the queried song', color=0xFF0000)
+            embed = discord.Embed(description='{nothing_found}', color=0xFF0000)
             return await status_msg.edit(embed=embed)
 
         # Scrape the lyrics from the song page
@@ -715,7 +715,7 @@ class Music(commands.Cog):
 
         # Set metadata on the first page
         paginator.pages[0].url = song_url
-        paginator.pages[0].title = song.get('full_title', '*Unknown title*')
+        paginator.pages[0].title = song.get('full_title', '*?*')
         paginator.pages[0].set_thumbnail(url=song.get('header_image_thumbnail_url', 'https://i.imgur.com/NmCTsoF.png'))
         paginator.pages[0].set_author(name='Genius', icon_url='https://i.imgur.com/NmCTsoF.png')
 
