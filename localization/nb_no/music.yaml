@@ -85,3 +85,4 @@ errors:
   right_channel: Du må være i riktig kanal
   my_channel: Du må være i samme stemmekanal som meg
   full_channel: Den kanalen er full
+  missing_api_key: API-nøkkel mangler
