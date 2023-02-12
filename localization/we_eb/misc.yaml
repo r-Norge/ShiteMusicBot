@@ -1,11 +1,13 @@
 bot:
   name: What?
-  infotext: Music bot wwitteny fow use ony /r/Norges Discord Sewvews. Its openy souwce!
+  infotext:
+    Music bot wwitteny fow use ony /r/Norges Discord Sewvews. Its openy souwce!
     You cany finyd it [HEWE]({global.vars.repo})
   spectext: |-
     **Python:** [{_python_v}](https://www.python.org/)
-    **Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/tree/rewrite)
-    **Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py)
+    **Discord.py:** [{_discord_v}](https://github.com/Rapptz/discord.py/releases/tag/v{_discord_v})
+    **Lavalink:** [{_lavalink_v}](https://github.com/Devoxin/Lavalink.py/releases/tag/{_lavalink_v})
+    **ShiteMusicBot:** [{_bot_v}](https://github.com/r-Norge/ShiteMusicBot)
   stattext: |-
     **Guiwds:** {_guilds}
     **Usews:** {_members}

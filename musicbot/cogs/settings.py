@@ -2,15 +2,20 @@
 import discord
 from discord.ext import commands
 
+from typing import Optional
+
+from bot import MusicBot
+
 from ..utils import checks
-from ..utils.userinteraction import Scroller
+from ..utils.settingsmanager import Settings as SettingsManager
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
 class Settings(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.settings = self.bot.settings
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
+        self.settings: SettingsManager = self.bot.settings
 
     def format_prefixes(self, prefixes):
         if prefixes is None:
@@ -26,7 +31,7 @@ class Settings(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @checks.is_admin()
     @commands.guild_only()
@@ -90,8 +95,8 @@ class Settings(commands.Cog):
 
         if textchannels := self.bot.settings.get(ctx.guild, 'channels.text'):
             embed = discord.Embed(title='Music command channels set', color=ctx.me.color)
-            channels = [ctx.guild.get_channel(channel) for channel in textchannels]
-            mentioned = [channel.mention for channel in channels if channel is not None]
+            configured_channels = [ctx.guild.get_channel(channel) for channel in textchannels]
+            mentioned = [channel.mention for channel in configured_channels if channel is not None]
             embed.description = ', '.join(mentioned)
             await ctx.send(embed=embed)
         else:
@@ -110,8 +115,8 @@ class Settings(commands.Cog):
 
         if musicchannels := self.bot.settings.get(ctx.guild, 'channels.music'):
             embed = discord.Embed(title='Music channels set', color=ctx.me.color)
-            channels = [ctx.guild.get_channel(channel) for channel in musicchannels]
-            mentioned = [channel.name for channel in channels if channel is not None]
+            configured_channels = [ctx.guild.get_channel(channel) for channel in musicchannels]
+            mentioned = [channel.name for channel in configured_channels if channel is not None]
             embed.description = ', '.join(mentioned)
             await ctx.send(embed=embed)
         else:
@@ -130,8 +135,8 @@ class Settings(commands.Cog):
 
         if listenchannels := self.bot.settings.get(ctx.guild, 'channels.listen_only'):
             embed = discord.Embed(title='Listen only channels set', color=ctx.me.color)
-            channels = [ctx.guild.get_channel(channel) for channel in listenchannels]
-            mentioned = [channel.name for channel in channels if channel is not None]
+            configured_channels = [ctx.guild.get_channel(channel) for channel in listenchannels]
+            mentioned = [channel.name for channel in configured_channels if channel is not None]
             embed.description = ', '.join(mentioned)
             await ctx.send(embed=embed)
         else:
@@ -150,8 +155,8 @@ class Settings(commands.Cog):
 
         if djroles := self.bot.settings.get(ctx.guild, 'roles.dj'):
             embed = discord.Embed(title='DJ roles set to', color=ctx.me.color)
-            roles = [ctx.guild.get_role(role) for role in djroles]
-            mentioned = [role.name for role in roles if role is not None]
+            configured_roles = [ctx.guild.get_role(role) for role in djroles]
+            mentioned = [role.name for role in configured_roles if role is not None]
             embed.description = ', '.join(mentioned)
             await ctx.send(embed=embed)
         else:
@@ -161,7 +166,7 @@ class Settings(commands.Cog):
     @checks.is_admin()
     @commands.guild_only()
     @_set.command(name='maxduration')
-    async def set_max_track_duration(self, ctx, duration: int = None):
+    async def set_max_track_duration(self, ctx, duration: Optional[int] = None):
         self.bot.settings.set(ctx.guild, 'duration.max', duration)
 
         if duration := self.bot.settings.get(ctx.guild, 'duration.max'):
@@ -190,7 +195,7 @@ class Settings(commands.Cog):
     async def current_settings(self, ctx):
         embed = discord.Embed(title='{current.title}', color=ctx.me.color)
         embed.description = '{current.description}'
-        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_thumbnail(url=ctx.guild.icon.url)
 
         prefixes = self.bot.settings.get(ctx.guild, 'prefixes', 'default_prefix')
         embed.add_field(name='{current.prefix}', value=self.format_prefixes(prefixes))
@@ -233,5 +238,5 @@ class Settings(commands.Cog):
         return msg
 
 
-def setup(bot):
-    bot.add_cog(Settings(bot))
+async def setup(bot):
+    await bot.add_cog(Settings(bot))

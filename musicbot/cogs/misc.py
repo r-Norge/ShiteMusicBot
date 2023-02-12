@@ -6,12 +6,14 @@ from lavalink import __version__ as LavalinkVersion
 import platform
 import time
 
+from bot import MusicBot
+
 from ..utils import bot_version
 
 
 class Misc(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
 
     def get_uptime(self):
         now = time.time()
@@ -50,14 +52,14 @@ class Misc(commands.Cog):
         Info about the music player
         """
         embed = discord.Embed(title='{music.title}', color=ctx.me.color)
-        lavalink = self.bot.lavalink
 
         listeners = 0
-        for guild, player in lavalink.player_manager.players.items():
-            listeners += len(player.listeners)
+        if lavalink := self.bot.lavalink:
+            for _, player in lavalink.player_manager.players.items():
+                listeners += len(player.listeners)
 
-        embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')
-        embed.add_field(name='{music.listeners}', value=f'{listeners}')
+            embed.add_field(name='{music.players}', value=f'{len(lavalink.player_manager.players)}')
+            embed.add_field(name='{music.listeners}', value=f'{listeners}')
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)
 
@@ -84,12 +86,12 @@ class Misc(commands.Cog):
         members = len(self.bot.users)
 
         days, hours, minutes, seconds = self.get_uptime()
-        avatar = self.bot.user.avatar_url_as(format=None, static_format='png', size=1024)
+        avatar_url = self.bot.user.display_avatar.replace(static_format='png', size=1024).url
 
         uptimetext = f'{days}d {hours}t {minutes}m {seconds}s'
         embed = discord.Embed(color=ctx.me.color)
-        embed.set_author(name=self.bot.user.name, icon_url=avatar)
-        embed.set_thumbnail(url=avatar)
+        embed.set_author(name=self.bot.user.name, icon_url=avatar_url)
+        embed.set_thumbnail(url=avatar_url)
         embed.set_image(url='https://cdn.discordapp.com/attachments/298524946454282250/'
                             '368118192251469835/vintage1turntable.png')
         embed.add_field(name="{bot.what}",
@@ -109,5 +111,5 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
 
-def setup(bot):
-    bot.add_cog(Misc(bot))
+async def setup(bot):
+    await bot.add_cog(Misc(bot))

@@ -1,4 +1,4 @@
-FROM amd64/python:3.8.3-alpine
+FROM python:3.10.7-alpine
 
 LABEL maintainer="Roxedus"
 

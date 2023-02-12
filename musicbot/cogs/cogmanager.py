@@ -3,13 +3,15 @@ from discord.ext import commands
 
 import traceback
 
-from ..utils.userinteraction import Scroller
+from bot import MusicBot
+
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
 class CogManager(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
         self.settings = self.bot.settings
 
     @commands.group(name='cogmanager', hidden=True)
@@ -19,14 +21,14 @@ class CogManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @_cogmanager.command()
     @commands.is_owner()
     async def load(self, ctx, *, module):
         """Loads a module."""
         try:
-            self.bot.load_extension(f'cogs.{module}')
+            await self.bot.load_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} loaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -38,7 +40,7 @@ class CogManager(commands.Cog):
         if module == "cogmanager":
             return await ctx.send('Unloading this cog is not allowed')
         try:
-            self.bot.unload_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} unloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -48,8 +50,8 @@ class CogManager(commands.Cog):
     async def _reload(self, ctx, *, module):
         """Reloads a module."""
         try:
-            self.bot.unload_extension(f'cogs.{module}')
-            self.bot.load_extension(f'cogs.{module}')
+            await self.bot.unload_extension(f'musicbot.cogs.{module}')
+            await self.bot.load_extension(f'musicbot.cogs.{module}')
             await ctx.send(f'{module} reloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -60,10 +62,10 @@ class CogManager(commands.Cog):
         """Reloads all extensions"""
         try:
             for extension in self.bot.extensions:
-                if extension == 'cogs.cogmanager':
+                if extension == 'musicbot.cogs.cogmanager':
                     continue
-                self.bot.unload_extension(f'{extension}')
-                self.bot.load_extension(f'{extension}')
+                await self.bot.unload_extension(f'{extension}')
+                await self.bot.load_extension(f'{extension}')
             await ctx.send('Extensions reloaded')
         except Exception:
             await ctx.send(f'```py\n{traceback.format_exc()}\n```')
@@ -72,9 +74,10 @@ class CogManager(commands.Cog):
     @commands.is_owner()
     async def _shutdown(self, ctx):
         """Logs out and stops."""
-        self.bot.lavalink.player_manager.players.clear()
-        await self.bot.logout()
+        if lavalink := self.bot.lavalink:
+            lavalink.player_manager.players.clear()
+        await self.bot.close()
 
 
-def setup(bot):
-    bot.add_cog(CogManager(bot))
+async def setup(bot):
+    await bot.add_cog(CogManager(bot))

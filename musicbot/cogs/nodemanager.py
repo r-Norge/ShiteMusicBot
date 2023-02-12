@@ -2,40 +2,50 @@
 import discord
 import lavalink
 from discord.ext import commands
-from lavalink import Node
 
 import codecs
+from typing import Optional
 
 import yaml
 
+from bot import MusicBot
+from musicbot.cogs.music.music_errors import MusicError
+
+# Bot Utilities
+from musicbot.utils.settingsmanager import Settings
 from ..utils.mixplayer import MixPlayer
-from ..utils.userinteraction import Scroller
+from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
 class NodeManager(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.settings = self.bot.settings
+    def __init__(self, bot: MusicBot):
+        self.bot: MusicBot = bot
+        self.settings: Settings = self.bot.settings
         self.logger = self.bot.main_logger.bot_logger.getChild("NodeManager")
 
+    async def load_music_cogs(self):
         music_extensions = [
             'musicbot.cogs.music',
         ]
 
-        if not hasattr(bot, 'lavalink'):
-            bot.lavalink = lavalink.Client(bot.user.id, player=MixPlayer)
+        if self.bot.lavalink is None and self.bot.user:
+            self.bot.lavalink = lavalink.Client(self.bot.user.id, player=MixPlayer)
+            self.lavalink = self.bot.lavalink
 
             self.load_nodes_from_file()
 
-            bot.add_listener(bot.lavalink.voice_update_handler, 'on_socket_response')
+            self.bot.add_listener(self.bot.lavalink.voice_update_handler, 'on_socket_response')
 
             for extension in music_extensions:
                 try:
                     self.logger.debug("Loading extension %s" % extension)
-                    self.bot.load_extension(extension)
+                    await self.bot.load_extension(extension)
                 except Exception:
                     self.logger.exception("Loading of extension %s failed" % extension)
+        else:
+            self.logger.error("Failed to initialize lavalink client")
+            raise MusicError("Failed to initialize lavalink client")
 
     def load_nodes_from_file(self):
         with codecs.open(f"{self.bot.datadir}/config.yaml", 'r', encoding='utf8') as f:
@@ -44,19 +54,20 @@ class NodeManager(commands.Cog):
             name_cache = []
             new_nodes = []
 
-            for node in self.bot.lavalink.node_manager.nodes:
+            for node in self.lavalink.node_manager.nodes:
                 name_cache.append(node.name)
 
             for node in conf['lavalink nodes'] + self.settings.get('lavalink', 'nodes', []):
                 if node['name'] in name_cache:
                     continue
-                name_cache.append(node['name'])
 
-                self.bot.lavalink.add_node(**node)
+                self.lavalink.add_node(**node)
+
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
                     node['name'], node['host'],
                     node['port'], node['region'],))
                 new_nodes.append({**node})
+                name_cache.append(node['name'])
             return new_nodes
 
     async def _regioner(self, region):
@@ -89,7 +100,7 @@ class NodeManager(commands.Cog):
                 embed.add_field(name=f'{await self._regioner(n.region)} **Name:** {n.name}',
                                 value=f'**Host:** {n.host}\n **Port:** {n.port}')
 
-        if isinstance(node, Node):
+        if isinstance(node, lavalink.Node):
             embed.add_field(name=f'{await self._regioner(node.region)} **Name:** {node.name}',
                             value=f'**Host:** {node.host}\n **Port:** {node.port}')
 
@@ -115,7 +126,7 @@ class NodeManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling()
+            await scroller.start_scrolling(ClearOn.AnyExit)
 
     @_node.command(name='reload_file')
     @commands.is_owner()
@@ -127,24 +138,24 @@ class NodeManager(commands.Cog):
 
     @_node.command(name='add')
     @commands.is_owner()
-    async def _add(self, ctx, host, port, password, region, name=None):
-        if name in [n.name for n in self.bot.lavalink.node_manager.nodes]:
+    async def _add(self, ctx, host: str, port: int, password: str, region, name: Optional[str] = None):
+        if name in [n.name for n in self.lavalink.node_manager.nodes]:
             return await ctx.send("A node with that name already exists")
 
-        self.bot.lavalink.add_node(host, port, password, region, name=name)
+        self.lavalink.add_node(host, port, password, region, name=name)
         self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (host, port, region, name,))
         embed = await self._node_presenter(ctx, {'host': host, 'port': port, 'password': password,
                                                  'region': region, 'name': name})
         embed.title = 'Added new node!'
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
-                                                n in self.bot.lavalink.node_manager.nodes])
+                                                n in self.lavalink.node_manager.nodes])
         await ctx.send(embed=embed)
 
     @_node.command(name='list')
     @commands.is_owner()
     async def list_nodes(self, ctx):
-        embed = await self._node_presenter(ctx, self.bot.lavalink.node_manager.nodes)
+        embed = await self._node_presenter(ctx, self.lavalink.node_manager.nodes)
         embed.title = 'Lavalink nodes attatched to this bot:'
         await ctx.send(embed=embed)
 
@@ -152,8 +163,8 @@ class NodeManager(commands.Cog):
     @commands.is_owner()
     async def _remove(self, ctx, node):
         sent_feedback = False
-        for _node in self.bot.lavalink.node_manager.nodes:
-            if len(self.bot.lavalink.node_manager.nodes) <= 1:
+        for _node in self.lavalink.node_manager.nodes:
+            if len(self.lavalink.node_manager.nodes) <= 1:
                 await ctx.send('Cannot remove the last node')
                 sent_feedback = True
                 break
@@ -162,11 +173,11 @@ class NodeManager(commands.Cog):
                 embed = await self._node_presenter(ctx, _node)
                 embed.title = 'Removed node from bot'
                 await ctx.send(embed=embed)
-                self.bot.lavalink.node_manager.remove_node(_node)
-                self.logger.info("Removed Lavalink node: %s" % _node.host)
+                self.lavalink.node_manager.remove_node(_node)
+                self.logger.info("Removed Lavalink node: %s, %s" % (_node.name, _node.host))
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
-                                                n in self.bot.lavalink.node_manager.nodes])
+                                                n in self.lavalink.node_manager.nodes])
 
         if not sent_feedback:
             await ctx.send('No node found')
@@ -174,7 +185,7 @@ class NodeManager(commands.Cog):
     @_node.command(name='change')
     @commands.is_owner()
     async def _nodechange(self, ctx, node=None):
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        player = self.lavalink.player_manager.get(ctx.guild.id)
 
         if not player:
             return
@@ -185,7 +196,7 @@ class NodeManager(commands.Cog):
 
         else:
             newnode = None
-            for _node in self.bot.lavalink.node_manager.nodes:
+            for _node in self.lavalink.node_manager.nodes:
                 if (_node.name or _node.host) == node:
                     newnode = _node
 
@@ -194,5 +205,7 @@ class NodeManager(commands.Cog):
             await player.change_node(newnode)
 
 
-def setup(bot):
-    bot.add_cog(NodeManager(bot))
+async def setup(bot):
+    cog = NodeManager(bot)
+    await cog.load_music_cogs()
+    await bot.add_cog(cog)

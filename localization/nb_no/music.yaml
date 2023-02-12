@@ -55,6 +55,9 @@ volume:
 boost:
   'on': Bassforsterkeren er på
   'off': Bassforsterkeren er av
+nightcore:
+  'on': Nattkjernemodus er på
+  'off': Nattkjernemodus er av
 scrub:
   add: Legger til kontrollere
   controls: "{music_controls}"
@@ -82,3 +85,4 @@ errors:
   right_channel: Du må være i riktig kanal
   my_channel: Du må være i samme stemmekanal som meg
   full_channel: Den kanalen er full
+  missing_api_key: API-nøkkel mangler

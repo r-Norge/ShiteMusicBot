@@ -50,11 +50,11 @@ move:
   description:    'Moves a track in your queue.'
 remove:
   aliases:        [rem]
-  args:           '<pos>'
+  args:           '<member>'
   description:    'Removes a song from your queue.'
 DJremove:
   aliases:        [DJremove, djremove]
-  args:           '<pos>'
+  args:           '<member>'
   description:    'Removes a song from the global queue.'
 removeuser:
   aliases:        [removeuser]
@@ -78,6 +78,10 @@ boost:
   aliases:        [boost, bassboost]
   args:           <True/False>
   description:    'Turns on or off bass boost'
+nightcore:
+  aliases:        [nightcore]
+  args:           <True/False>
+  description:    'Turns on or off nightcore mode'
 history:
   aliases:        [history, h]
   description:    'Shows the last 10 songs played.'

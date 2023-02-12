@@ -1,5 +1,6 @@
 # Discord Packages
 import discord
+import lavalink
 from discord.ext import commands
 from discord.flags import MemberCacheFlags
 
@@ -8,24 +9,23 @@ import os
 import time
 import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
+from typing import Optional
 
 import aiohttp
 import yaml
 
+# Bot Utilities
 from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
 from musicbot.utils.logger import BotLogger
 from musicbot.utils.settingsmanager import Settings
 
-initial_extensions = [
+on_ready_extensions = [
+    'musicbot.cogs.nodemanager',
     'musicbot.cogs.errors',
     'musicbot.cogs.cogmanager',
     'musicbot.cogs.settings',
     'musicbot.cogs.misc',
     'musicbot.cogs.helpformatter'
-]
-
-on_ready_extensions = [
-    'musicbot.cogs.nodemanager'
 ]
 
 
@@ -37,7 +37,7 @@ def _get_prefix(bot, message):
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
-class Bot(commands.Bot):
+class MusicBot(commands.Bot):
     def __init__(self, datadir, debug: bool = False):
         intents = discord.Intents.all()
         super().__init__(command_prefix=_get_prefix,
@@ -57,12 +57,7 @@ class Bot(commands.Bot):
         self.main_logger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
         self.logger.debug("Debug: %s" % debug)
-
-        for extension in initial_extensions:
-            try:
-                self.load_extension(extension)
-            except Exception:
-                self.logger.exception("Loading of extension %s failed" % extension)
+        self.lavalink: Optional[lavalink.Client] = None
 
     async def on_message(self, message):
         if message.author.bot:
@@ -90,14 +85,18 @@ class Bot(commands.Bot):
         for extension in on_ready_extensions:
             try:
                 self.logger.debug("Loading extension %s" % extension)
-                self.load_extension(extension)
+                await self.load_extension(extension)
             except Exception:
                 self.logger.exception("Loading of extension %s failed" % extension)
 
-        print(f'\nLogged in as: {self.user.name}' +
-              f' in {len(self.guilds)} servers.')
-        print(f'Version: {discord.__version__}\n')
-        self.logger.debug("Bot Ready\n\n\n")
+        if self.user:
+            info = f'Logged in as: {self.user.name} in {len(self.guilds)} servers.'
+            border = "="*len(info)
+            self.logger.info(border)
+            self.logger.info(info)
+            self.logger.info(f'Version: {discord.__version__}')
+            self.logger.info(border)
+        self.logger.debug("Bot Ready")
 
         self.session = aiohttp.ClientSession(loop=self.loop)
         await self.change_presence(activity=discord.Game(type=0,
@@ -110,11 +109,11 @@ class Bot(commands.Bot):
         except Exception as e:
             tb = e.__traceback__
             traceback.print_tb(tb)
-            print(e)
+            self.logger.exception(e)
 
 
 def run_bot(datadir, debug: bool = False):
-    bot = Bot(datadir, debug=debug)
+    bot = MusicBot(datadir, debug=debug)
     bot.run()
 
 

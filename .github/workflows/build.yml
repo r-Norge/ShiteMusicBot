@@ -2,17 +2,17 @@ name: Test And Build BOT
 on: [push, pull_request]
 
 jobs:
-  flake8:
+  lint:
     runs-on: ubuntu-latest
     env:
       CheckFiles: "bot.py musicbot/"
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4.2.0
         with:
-          python-version: 3.8
+          python-version: 3.10.7
 
       - name: Lint with flake8
         run: |
@@ -24,23 +24,27 @@ jobs:
           pip install isort
           isort --check --sp setup.cfg ${CheckFiles}
 
-      - name: Sort with Isort
-        if: failure()
-        run: |
-          isort --sp setup.cfg ${CheckFiles}
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
-      - name: Create Pull Request
-        if: failure()
-        uses: peter-evans/create-pull-request@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4.2.0
         with:
-          token: ${{ secrets.GH_TOKEN }}
-          branch: actions/auto
-          commit-message: Changes done by tests
-          committer: Roxedus <bot@roxedus.dev>
-          title: Linter changed files
+          python-version: 3.10.7
+
+      - name: Install dependencies 
+        run: |
+          pip install pytest
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
+          pytest
 
   build-and-push:
-    needs: flake8
+    needs: [lint, test]
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' && contains(github.ref, 'actions') != 'true'
     env:
@@ -59,17 +63,6 @@ jobs:
           echo "::set-output name=branch::$(echo ${_ref} | cut -d/ -f3)"
           echo "::set-output name=username::$(echo ${_username} | cut -d/ -f1 | tr '[:upper:]' '[:lower:]')"
           echo "::set-output name=repo::$(echo ${_repo} | tr '[:upper:]' '[:lower:]')"
-
-      - name: Bump TAG
-        if: github.ref == 'refs/heads/master'
-        id: tagger
-        run: |
-          version=$(grep -i bot_version musicbot/utils/bot_version.py | cut -d" " -f3 | tr -d \")
-          a=(${version//./ })
-          ((a[2]++))
-          new_version=$(echo "${a[0]}.${a[1]}.${a[2]}")
-          sed -i "s/${version}/${new_version}/g" musicbot/utils/bot_version.py
-          echo "::set-output name=tag::${new_version}"
 
       - name: Push changed files, and tags
         if: github.ref == 'refs/heads/master'
