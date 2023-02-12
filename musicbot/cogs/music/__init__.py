@@ -637,7 +637,7 @@ class Music(commands.Cog):
         """ Search for lyrics of a song """
         # Check for API key
         if not (genius_access_token := self.bot.APIkeys.get('genius')):
-            return await ctx.send(ctx.localizer.format_str('{history.title}'))
+            return await ctx.send(ctx.localizer.format_str('{errors.missing_api_key}'))
 
         # Extract all arguments into a single string
         query = ' '.join(query)
