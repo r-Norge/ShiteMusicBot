@@ -80,6 +80,7 @@ jobs:
       - name: Create VARS
         id: vars
         run: |
+          ARCHITECTURE=${{ matrix.architecture }}
           echo "branch=$(echo ${{github.ref}} | cut -d/ -f3)" >> $GITHUB_OUTPUT
           echo "repo=rnorge/music" >> $GITHUB_OUTPUT
           echo "platform=${ARCHITECTURE//-/\/}" >> $GITHUB_OUTPUT
@@ -142,9 +143,10 @@ jobs:
           IMAGE=${{ steps.vars.outputs.repo }}
           TAG=${{ steps.vars.outputs.branch }}-${{github.sha}}
           SOURCE=${IMAGE}:${TAG}
-          docker buildx imagetools create -t ${SOURCE}            ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${SOURCE}                                  ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${IMAGE}:${{ steps.vars.outputs.branch }}  ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
           if [[ ${GITHUB_REF//refs\/heads\//} == master ]]; then
-          docker buildx imagetools create -t ${IMAGE}:latest      ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${IMAGE}:latest                            ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
           fi
       - name: Create manifests for GitHub Container Registry
         env:
@@ -153,7 +155,8 @@ jobs:
           IMAGE=ghcr.io/${{ steps.vars.outputs.ghcr }}
           TAG=${{ steps.vars.outputs.branch }}-${{github.sha}}
           SOURCE=${IMAGE}:${TAG}
-          docker buildx imagetools create -t ${SOURCE}            ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${SOURCE}                                  ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${IMAGE}:${{ steps.vars.outputs.branch }}  ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
           if [[ ${GITHUB_REF//refs\/heads\//} == master ]]; then
-          docker buildx imagetools create -t ${IMAGE}:latest      ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
+          docker buildx imagetools create -t ${IMAGE}:latest                            ${SOURCE}-linux-amd64 ${SOURCE}-linux-arm-v7 ${SOURCE}-linux-arm64
           fi
