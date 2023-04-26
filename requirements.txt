@@ -3,3 +3,6 @@ lavalink == 4.0.*
 asyncio
 pyyaml
 BeautifulSoup4
+pytest
+ruff==0.0.263
+pre-commit
