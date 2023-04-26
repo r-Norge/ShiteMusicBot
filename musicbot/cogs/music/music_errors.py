@@ -1,7 +1,6 @@
-# Discord Packages
-from discord.ext.commands import CommandError
-
 from typing import Optional
+
+from discord.ext.commands import CommandError
 
 
 class MusicError(CommandError):

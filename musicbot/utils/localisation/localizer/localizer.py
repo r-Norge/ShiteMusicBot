@@ -1,10 +1,9 @@
-# Discord Packages
-from discord import Embed
-
 import copy
 import re
 from glob import glob
 from os import path
+
+from discord import Embed
 
 import yaml
 
@@ -40,7 +39,7 @@ class Localizer:
             self._load_localization(lang)
 
         self.all_localizations = flatten(self.localization_table)
-        for lang, d in self.localization_table.items():
+        for lang, _ in self.localization_table.items():
             self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang],
                                                                                      self.all_localizations)
 
@@ -69,7 +68,7 @@ class Localizer:
 
             l_table = flatten(l_table)
             # parsing a few times to resolve all values
-            for i in range(0, 5):
+            for _ in range(0, 5):
                 l_table = Localizer._parse_localization_dictionary(l_table, l_table)
 
             self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)

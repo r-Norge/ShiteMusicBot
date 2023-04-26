@@ -1,4 +1,3 @@
-# Discord Packages
 import discord
 
 from bot import MusicBot

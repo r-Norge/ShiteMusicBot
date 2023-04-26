@@ -1,11 +1,10 @@
-# Discord Packages
-from discord.ext import commands
-
 import traceback
 
-from bot import MusicBot
+from discord.ext import commands
 
-from ..utils.userinteraction import ClearOn, Scroller
+from bot import MusicBot
+from musicbot.utils.userinteraction import ClearMode, Scroller
+
 from .helpformatter import commandhelper
 
 
@@ -21,7 +20,7 @@ class CogManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ClearOn.AnyExit)
+            await scroller.start_scrolling(ClearMode.AnyExit)
 
     @_cogmanager.command()
     @commands.is_owner()
@@ -59,7 +58,7 @@ class CogManager(commands.Cog):
     @_cogmanager.command(name='reloadall')
     @commands.is_owner()
     async def _relaod_all(self, ctx):
-        """Reloads all extensions"""
+        """Reloads all extensions."""
         try:
             for extension in self.bot.extensions:
                 if extension == 'musicbot.cogs.cogmanager':

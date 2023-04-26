@@ -1,8 +1,7 @@
-# Discord Packages
-from discord.ext import commands
-
 from glob import glob
 from os import path
+
+from discord.ext import commands
 
 import yaml
 
@@ -21,7 +20,7 @@ class Aliaser:
         self.load_localizations()
 
     def _gen_alias_dict(self, commands):
-        """ Reverses the direction of a dict of commans→aliases to be alias→command. """
+        """Reverses the direction of a dict of commans→aliases to be alias→command."""
         inverted = {}
         subcommands = {}
         for cmd, properties in commands.items():
@@ -79,7 +78,7 @@ class Aliaser:
         return default
 
     def get_cmd_help(self, locale, command=None, parents=None):
-        """ Fetches the command info dictionary """
+        """Fetches the command info dictionary."""
         if parents is None:
             parents = []
         locale = self.localization_table[locale]
@@ -103,7 +102,7 @@ class Aliaser:
         return command_tree
 
     def get_command(self, ctx):
-        """ Get a top level command. """
+        """Get a top level command."""
         if not ctx.prefix:
             ctx.command = None
             return ctx
@@ -124,7 +123,7 @@ class Aliaser:
         return view
 
     def get_subcommand(self, ctx, group=None, parents=None):
-        """ Recursicely replaces all subcommand aliases with subcommands."""
+        """Recursicely replaces all subcommand aliases with subcommands."""
         if parents is None:
             parents = []
         view = ctx.view

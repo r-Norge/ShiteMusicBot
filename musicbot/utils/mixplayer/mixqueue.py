@@ -1,11 +1,10 @@
-# Discord Packages
-from lavalink.models import AudioTrack
-
 import logging
 from collections import OrderedDict, deque
 from itertools import chain, cycle, islice
 from random import shuffle
 from typing import Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar
+
+from lavalink.models import AudioTrack
 
 # Would like to ensure the T has a "requester" attribute, but don't know if that is possible
 T = TypeVar('T', bound=AudioTrack)
@@ -13,7 +12,7 @@ QueueType = List[T]
 
 
 def roundrobin(*iterables: Iterable[T]) -> Iterator[T]:
-    """roundrobin('ABC', 'D', 'EF') --> A D E B F C"""
+    """roundrobin('ABC', 'D', 'EF') --> A D E B F C."""
     # Recipe credited to George Sakkis
     num_active = len(iterables)
     nexts = cycle(iter(it).__next__ for it in iterables)
@@ -79,7 +78,7 @@ class MixQueue(Generic[T]):
         pos = [self._loc_to_glob(requester, i) for i in range(len(queue))]
         if self.looping:
             pos = [(p + self.loop_offset) % len(self) for p in pos]
-        combined = zip(queue, pos)
+        combined = zip(queue, pos, strict=True)
         return list(combined)
 
     def pop_first(self) -> Optional[T]:
@@ -154,9 +153,7 @@ class MixQueue(Generic[T]):
                 return track
 
     def remove_track(self, track: T) -> Optional[Tuple[int, T]]:
-        """
-        Removes a track by identity
-        """
+        """Removes a track by identity."""
         for queue in self.queues.values():
             for i, t in enumerate(queue):
                 if t is track:

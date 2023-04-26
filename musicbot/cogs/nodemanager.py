@@ -1,20 +1,18 @@
-# Discord Packages
+import codecs
+from typing import Optional
+
 import discord
 import lavalink
 from discord.ext import commands
-
-import codecs
-from typing import Optional
 
 import yaml
 
 from bot import MusicBot
 from musicbot.cogs.music.music_errors import MusicError
-
-# Bot Utilities
+from musicbot.utils.mixplayer import MixPlayer
 from musicbot.utils.settingsmanager import Settings
-from ..utils.mixplayer import MixPlayer
-from ..utils.userinteraction import ClearOn, Scroller
+from musicbot.utils.userinteraction import ClearMode, Scroller
+
 from .helpformatter import commandhelper
 
 
@@ -126,7 +124,7 @@ class NodeManager(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ClearOn.AnyExit)
+            await scroller.start_scrolling(ClearMode.AnyExit)
 
     @_node.command(name='reload_file')
     @commands.is_owner()

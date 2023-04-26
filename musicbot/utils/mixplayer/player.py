@@ -1,12 +1,11 @@
-# Discord Packages
+import logging
+from typing import Dict, List, Optional, Set, Tuple
+
 import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 from lavalink.filters import Equalizer, Timescale
-
-import logging
-from typing import Dict, List, Optional, Set, Tuple
 
 from .mixqueue import MixQueue
 
@@ -42,18 +41,18 @@ class MixPlayer(DefaultPlayer):
 
     def add(self, requester: RequesterType, track: AudioTrack,
             pos: Optional[int] = None) -> Tuple[AudioTrack, int, int]:
-        """ Adds a track to the queue. """
+        """Adds a track to the queue."""
         track, global_position, localpos = self.queue.add_track(requester.id, track, pos)
         self.logger.info(f"Track {track.title} added for {requester.display_name} @ ({global_position}, {localpos}).")
         return track, global_position, localpos
 
     def add_priority(self, track: AudioTrack):
-        """ Adds a track to beginning of the queue """
+        """Adds a track to beginning of the queue."""
         self.queue.add_priorty_queue_track(track)
         self.logger.info(f"Track {track} added to priority queue.")
 
     def move_user_track(self, requester: RequesterType, initial: int, final: int):
-        """ Moves a track in a users queue"""
+        """Moves a track in a users queue."""
         if moved := self.queue.move_user_track(requester.id, initial, final):
             self.logger.info(f"Track {moved.title} moved from {initial} to {final}" +
                              f"for in queue for {requester.display_name}")
@@ -66,7 +65,7 @@ class MixPlayer(DefaultPlayer):
             self.logger.debug(f"User {requester.display_name} has no more tracks. Remove from queue")
 
     def remove_user_track(self, requester: RequesterType, pos: int) -> Optional[AudioTrack]:
-        """ Removes the song at <pos> from the queue of requester """
+        """Removes the song at <pos> from the queue of requester."""
         if track := self.queue.remove_user_track(requester.id, pos):
             self.logger.info(f"Track {track.title} for requester {requester.display_name} removed.")
             return track
@@ -75,11 +74,11 @@ class MixPlayer(DefaultPlayer):
         return self.queue.remove_track(track)
 
     def remove_global_track(self, pos: int) -> Optional[AudioTrack]:
-        """ Removes the song at <pos> in the global queue """
+        """Removes the song at <pos> in the global queue."""
         return self.queue.remove_global_track(pos)
 
     def shuffle_user_queue(self, requester: RequesterType):
-        """ Randomly reorders the queue of requester """
+        """Randomly reorders the queue of requester."""
         self.queue.shuffle_user_queue(requester.id)
 
     def user_queue(self, requester: RequesterType) -> List[AudioTrack]:
@@ -140,7 +139,7 @@ class MixPlayer(DefaultPlayer):
         self.logger.info(f"Playing track: {track.title}")
 
     async def skip(self, pos: int = 0):
-        """ Plays the next track in the queue, if any. """
+        """Plays the next track in the queue, if any."""
         for _ in range(pos):
             track = self.queue.pop_first()
             self.logger.debug(f"Track {track} skipped")
@@ -149,7 +148,7 @@ class MixPlayer(DefaultPlayer):
         await self.play()
 
     async def stop(self):
-        """ Stops the player. """
+        """Stops the player."""
         await self.node._send(op='stop', guildId=str(self.guild_id))
         self.current = None
         self.queue.enable_looping(False)
@@ -207,7 +206,7 @@ class MixPlayer(DefaultPlayer):
             self.queue.enable_looping(looping)
 
     async def handle_event(self, event):
-        """ Handles the given event as necessary. """
+        """Handles the given event as necessary."""
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
                 isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
             self.logger.debug("Track ended, clearing votes")

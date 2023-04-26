@@ -1,7 +1,6 @@
-# Discord Packages
-from discord.ext import commands
-
 from typing import Optional
+
+from discord.ext import commands
 
 from .localizer.localizerwrapper import LocalizerWrapper
 

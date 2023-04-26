@@ -1,4 +1,4 @@
-class CantScrollException(Exception):
+class CantScrollError(Exception):
     pass
 
 
