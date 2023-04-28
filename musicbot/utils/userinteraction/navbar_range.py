@@ -21,8 +21,3 @@ class NavBarRange:
             mid_select_items[0] = 0
             mid_select_items[-1] = self.num_items - 1
         return iter(mid_select_items)
-
-    def _make_truncated_range(self, start, end):
-        actual_start = max(start, 0)
-        actual_end = min(self.max_iter_length, end)
-        return range(actual_start, actual_end)
