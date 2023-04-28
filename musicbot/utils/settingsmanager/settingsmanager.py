@@ -1,10 +1,9 @@
-# Discord Packages
-import discord
-
 import codecs
 import locale as localee
 import os
 from typing import Any
+
+import discord
 
 import yaml
 
@@ -38,7 +37,7 @@ class Settings():
             self.settings = yaml.load(f, Loader=yaml.SafeLoader)
 
     def set(self, identifier, setting, value):
-        """ Set value in settings, will overwrite any existing values. """
+        """Set value in settings, will overwrite any existing values."""
         guild_name = None
         if isinstance(identifier, discord.Guild):
             guild_name = identifier.name
@@ -55,9 +54,10 @@ class Settings():
             yaml.dump(self.settings, f, indent=2)
 
     def get(self, identifier, setting, default: Any = '') -> Any:
-        """ Gets a value from the settings if a default return value is specified
+        """Gets a value from the settings if a default return value is specified
         it will return the default if no setting is found. If that default is an
-        attribute of the settings class, the value of the attribute will get returned."""
+        attribute of the settings class, the value of the attribute will get returned.
+        """
         if isinstance(identifier, discord.Guild):
             identifier = str(identifier.id)
 

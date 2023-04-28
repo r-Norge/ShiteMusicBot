@@ -1,0 +1,10 @@
+[tool.ruff]
+# Allow lines to be as long as 120 characters.
+select = ["F", "E", "B", "W", "I001"]
+line-length = 120
+
+[tool.ruff.isort]
+section-order = ["future", "standard-library", "discord", "third-party", "first-party", "local-folder"]
+[tool.ruff.isort.sections]
+"discord" = ["discord", "lavalink"]
+

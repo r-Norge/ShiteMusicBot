@@ -1,27 +1,25 @@
-# Discord Packages
-import discord
-
 import asyncio
 import functools
 import inspect
 import math
 
-# Bot Utilities
+import discord
+
+from musicbot.utils.checks import is_dj
 from musicbot.utils.mixplayer.player import MixPlayer
-from ...utils.checks import is_dj
+
 from . import music_errors
 from .voice_client import BasicVoiceClient
 
 
 def require_voice_connection(should_connect=False):
-    """
-    Checks if the bot is in a valid voice channel for the command
-    should_connect indicates whether the bot should try to join a channel
+    """Checks if the bot is in a valid voice channel for the command
+    should_connect indicates whether the bot should try to join a channel.
     """
     def ensure_voice(func):
         @functools.wraps(func)
         async def ensure_voice_inner(self, ctx, *command_args, **kwargs):
-            """ This check ensures that the bot and command author are in the same voicechannel. """
+            """This check ensures that the bot and command author are in the same voicechannel."""
             player: MixPlayer = self.bot.lavalink.player_manager.get(ctx.guild.id)
             if not player:
                 raise music_errors.MusicError("ensure voice could not get lavalink player")
@@ -63,9 +61,8 @@ def require_voice_connection(should_connect=False):
 
 
 def require_playing(require_user_listening=False):
-    """
-    Checks if the bot is currently playing a track
-    ensure_user_listening: also checks if the user is listening to the bot
+    """Checks if the bot is currently playing a track
+    ensure_user_listening: also checks if the user is listening to the bot.
     """
     def ensure_play(func):
         @functools.wraps(func)
@@ -89,9 +86,8 @@ def require_playing(require_user_listening=False):
 
 
 def require_queue(require_member_queue=False, require_author_queue=False):
-    """
-    Checks if there is something queued
-    require_member_queue also checks if the queue of a member is empty, only works when member is an argument
+    """Checks if there is something queued
+    require_member_queue also checks if the queue of a member is empty, only works when member is an argument.
     """
     def ensure_queue(func):
         if require_member_queue:
@@ -114,7 +110,8 @@ def require_queue(require_member_queue=False, require_author_queue=False):
                             embed = ctx.localizer.format_embed(embed, _user=member.display_name)
                             return await ctx.send(embed=embed)
                 except KeyError:
-                    raise Exception("require_member_error can only be used on commands with a member keyword argument")
+                    raise Exception("require_member_error can only be used \
+                                    on commands with a member keyword argument") from None
 
             if require_author_queue:
                 user_queue = player.user_queue(ctx.author)

@@ -1,14 +1,12 @@
-# Discord Packages
+import platform
+import time
+
 import discord
 from discord.ext import commands
 from lavalink import __version__ as LavalinkVersion
 
-import platform
-import time
-
 from bot import MusicBot
-
-from ..utils import bot_version
+from musicbot.utils import bot_version
 
 
 class Misc(commands.Cog):
@@ -48,9 +46,7 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def musicinfo(self, ctx):
-        """
-        Info about the music player
-        """
+        """Info about the music player."""
         embed = discord.Embed(title='{music.title}', color=ctx.me.color)
 
         listeners = 0
@@ -79,9 +75,7 @@ class Misc(commands.Cog):
 
     @commands.command()
     async def info(self, ctx):
-        """
-        Info about the bot
-        """
+        """Info about the bot."""
         guilds = len(self.bot.guilds)
         members = len(self.bot.users)
 

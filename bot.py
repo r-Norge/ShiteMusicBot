@@ -1,9 +1,3 @@
-# Discord Packages
-import discord
-import lavalink
-from discord.ext import commands
-from discord.flags import MemberCacheFlags
-
 import codecs
 import os
 import time
@@ -11,10 +5,14 @@ import traceback
 from argparse import ArgumentParser, RawTextHelpFormatter
 from typing import Optional
 
+import discord
+import lavalink
+from discord.ext import commands
+from discord.flags import MemberCacheFlags
+
 import aiohttp
 import yaml
 
-# Bot Utilities
 from musicbot.utils.localisation import Aliaser, LocalizedContext, Localizer, LocalizerWrapper
 from musicbot.utils.logger import BotLogger
 from musicbot.utils.settingsmanager import Settings

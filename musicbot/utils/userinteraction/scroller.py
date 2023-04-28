@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-# Discord Packages
-import discord
-
 import asyncio
 from enum import Flag, auto
 from typing import List, Optional, Tuple
 
+import discord
+
 from bot import MusicBot
 
-from .paginators import BasePaginator, CantScrollException
+from .paginators import BasePaginator, CantScrollError
 
 
-class ClearOn(Flag):
+class ClearMode(Flag):
     Timeout = auto()
     ManualExit = auto()
     AnyExit = Timeout | ManualExit
@@ -85,12 +84,12 @@ class Scroller:
         self.permissions = self.channel.permissions_for(bot_user)
 
         if not self.permissions.embed_links:
-            raise CantScrollException('Bot does not have embed links permission.')
+            raise CantScrollError('Bot does not have embed links permission.')
 
         if not self.permissions.send_messages:
-            raise CantScrollException('Bot cannot send messages.')
+            raise CantScrollError('Bot cannot send messages.')
 
-    async def start_scrolling(self, clear_mode: ClearOn,
+    async def start_scrolling(self, clear_mode: ClearMode,
                               message: Optional[discord.Message] = None,
                               start_page: int = 0) -> Tuple[discord.Message, bool]:
         self.clear_mode = clear_mode
@@ -132,8 +131,8 @@ class Scroller:
         if clear_scroller_view:
             self.view.clear_items()
         self.timed_out = was_timeout
-        if (not was_timeout and self.clear_mode & ClearOn.ManualExit or
-                was_timeout and self.clear_mode & ClearOn.Timeout):
+        if (not was_timeout and self.clear_mode & ClearMode.ManualExit or
+                was_timeout and self.clear_mode & ClearMode.Timeout):
             if self.message:
                 await self.message.delete()
                 self.message = None

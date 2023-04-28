@@ -1,14 +1,14 @@
-# Discord Packages
 from discord.ext import commands
 
 from bot import MusicBot
+from musicbot.utils.userinteraction.scroller import ClearMode, Scroller
 
-from ...utils.userinteraction.scroller import ClearOn, Scroller
 from .helpformatter import coghelper, commandhelper, helper, prefix_cleaner
 
 
 class Help(commands.Cog):
-    """Help command"""
+    """Help command."""
+
     def __init__(self, bot: MusicBot):
         self.bot: MusicBot = bot
 
@@ -35,4 +35,4 @@ class Help(commands.Cog):
                 paginator = await coghelper(ctx, thing)
 
         scroller = Scroller(ctx, paginator)
-        await scroller.start_scrolling(ClearOn.Timeout | ClearOn.ManualExit)
+        await scroller.start_scrolling(ClearMode.Timeout | ClearMode.ManualExit)

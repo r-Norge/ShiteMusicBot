@@ -1,14 +1,13 @@
-# Discord Packages
+from typing import Optional
+
 import discord
 from discord.ext import commands
 
-from typing import Optional
-
 from bot import MusicBot
+from musicbot.utils import checks
+from musicbot.utils.settingsmanager import Settings as SettingsManager
+from musicbot.utils.userinteraction import ClearMode, Scroller
 
-from ..utils import checks
-from ..utils.settingsmanager import Settings as SettingsManager
-from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 
 
@@ -31,7 +30,7 @@ class Settings(commands.Cog):
             ctx.localizer.prefix = 'help'  # Ensure the bot looks for locales in the context of help, not cogmanager.
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=True)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ClearOn.AnyExit)
+            await scroller.start_scrolling(ClearMode.AnyExit)
 
     @checks.is_admin()
     @commands.guild_only()
