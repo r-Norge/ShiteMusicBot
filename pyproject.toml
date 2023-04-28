@@ -1,3 +1,9 @@
+
+
+# Required in order to make pytest handle imports correctly.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [tool.ruff]
 # Allow lines to be as long as 120 characters.
 select = ["F", "E", "B", "W", "I001"]

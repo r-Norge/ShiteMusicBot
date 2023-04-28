@@ -1,4 +1,3 @@
-
 from .navbar_range import NavBarRange
 
 
