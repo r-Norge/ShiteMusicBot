@@ -30,7 +30,7 @@ clean:
 
 # Run ruff
 lint: venv
-    ruff . --fix
+    {{python}} -m ruff . --fix
 
 # Run tests
 test: venv

@@ -9,6 +9,15 @@ from .paginators import TextPaginator
 from .scroller import ClearMode, Scroller
 
 
+def selector_button_callback(f):
+    def wrapper(*args, **kwargs):
+        async def base_button_callback(_interaction, _button):
+            # call the decorated function f with provided args and button info
+            return await f(_interaction, _button, *args, **kwargs)
+        return base_button_callback
+    return wrapper
+
+
 class SelectMode(Enum):
     SingleSelect = auto()
     MultiSelect = auto()
