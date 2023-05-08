@@ -27,7 +27,13 @@ from musicbot.utils.mixplayer.player import MixPlayer
 from musicbot.utils.thumbnailer import Thumbnailer
 from musicbot.utils.userinteraction.paginators import QueuePaginator, TextPaginator
 from musicbot.utils.userinteraction.scroller import ClearMode, Scroller
-from musicbot.utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
+from musicbot.utils.userinteraction.selector import (
+    SelectMode,
+    Selector,
+    SelectorButton,
+    SelectorItem,
+    selector_button_callback,
+)
 
 from .decorators import require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import MusicError, PlayerNotAvailableError, WrongTextChannelError
@@ -306,7 +312,8 @@ class Music(commands.Cog):
 
         # We create a new selector for each selection
         def build_move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
-            async def return_track(track):
+            @selector_button_callback
+            async def return_track(_interaction, _button, track):
                 return track
 
             choices = []
@@ -317,7 +324,7 @@ class Music(commands.Cog):
                 else:
                     prefix = f'`{index:<3}-> `\n`{blank}`'
                 label = f'{prefix} [{track.title}]({track.uri})'
-                selection = SelectorItem(label, str(index), wrap_in_button_callback(return_track, track))
+                selection = SelectorItem(label, str(index), return_track(track))
                 choices.append(selection)
 
             return Selector(ctx, choices, select_mode=SelectMode.SpanningMultiSelect, use_tick_for_stop_emoji=True,
@@ -367,26 +374,20 @@ class Music(commands.Cog):
 
         tracks_to_remove = []
 
-        async def update_remove_list(tracks_list, track: AudioTrack):
+        @selector_button_callback
+        async def update_remove_list(_interaction, button: SelectorButton, tracks_list, track: AudioTrack):
             # It seems duplicate songs still don't satisfy equality
-            # which meas remove is sufficient to preserve order
+            # which means remove is sufficient to preserve order
             # of similar items
             if track in tracks_list:
                 tracks_list.remove(track)
             else:
                 tracks_list.append(track)
 
-        # The callback from the selector takes a discord interaction and
-        # the button class. We wrap the track remove callback to handle those
-        # arguments and update button color
-        def add_change_button_color(func, *args):
-            async def inner(_, button: SelectorButton):
-                if button.style == discord.ButtonStyle.red:
-                    button.style = discord.ButtonStyle.gray
-                else:
-                    button.style = discord.ButtonStyle.red
-                return await func(*args)
-            return inner
+            if button.style == discord.ButtonStyle.red:
+                button.style = discord.ButtonStyle.gray
+            else:
+                button.style = discord.ButtonStyle.red
 
         selector_buttons = []
         # Build each selection from the queue, a visible string and a callback.
@@ -394,7 +395,7 @@ class Music(commands.Cog):
             requester = self.bot.get_user(track.requester)
             selector_buttons.append(
                 SelectorItem(f'`{index}` [{track.title}]({track.uri}) - {requester.mention if requester else ""}',
-                             str(index), add_change_button_color(update_remove_list, tracks_to_remove, track)))
+                             str(index), update_remove_list(tracks_to_remove, track)))
 
         remove_selector = Selector(ctx, selector_buttons, select_mode=SelectMode.MultiSelect,
                                    use_tick_for_stop_emoji=True, color=ctx.me.color, title='Select songs to remove')
@@ -469,14 +470,19 @@ class Music(commands.Cog):
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
+        def make_enqueue_callback(func, *args):
+            """Take a callback and convert it to the form required by a SelectorItem."""
+            async def inner(_interaction, _button):
+                return await func(*args)
+            return inner
+
         # This is the base embed that will be modified by the selector
         embed = discord.Embed(color=ctx.me.color)
         buttons = []
         for i, track in enumerate(results['tracks'], start=1):
             duration = timeformatter.format_ms(int(track.duration))
             interaction = SelectorItem(f'`{i}` [{track.title}]({track.uri}) `{duration}`', str(i),
-                                       wrap_in_button_callback(
-                                           self.enqueue, ctx, track, embed))
+                                       make_enqueue_callback(self.enqueue, ctx, track, embed))
             buttons.append(interaction)
 
         search_selector = Selector(ctx, buttons, select_mode=SelectMode.SingleSelect,
@@ -745,26 +751,23 @@ class Music(commands.Cog):
         player = self.get_player(ctx.guild)
         controls = '{scrub.controls}'
 
-        def seek_callback(player: MixPlayer, seconds):
-            async def inner(_interaction, _button):
-                newpos = player.position + seconds * 1000
-                return await player.seek(newpos)
-            return inner
+        @selector_button_callback
+        async def seek(_interacton, _button, seconds):
+            newpos = player.position + seconds * 1000
+            return await player.seek(newpos)
 
-        def toggle_pause_callback(player: MixPlayer):
-            async def inner(_interaction, button):
-                should_pause = not player.paused
-                button.style = discord.ButtonStyle.red if should_pause else discord.ButtonStyle.gray
-                return await player.set_pause(should_pause)
-            return inner
+        @selector_button_callback
+        async def toggle_pause(_interaction, button: SelectorButton):
+            should_pause = not player.paused
+            button.style = discord.ButtonStyle.red if should_pause else discord.ButtonStyle.gray
+            return await player.set_pause(should_pause)
 
         scrubber_controls = [
-            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, -1000)),
-            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek_callback(player, -15)),
-            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}',
-                         toggle_pause_callback(player)),
-            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek_callback(player, 15)),
-            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek(-1000)),
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek(-15)),
+            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}', toggle_pause()),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek(15)),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek(1000))
         ]
         scrubber = Selector(ctx, scrubber_controls, select_mode=SelectMode.MultiSelect, use_tick_for_stop_emoji=True,
                             default_text=ctx.localizer.format_str(controls), color=ctx.me.color)
@@ -880,13 +883,6 @@ class Music(commands.Cog):
         except Exception as err:
             self.logger.error("Error in leave_timer loop")
             self.logger.exception(err)
-
-
-def wrap_in_button_callback(func, *args):
-    """Take a callback and convert it to the form required by a SelectorItem."""
-    async def inner(_interaction, _button):
-        return await func(*args)
-    return inner
 
 
 async def setup(bot):
