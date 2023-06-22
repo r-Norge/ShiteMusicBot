@@ -7,7 +7,7 @@ default:
 # Make a new virtual environment
 [private]
 make_venv:
-    python3.10 -m venv {{env_name}}
+    python3 -m venv {{env_name}}
     {{python}} -m pip install --upgrade pip
     {{python}} -m pip install -r requirements.txt
 

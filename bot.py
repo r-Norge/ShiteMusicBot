@@ -47,12 +47,12 @@ class MusicBot(commands.Bot):
         self.settings = Settings(datadir, **conf['default server settings'])
         self.APIkeys = conf.get('APIkeys', {})
 
-        self.localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
-        self.aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+        self.localizer: Localizer = Localizer(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
+        self.aliaser: Aliaser = Aliaser(conf.get('locale path', "./localization"), conf.get('locale', 'en_en'))
 
         self.datadir = datadir
-        self.debug = debug
-        self.main_logger = logger
+        self.debug: bool = debug
+        self.main_logger: BotLogger = logger
         self.logger = self.main_logger.bot_logger.getChild("Bot")
         self.logger.debug("Debug: %s" % debug)
         self.lavalink: Optional[lavalink.Client] = None
@@ -66,7 +66,7 @@ class MusicBot(commands.Bot):
         ctx = await self.get_context(message, cls=LocalizedContext)
 
         # Replace aliases with commands
-        ctx = self.aliaser.get_command(ctx)
+        ctx: LocalizedContext = self.aliaser.get_command(ctx)
 
         # Add the localizer
         if ctx.command and ctx.command.cog_name:
