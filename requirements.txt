@@ -1,8 +1,8 @@
-discord.py == 2.0.*
+discord.py == 2.3.*
 lavalink == 4.0.*
 asyncio
 pyyaml
 BeautifulSoup4
 pytest
-ruff==0.0.263
+ruff==0.0.274
 pre-commit

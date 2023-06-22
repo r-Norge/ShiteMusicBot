@@ -39,7 +39,6 @@ from .decorators import require_playing, require_queue, require_voice_connection
 from .music_errors import MusicError, PlayerNotAvailableError, WrongTextChannelError
 from .voice_client import BasicVoiceClient
 
-time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 
 
@@ -199,19 +198,13 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True, track_requester=True)
     @require_voice_connection()
     @require_playing(require_user_listening=True)
-    async def _seek(self, ctx, *, time: str):
+    async def _seek(self, ctx, *, seconds: int):
         """Seeks to a given position in a track."""
         player = self.get_player(ctx.guild)
-        if seconds := time_rx.search(time):
-            # Convert to milliseconds, include sign
-            milliseconds = int(seconds.group())*1000 * (-1 if time.startswith('-1') else 1)
-
-            track_time = player.position + milliseconds
-            await player.seek(int(track_time))
-            msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
-            await ctx.send(msg)
-        else:
-            await ctx.send(ctx.localizer.format_str("{seek.missing_amount}"))
+        track_time = player.position + seconds * 1000  # milliseconds
+        await player.seek(int(track_time))
+        msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
+        return await ctx.send(msg)
 
     @commands.command(name='skip')
     @require_voice_connection()
@@ -868,8 +861,9 @@ class Music(commands.Cog):
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
                 await player.stop()
+                voice_client: BasicVoiceClient
                 if voice_client := guild.voice_client:
-                    await voice_client.disconnect(force=False)
+                    await voice_client.disconnect(force=True)
 
     async def leave_check(self):
         for player_id in self.lavalink.player_manager.players:
