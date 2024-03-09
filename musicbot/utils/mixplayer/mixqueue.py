@@ -4,7 +4,7 @@ from itertools import chain, cycle, islice
 from random import shuffle
 from typing import Generic, Iterable, Iterator, List, Optional, Tuple, TypeVar
 
-from lavalink.models import AudioTrack
+from lavalink import AudioTrack
 
 # Would like to ensure the T has a "requester" attribute, but don't know if that is possible
 T = TypeVar('T', bound=AudioTrack)

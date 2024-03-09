@@ -7,6 +7,7 @@ import discord
 import lavalink
 from discord import VoiceChannel
 from discord.ext import commands, tasks
+from lavalink import AudioTrack
 from lavalink.events import (
     NodeChangedEvent,
     NodeConnectedEvent,
@@ -17,7 +18,6 @@ from lavalink.events import (
     TrackStartEvent,
     TrackStuckEvent,
 )
-from lavalink.models import AudioTrack
 
 from bs4 import BeautifulSoup
 

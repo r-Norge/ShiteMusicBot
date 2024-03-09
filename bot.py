@@ -97,9 +97,11 @@ class MusicBot(commands.Bot):
         self.logger.debug("Bot Ready")
 
         self.session = aiohttp.ClientSession(loop=self.loop)
-        await self.change_presence(activity=discord.Game(type=0,
-                                                         name=conf["bot"]["playing status"]),
-                                   status=discord.Status.online)
+
+        if presence := conf["bot"]["playing status"]:
+            await self.change_presence(activity=discord.Game(type=0,
+                                                             name=presence),
+                                       status=discord.Status.online)
 
     def run(self):
         try:
