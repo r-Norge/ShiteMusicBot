@@ -123,7 +123,7 @@ class MixPlayer(DefaultPlayer):
                 await self.bassboost(False)
                 await self.nightcoreify(False)
                 await self.stop()
-                await self.node._dispatch_event(QueueEndEvent(self))
+                await self.client._dispatch_event(QueueEndEvent(self))
                 return
             else:
                 # At this point track will not be None, as the queue is not empty
@@ -133,9 +133,9 @@ class MixPlayer(DefaultPlayer):
         if track is None or track.track is None:
             # Ignore, if the queue was empty we would have dispatched the event already
             return
-        await self.node._send(op='play', guildId=str(self.guild_id),
-                              track=track.track, startTime=start_time)
-        await self.node._dispatch_event(TrackStartEvent(self, track))
+        await self.play_track(track, start_time)
+
+        await self.client._dispatch_event(TrackStartEvent(self, track))
         self.logger.info(f"Playing track: {track.title}")
 
     async def skip(self, pos: int = 0):
@@ -149,7 +149,8 @@ class MixPlayer(DefaultPlayer):
 
     async def stop(self):
         """Stops the player."""
-        await self.node._send(op='stop', guildId=str(self.guild_id))
+        # await self.node._send(op='stop', guildId=str(self.guild_id))
+        await super().stop()
         self.current = None
         self.queue.enable_looping(False)
         self.logger.info("Music player stopped, clearing current track and stopping looping")
