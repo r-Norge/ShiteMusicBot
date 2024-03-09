@@ -78,7 +78,7 @@ class Localizer:
     def _parse_localization_dictionary(d, lookup, prefix=None):
         n_dict = {}
         for k, v in d.items():
-            if type(v) is str:
+            if isinstance(v, str):
                 n_dict[k] = Localizer._parse_localization_string(v, lookup, prefix)
             else:
                 n_dict[k] = v
@@ -137,11 +137,11 @@ class Localizer:
         cursorQueue = [nd]
         while cursorQueue:
             cursor = cursorQueue.pop()
-            for k, v in (cursor.items() if type(cursor) == dict else enumerate(cursor)):
-                if type(v) == str:
+            for k, v in (cursor.items() if isinstance(cursor, dict) else enumerate(cursor)):
+                if isinstance(v, str):
                     # insert translations based on lang
                     cursor[k] = self.format_str(v, lang, prefix, **kvpairs)
-                elif type(v) == dict or type(v) == list:
+                elif isinstance(v, dict) or isinstance(v, list):
                     cursorQueue.append(v)
 
         return nd
