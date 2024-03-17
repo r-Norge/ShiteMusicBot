@@ -1,4 +1,5 @@
 import discord
+import lavalink
 
 from bot import MusicBot
 from musicbot.cogs.music.music_errors import MusicError
