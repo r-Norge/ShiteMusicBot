@@ -507,7 +507,7 @@ class Music(commands.Cog):
     @commands.command(name='reconnect')
     @require_voice_connection()
     @voteable(DJ_override=True, react_to_vote=True)
-    async def _reconnect(self, ctx):
+    async def _reconnect(self, ctx, force: bool = False):
         """Tries to disconnect then reconnect the player in case the bot gets stuck on a song."""
         player = self.get_player(ctx.guild)
         current_channel = player.channel_id
@@ -515,7 +515,7 @@ class Music(commands.Cog):
         async def inner_reconnect():
             await player.stop()
             if ctx.voice_client:
-                await ctx.voice_client.disconnect()
+                await ctx.voice_client.disconnect(force)
                 await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
                 channel = ctx.guild.get_channel(current_channel)
                 await channel.connect(cls=BasicVoiceClient)
@@ -833,6 +833,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, _: discord.VoiceState, after: discord.VoiceState):
         """Updates listeners when the bot or a user changes voice state."""
+        self.logger.debug("Voice state update, member: %s, new_state: %s", member, after)
         if self.bot.user is None:
             return  # Bot not logged in
         if member.id == self.bot.user.id and after.channel is not None:
@@ -845,6 +846,11 @@ class Music(commands.Cog):
             for member in voice_channel.members:
                 if not member.bot:
                     player.update_listeners(member, member.voice)
+
+        if member.id == self.bot.user.id and after.channel is None:
+            voice_client: BasicVoiceClient
+            if voice_client := member.guild.voice_client:
+                await voice_client.disconnect(force=True)
 
         if not member.bot:
             try:

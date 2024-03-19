@@ -21,8 +21,8 @@ run: venv
     {{python}} bot.py
 
 # Run with debug logging enabled
-debug: run
-    --debug
+debug: venv
+    {{python}} bot.py --debug
 
 clean:
     rm -rf {{env_name}}
