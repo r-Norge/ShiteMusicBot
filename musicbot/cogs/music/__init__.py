@@ -515,7 +515,7 @@ class Music(commands.Cog):
         async def inner_reconnect():
             await player.stop()
             if ctx.voice_client:
-                await ctx.voice_client.disconnect(force)
+                await ctx.voice_client.disconnect(force=force)
                 await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
                 channel = ctx.guild.get_channel(current_channel)
                 await channel.connect(cls=BasicVoiceClient)
