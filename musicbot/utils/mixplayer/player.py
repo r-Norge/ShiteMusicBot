@@ -209,7 +209,13 @@ class MixPlayer(DefaultPlayer):
     async def handle_event(self, event):
         """Handles the given event as necessary."""
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
-                isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
+                (isinstance(event, TrackEndEvent) and event.reason.may_start_next()):
+            if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)):
+                self.logger.debug("Event stuck or except: %s" % event)
+            if isinstance(event, TrackEndEvent) and event.reason.may_start_next():
+                self.logger.debug("Event end: %s, %s, %s" % (event, event.reason, event.reason.may_start_next()))
+                if event.track is not None:
+                    self.logger.debug("Event end track: %s, pos: %s" % (event.track, event.track.position))
             self.logger.debug("Track ended, clearing votes")
             self.skip_voters.clear()
             for _, votes in self.voteables.items():
