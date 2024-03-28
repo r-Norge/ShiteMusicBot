@@ -1,5 +1,5 @@
 import codecs
-from typing import Optional
+from typing import List, Optional, Union
 
 import discord
 import lavalink
@@ -59,12 +59,12 @@ class NodeManager(commands.Cog):
                 if node['name'] in name_cache:
                     continue
 
-                self.lavalink.add_node(**node)
+                added = self.lavalink.add_node(**node)
 
                 self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (
                     node['name'], node['host'],
                     node['port'], node['region'],))
-                new_nodes.append({**node})
+                new_nodes.append(added)
                 name_cache.append(node['name'])
             return new_nodes
 
@@ -89,31 +89,27 @@ class NodeManager(commands.Cog):
         except KeyError:
             return ':question:'
 
-    async def _node_presenter(self, ctx, node):
+    async def _node_presenter(self, ctx, node: Union[List[lavalink.Node], lavalink.Node]):
         embed = discord.Embed(color=ctx.me.color)
         embed.title = 'Added new node!'
 
         if isinstance(node, list):
             for n in node:
                 embed.add_field(name=f'{await self._regioner(n.region)} **Name:** {n.name}',
-                                value=f'**Host:** {n.host}\n **Port:** {n.port}')
+                                value=f'**Host:** {n._transport._host}\n **Port:** {n._transport._port}')
 
         if isinstance(node, lavalink.Node):
             embed.add_field(name=f'{await self._regioner(node.region)} **Name:** {node.name}',
-                            value=f'**Host:** {node.host}\n **Port:** {node.port}')
-
-        if isinstance(node, dict):
-            embed.description = f'**Name:** {node.get("name")}\n **Host:** {node.get("host")}\n ' \
-                f'**Port:** {node.get("port")}\n **Region:** {await self._regioner(node.get("region"))}'
+                            value=f'**Host:** {node._transport._host}\n **Port:** {node._transport._port}')
 
         return embed
 
-    def get_node_properties(self, node):
+    def get_node_properties(self, node: lavalink.Node):
         return {
             'name': node.name,
-            'host': node.host,
-            'port': node.port,
-            'password': node.password,
+            'host': node._transport._host,
+            'port': node._transport._port,
+            'password': node._transport._password,
             'region': node.region
         }
 
@@ -140,10 +136,10 @@ class NodeManager(commands.Cog):
         if name in [n.name for n in self.lavalink.node_manager.nodes]:
             return await ctx.send("A node with that name already exists")
 
-        self.lavalink.add_node(host, port, password, region, name=name)
-        self.logger.debug("Adding Lavalink node: %s on %s with the port %s in %s" % (host, port, region, name,))
-        embed = await self._node_presenter(ctx, {'host': host, 'port': port, 'password': password,
-                                                 'region': region, 'name': name})
+        node = self.lavalink.add_node(host, port, password, region, name=name)
+        self.logger.debug("Adding Lavalink node: %s", (node))
+
+        embed = await self._node_presenter(ctx, node)
         embed.title = 'Added new node!'
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
@@ -166,13 +162,14 @@ class NodeManager(commands.Cog):
                 await ctx.send('Cannot remove the last node')
                 sent_feedback = True
                 break
-            if (_node.name or _node.host) == node:
+            if _node.name == node:
                 sent_feedback = True
                 embed = await self._node_presenter(ctx, _node)
                 embed.title = 'Removed node from bot'
                 await ctx.send(embed=embed)
-                self.lavalink.node_manager.remove_node(_node)
-                self.logger.info("Removed Lavalink node: %s, %s" % (_node.name, _node.host))
+                self.lavalink.node_manager.remove(_node)
+                await _node.destroy()
+                self.logger.info("Removed Lavalink node: %s" % (_node.name))
 
         self.settings.set('lavalink', 'nodes', [self.get_node_properties(n) for
                                                 n in self.lavalink.node_manager.nodes])
@@ -195,7 +192,7 @@ class NodeManager(commands.Cog):
         else:
             newnode = None
             for _node in self.lavalink.node_manager.nodes:
-                if (_node.name or _node.host) == node:
+                if _node.name == node:
                     newnode = _node
 
             if not newnode:

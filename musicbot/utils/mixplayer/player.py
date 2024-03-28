@@ -217,20 +217,23 @@ class MixPlayer(DefaultPlayer):
             await self.play()
 
     async def bassboost(self, boost: bool):
+        changed = self.boosted != boost
         self.boosted = boost
+        if changed:
+            self.logger.info(f"{'Enabling' if self.boosted else 'Disabling'} bass boost")
         if boost:
             await self.set_filter(self.bass_boost_filter)
         else:
-            self.logger.info("Disabling bass boost")
             await self.remove_filter(self.bass_boost_filter)
 
     async def nightcoreify(self, nightcore: bool):
+        changed = self.nightcore_enabled != nightcore
         self.nightcore_enabled = nightcore
+        if changed:
+            self.logger.info(f"{'Enabling' if self.nightcore_enabled else 'Disabling'} nightcore mode")
         if nightcore:
-            self.logger.info("Enabling nightcore mode")
             await self.set_filter(self.nightcore_filter)
         else:
-            self.logger.info("Disabling nightcore mode")
             await self.remove_filter(self.nightcore_filter)
 
     @property
