@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-# Discord Packages
-import discord
-
 from enum import Enum, auto
 from typing import Callable, Coroutine, List, Optional
 
+import discord
+
 from .paginators import TextPaginator
-from .scroller import ClearOn, Scroller
+from .scroller import ClearMode, Scroller
+
+
+def selector_button_callback(f):
+    def wrapper(*args, **kwargs):
+        async def base_button_callback(_interaction, _button):
+            # call the decorated function f with provided args and button info
+            return await f(_interaction, _button, *args, **kwargs)
+        return base_button_callback
+    return wrapper
 
 
 class SelectMode(Enum):
@@ -108,7 +116,6 @@ class Selector(TextPaginator, Scroller):
             self.view.remove_item(item=button)
 
         self.currently_visible_buttons = []
-        self.page_number
         start = self.page_number * self.selections_per_page
         end = min((self.page_number + 1) * self.selections_per_page, len(self.selections))
 
@@ -116,7 +123,7 @@ class Selector(TextPaginator, Scroller):
             self.view.add_item(item=button)
             self.currently_visible_buttons.append(button)
 
-    async def start_scrolling(self, clear_mode: ClearOn = ClearOn.Timeout,
+    async def start_scrolling(self, clear_mode: ClearMode = ClearMode.Timeout,
                               message: Optional[discord.Message] = None,
                               start_page: int = 0):
         message, timed_out = await super().start_scrolling(clear_mode, message, start_page)

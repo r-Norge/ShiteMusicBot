@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-# Discord Packages
-import discord
-
 import asyncio
 from enum import Flag, auto
 from typing import List, Optional, Tuple
 
+import discord
+
 from bot import MusicBot
 
-from .paginators import BasePaginator, CantScrollException
+from .navbar_range import NavBarRange
+from .paginators import BasePaginator, CantScrollError
+
+DISCORD_MAX_SELECTOR_OPTIONS = 25
 
 
-class ClearOn(Flag):
+class ClearMode(Flag):
     Timeout = auto()
     ManualExit = auto()
     AnyExit = Timeout | ManualExit
@@ -85,12 +87,12 @@ class Scroller:
         self.permissions = self.channel.permissions_for(bot_user)
 
         if not self.permissions.embed_links:
-            raise CantScrollException('Bot does not have embed links permission.')
+            raise CantScrollError('Bot does not have embed links permission.')
 
         if not self.permissions.send_messages:
-            raise CantScrollException('Bot cannot send messages.')
+            raise CantScrollError('Bot cannot send messages.')
 
-    async def start_scrolling(self, clear_mode: ClearOn,
+    async def start_scrolling(self, clear_mode: ClearMode,
                               message: Optional[discord.Message] = None,
                               start_page: int = 0) -> Tuple[discord.Message, bool]:
         self.clear_mode = clear_mode
@@ -110,7 +112,7 @@ class Scroller:
 
     def update_view(self):
         if self.use_nav_bar:
-            self.navigator.placeholder = f"Page: {self.page_number + 1}/{len(self.paginator.pages)}"
+            self._update_navbar_items()
 
         if self.is_scrolling_paginator:
             self.back_button.disabled = self.page_number == 0
@@ -121,10 +123,32 @@ class Scroller:
             self.view.add_item(item=button)
 
         if self.use_nav_bar:
-            self.navigator = ScrollerNav(self.navigate, placeholder="Navigate to page", row=4)
+            self.navigator = None
+            self._update_navbar_items()
+
+    def _update_navbar_items(self):
+        placeholder = f"Page: {self.page_number + 1}/{len(self.paginator.pages)}"
+        did_exist = False
+        # If we have more than 25 items, the navigator needs to be re-created.
+        num_selectable_items = len(self.paginator.pages)
+        if num_selectable_items > DISCORD_MAX_SELECTOR_OPTIONS and self.navigator is not None:
+            self.view.remove_item(self.navigator)
+            self.navigator = None
+            did_exist = True
+
+        if self.navigator is None:
+            if not did_exist:
+                placeholder = "Navigate to page"
+            self.navigator = ScrollerNav(self.navigate, placeholder=placeholder, row=4)
             self.view.add_item(item=self.navigator)
-            for (i, _) in enumerate(self.paginator.pages):
-                self.navigator.add_option(label=str(i+1), value=str(i))
+            navigatable_items = NavBarRange(num_items=num_selectable_items,
+                                            current_item=self.page_number,
+                                            max_iter_length=DISCORD_MAX_SELECTOR_OPTIONS,
+                                            add_ends=True)
+            for page in navigatable_items:
+                self.navigator.add_option(label=str(page+1), value=str(page))
+        else:
+            self.navigator.placeholder = placeholder
 
     async def stop(self, was_timeout: bool, clear_scroller_view: bool = True):
         self.is_scrolling_paginator = False
@@ -132,8 +156,8 @@ class Scroller:
         if clear_scroller_view:
             self.view.clear_items()
         self.timed_out = was_timeout
-        if (not was_timeout and self.clear_mode & ClearOn.ManualExit or
-                was_timeout and self.clear_mode & ClearOn.Timeout):
+        if (not was_timeout and self.clear_mode & ClearMode.ManualExit or
+                was_timeout and self.clear_mode & ClearMode.Timeout):
             if self.message:
                 await self.message.delete()
                 self.message = None

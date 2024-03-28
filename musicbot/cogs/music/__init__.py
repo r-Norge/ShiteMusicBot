@@ -1,34 +1,44 @@
-# Discord Packages
-import discord
-import lavalink
-from discord import VoiceChannel
-from discord.ext import commands, tasks
-from lavalink.events import (
-    NodeChangedEvent, NodeConnectedEvent, NodeDisconnectedEvent, PlayerUpdateEvent, QueueEndEvent, TrackEndEvent,
-    TrackStartEvent, TrackStuckEvent)
-from lavalink.models import AudioTrack
-
 import asyncio
 import re
 import urllib.parse as urlparse
 from typing import List, Optional, Tuple
 
+import discord
+import lavalink
+from discord import VoiceChannel
+from discord.ext import commands, tasks
+from lavalink import AudioTrack
+from lavalink.events import (
+    NodeChangedEvent,
+    NodeConnectedEvent,
+    NodeDisconnectedEvent,
+    PlayerUpdateEvent,
+    QueueEndEvent,
+    TrackEndEvent,
+    TrackStartEvent,
+    TrackStuckEvent,
+)
+
 from bs4 import BeautifulSoup
 
 from bot import MusicBot
-
-# Bot Utilities
+from musicbot.utils import checks, timeformatter
 from musicbot.utils.mixplayer.player import MixPlayer
-from ...utils import checks, timeformatter
-from ...utils.thumbnailer import Thumbnailer
-from ...utils.userinteraction.paginators import QueuePaginator, TextPaginator
-from ...utils.userinteraction.scroller import ClearOn, Scroller
-from ...utils.userinteraction.selector import SelectMode, Selector, SelectorButton, SelectorItem
+from musicbot.utils.thumbnailer import Thumbnailer
+from musicbot.utils.userinteraction.paginators import QueuePaginator, TextPaginator
+from musicbot.utils.userinteraction.scroller import ClearMode, Scroller
+from musicbot.utils.userinteraction.selector import (
+    SelectMode,
+    Selector,
+    SelectorButton,
+    SelectorItem,
+    selector_button_callback,
+)
+
 from .decorators import require_playing, require_queue, require_voice_connection, voteable
 from .music_errors import MusicError, PlayerNotAvailableError, WrongTextChannelError
 from .voice_client import BasicVoiceClient
 
-time_rx = re.compile('[0-9]+')
 url_rx = re.compile('https?:\\/\\/(?:www\\.)?.+')
 
 
@@ -54,7 +64,7 @@ class Music(commands.Cog):
         return True
 
     async def cog_before_invoke(self, ctx):
-        """ Ensures a valid player exists whenever a command is run """
+        """Ensures a valid player exists whenever a command is run."""
         # Creates a new only if one doesn't exist, ensures a valid player for all checks.
         if ctx.guild:
             self.lavalink.player_manager.create(ctx.guild.id)
@@ -174,40 +184,34 @@ class Music(commands.Cog):
     @commands.command(name='play')
     @require_voice_connection(should_connect=True)
     async def _play(self, ctx, *, query: str):
-        """ Searches and plays a song from a given query. """
+        """Searches and plays a song from a given query."""
         await self._search_and_play_query(ctx, query, check_max_length=True)
 
     @commands.command(name='forceplay')
     @require_voice_connection(should_connect=True)
     @voteable(DJ_override=True, react_to_vote=True)
     async def _forceplay(self, ctx, *, query: str):
-        """ Searches and plays a song from a given query, ignoring configured max duration. """
+        """Searches and plays a song from a given query, ignoring configured max duration."""
         await self._search_and_play_query(ctx, query, check_max_length=False)
 
     @commands.command(name='seek')
     @checks.dj_or(alone=True, track_requester=True)
     @require_voice_connection()
     @require_playing(require_user_listening=True)
-    async def _seek(self, ctx, *, time: str):
-        """ Seeks to a given position in a track. """
+    async def _seek(self, ctx, *, seconds: int):
+        """Seeks to a given position in a track."""
         player = self.get_player(ctx.guild)
-        if seconds := time_rx.search(time):
-            # Convert to milliseconds, include sign
-            milliseconds = int(seconds.group())*1000 * (-1 if time.startswith('-1') else 1)
-
-            track_time = player.position + milliseconds
-            await player.seek(int(track_time))
-            msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
-            await ctx.send(msg)
-        else:
-            await ctx.send(ctx.localizer.format_str("{seek.missing_amount}"))
+        track_time = player.position + seconds * 1000  # milliseconds
+        await player.seek(int(track_time))
+        msg = ctx.localizer.format_str("{seek.track_moved}", _position=timeformatter.format_ms(track_time))
+        return await ctx.send(msg)
 
     @commands.command(name='skip')
     @require_voice_connection()
     @require_playing()
     @voteable(requester_override=True, react_to_vote=True)
     async def _skip(self, ctx):
-        """ Skips the current track. """
+        """Skips the current track."""
         player = self.get_player(ctx.guild)
 
         await player.skip()
@@ -218,7 +222,7 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True)
     @require_playing(require_user_listening=True)
     async def _skip_to(self, ctx, pos: int = 1):
-        """ Plays the queue from a specific point. Disregards tracks before the pos. """
+        """Plays the queue from a specific point. Disregards tracks before the pos."""
         player = self.get_player(ctx.guild)
 
         # TODO: Do all queue out of range messages the same way
@@ -240,7 +244,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     @voteable(DJ_override=True, react_to_vote=True)
     async def _stop(self, ctx):
-        """ Stops the player and clears its queue. """
+        """Stops the player and clears its queue."""
         player = self.get_player(ctx.guild)
         player.queue.clear()
         await player.stop()
@@ -258,16 +262,16 @@ class Music(commands.Cog):
     @commands.command(name='queue')
     @require_queue(require_member_queue=True)
     async def _queue(self, ctx, *, member: Optional[discord.Member] = None):
-        """ Shows the player's queue. """
+        """Shows the player's queue."""
         player = self.get_player(ctx.guild)
         pagified_queue = QueuePaginator(ctx.localizer, player, color=ctx.me.color, member=member)
         scroller = Scroller(ctx, pagified_queue)
-        await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
+        await scroller.start_scrolling(ClearMode.ManualExit | ClearMode.Timeout)
 
     @commands.command(name='myqueue')
     @require_queue(require_author_queue=True)
     async def _myqueue(self, ctx):
-        """ Shows your queue. """
+        """Shows your queue."""
         await self._queue(ctx, member=ctx.author)
 
     @commands.command(name='pause')
@@ -275,7 +279,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_playing()
     async def _pause(self, ctx):
-        """ Pauses/Resumes the current track. """
+        """Pauses/Resumes the current track."""
         player = self.get_player(ctx.guild)
         await player.set_pause(not player.paused)
         if player.paused:
@@ -287,7 +291,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue(require_author_queue=True)
     async def _shuffle(self, ctx):
-        """ Shuffles your queue. """
+        """Shuffles your queue."""
         player = self.get_player(ctx.guild)
         player.shuffle_user_queue(ctx.author)
         await ctx.send(ctx.localizer.format_str("{shuffle}"))
@@ -296,12 +300,13 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue(require_author_queue=True)
     async def _move(self, ctx):
-        """ Moves a song in your queue. """
+        """Moves a song in your queue."""
         player = self.get_player(ctx.guild)
 
         # We create a new selector for each selection
         def build_move_selector(ctx, queue: List[AudioTrack], title: str, first: bool):
-            async def return_track(track):
+            @selector_button_callback
+            async def return_track(_interaction, _button, track):
                 return track
 
             choices = []
@@ -312,7 +317,7 @@ class Music(commands.Cog):
                 else:
                     prefix = f'`{index:<3}-> `\n`{blank}`'
                 label = f'{prefix} [{track.title}]({track.uri})'
-                selection = SelectorItem(label, str(index), wrap_in_button_callback(return_track, track))
+                selection = SelectorItem(label, str(index), return_track(track))
                 choices.append(selection)
 
             return Selector(ctx, choices, select_mode=SelectMode.SpanningMultiSelect, use_tick_for_stop_emoji=True,
@@ -323,7 +328,7 @@ class Music(commands.Cog):
         while True:
             # Prompt the user for which track to move
             selector = build_move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_pos}", True)
-            message, timed_out, track_to_move = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            message, timed_out, track_to_move = await selector.start_scrolling(ClearMode.Timeout, message, page)
             page = selector.page_number
 
             if not track_to_move or timed_out:
@@ -331,7 +336,7 @@ class Music(commands.Cog):
 
             # Prompt the user for where to move it
             selector = build_move_selector(ctx, player.user_queue(ctx.author), "{moved.choose_song}", False)
-            message, timed_out, track_to_replace = await selector.start_scrolling(ClearOn.Timeout, message, page)
+            message, timed_out, track_to_replace = await selector.start_scrolling(ClearMode.Timeout, message, page)
             page = selector.page_number
 
             if not track_to_replace or timed_out:
@@ -355,34 +360,27 @@ class Music(commands.Cog):
             await message.delete()
 
     async def _interactive_remove(self, ctx, queue: List[AudioTrack]):
-        """
-        Helper function for creating an interactive selector over a given queue
+        """Helper function for creating an interactive selector over a given queue
         in which will remove the selected tracks on exit.
         """
         player = self.get_player(ctx.guild)
 
         tracks_to_remove = []
 
-        async def update_remove_list(tracks_list, track: AudioTrack):
+        @selector_button_callback
+        async def update_remove_list(_interaction, button: SelectorButton, tracks_list, track: AudioTrack):
             # It seems duplicate songs still don't satisfy equality
-            # which meas remove is sufficient to preserve order
+            # which means remove is sufficient to preserve order
             # of similar items
             if track in tracks_list:
                 tracks_list.remove(track)
             else:
                 tracks_list.append(track)
 
-        # The callback from the selector takes a discord interaction and
-        # the button class. We wrap the track remove callback to handle those
-        # arguments and update button color
-        def add_change_button_color(func, *args):
-            async def inner(_, button: SelectorButton):
-                if button.style == discord.ButtonStyle.red:
-                    button.style = discord.ButtonStyle.gray
-                else:
-                    button.style = discord.ButtonStyle.red
-                return await func(*args)
-            return inner
+            if button.style == discord.ButtonStyle.red:
+                button.style = discord.ButtonStyle.gray
+            else:
+                button.style = discord.ButtonStyle.red
 
         selector_buttons = []
         # Build each selection from the queue, a visible string and a callback.
@@ -390,11 +388,11 @@ class Music(commands.Cog):
             requester = self.bot.get_user(track.requester)
             selector_buttons.append(
                 SelectorItem(f'`{index}` [{track.title}]({track.uri}) - {requester.mention if requester else ""}',
-                             str(index), add_change_button_color(update_remove_list, tracks_to_remove, track)))
+                             str(index), update_remove_list(tracks_to_remove, track)))
 
         remove_selector = Selector(ctx, selector_buttons, select_mode=SelectMode.MultiSelect,
                                    use_tick_for_stop_emoji=True, color=ctx.me.color, title='Select songs to remove')
-        _, timed_out, _ = await remove_selector.start_scrolling(ClearOn.AnyExit)
+        _, timed_out, _ = await remove_selector.start_scrolling(ClearMode.AnyExit)
 
         # If any tracks were removed create a scroller for navigating them
         if tracks_to_remove and not timed_out:
@@ -414,13 +412,13 @@ class Music(commands.Cog):
 
             paginator.close_page()
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ClearOn.ManualExit | ClearOn.Timeout)
+            await scroller.start_scrolling(ClearMode.ManualExit | ClearMode.Timeout)
 
     @commands.command(name='remove')
     @require_voice_connection()
     @require_queue(require_author_queue=True)
     async def _remove(self, ctx):
-        """ Remove a song from your queue. """
+        """Remove a song from your queue."""
         player = self.get_player(ctx.guild)
         return await self._interactive_remove(ctx, player.user_queue(ctx.author))
 
@@ -429,7 +427,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue()
     async def _djremove(self, ctx, member: Optional[discord.Member] = None):
-        """ Remove a song from either the global queue or a users queue"""
+        """Remove a song from either the global queue or a users queue."""
         player = self.get_player(ctx.guild)
         # TODO: add way to allow "member" as regular arg in require_queue() instead of only kwargs
         queue = player.user_queue(member) if member else player.global_queue()
@@ -440,7 +438,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_queue(require_member_queue=True)
     async def _user_queue_remove(self, ctx, *, member: discord.Member):
-        """ Remove a song from either the global queue or a users queue"""
+        """Remove a song from either the global queue or a users queue."""
         player = self.get_player(ctx.guild)
         player.remove_user_queue(member)
 
@@ -465,19 +463,24 @@ class Music(commands.Cog):
             embed = ctx.localizer.format_embed(embed)
             return await ctx.send(embed=embed)
 
+        def make_enqueue_callback(func, *args):
+            """Take a callback and convert it to the form required by a SelectorItem."""
+            async def inner(_interaction, _button):
+                return await func(*args)
+            return inner
+
         # This is the base embed that will be modified by the selector
         embed = discord.Embed(color=ctx.me.color)
         buttons = []
         for i, track in enumerate(results['tracks'], start=1):
             duration = timeformatter.format_ms(int(track.duration))
             interaction = SelectorItem(f'`{i}` [{track.title}]({track.uri}) `{duration}`', str(i),
-                                       wrap_in_button_callback(
-                                           self.enqueue, ctx, track, embed))
+                                       make_enqueue_callback(self.enqueue, ctx, track, embed))
             buttons.append(interaction)
 
         search_selector = Selector(ctx, buttons, select_mode=SelectMode.SingleSelect,
                                    color=ctx.me.color, title=ctx.localizer.format_str('{results}'))
-        message, timed_out, _ = await search_selector.start_scrolling(ClearOn.Timeout)
+        message, timed_out, _ = await search_selector.start_scrolling(ClearMode.Timeout)
 
         if timed_out:
             return
@@ -491,7 +494,7 @@ class Music(commands.Cog):
     @require_voice_connection()
     @voteable(DJ_override=True, react_to_vote=True)
     async def _disconnect(self, ctx):
-        """ Disconnects the player from the voice channel and clears its queue. """
+        """Disconnects the player from the voice channel and clears its queue."""
         player = self.get_player(ctx.guild)
 
         player.queue.clear()
@@ -504,15 +507,15 @@ class Music(commands.Cog):
     @commands.command(name='reconnect')
     @require_voice_connection()
     @voteable(DJ_override=True, react_to_vote=True)
-    async def _reconnect(self, ctx):
-        """ Tries to disconnect then reconnect the player in case the bot gets stuck on a song """
+    async def _reconnect(self, ctx, force: bool = False):
+        """Tries to disconnect then reconnect the player in case the bot gets stuck on a song."""
         player = self.get_player(ctx.guild)
         current_channel = player.channel_id
 
         async def inner_reconnect():
             await player.stop()
             if ctx.voice_client:
-                await ctx.voice_client.disconnect()
+                await ctx.voice_client.disconnect(force=force)
                 await asyncio.sleep(1)  # Pretend stuff is happening/give everything some time to reset.
                 channel = ctx.guild.get_channel(current_channel)
                 await channel.connect(cls=BasicVoiceClient)
@@ -530,7 +533,7 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True, track_requester=True)
     @require_playing(require_user_listening=True)
     async def _volume(self, ctx, volume: Optional[int] = None):
-        """ Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink. """
+        """Changes the player's volume. Must be between 0 and 1000. Error Handling for that is done by Lavalink."""
         player = self.get_player(ctx.guild)
 
         if not volume:
@@ -550,7 +553,7 @@ class Music(commands.Cog):
     @commands.command(name='forcedisconnect')
     @checks.dj_or(alone=True)
     async def _forcedisconnect(self, ctx):
-        """ Attempts to force disconnect the bot without checking if it is connected initially. """
+        """Attempts to force disconnect the bot without checking if it is connected initially."""
         try:
             player = self.get_player(ctx.guild)
             player.queue.clear()
@@ -567,7 +570,7 @@ class Music(commands.Cog):
     @checks.dj_or(alone=True)
     @require_voice_connection()
     async def _normalize(self, ctx):
-        """ Reset the equalizer and volume """
+        """Reset the equalizer and volume."""
         player = self.get_player(ctx.guild)
 
         await player.set_volume(100)
@@ -581,7 +584,7 @@ class Music(commands.Cog):
     @commands.command(name='boost')
     @checks.dj_or(alone=True)
     async def _boost(self, ctx, boost: bool = False):
-        """ Set the equalizer to bass boost the music """
+        """Set the equalizer to bass boost the music."""
         player = self.get_player(ctx.guild)
 
         if boost is not None:
@@ -596,7 +599,7 @@ class Music(commands.Cog):
     @commands.command(name='nightcore')
     @checks.dj_or(alone=True)
     async def _nightcore(self, ctx, boost: bool = False):
-        """ Set a filter mimicking nightcore the music """
+        """Set a filter mimicking nightcore the music."""
         player = self.get_player(ctx.guild)
 
         await player.nightcoreify(boost)
@@ -608,7 +611,7 @@ class Music(commands.Cog):
 
     @commands.command(name='history')
     async def _history(self, ctx):
-        """ Show the last 10 songs played """
+        """Show the last 10 songs played."""
         player = self.get_player(ctx.guild)
         history = player.get_history()
         if not history:
@@ -634,7 +637,7 @@ class Music(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.guild)
     @commands.command(name='lyrics')
     async def _lyrics(self, ctx, *query: str):
-        """ Search for lyrics of a song """
+        """Search for lyrics of a song."""
         # Check for API key
         if not (genius_access_token := self.bot.APIkeys.get('genius')):
             return await ctx.send(ctx.localizer.format_str('{errors.missing_api_key}'))
@@ -726,7 +729,7 @@ class Music(commands.Cog):
                 await ctx.send(embed=page)
         else:
             paginator.add_page_indicator(ctx.localizer)
-            await Scroller(ctx, paginator).start_scrolling(ClearOn.AnyExit)
+            await Scroller(ctx, paginator).start_scrolling(ClearMode.AnyExit)
 
         # Since we are using a paginator, we need to delete the status message
         # because the final output may consist of multiple pages
@@ -737,34 +740,31 @@ class Music(commands.Cog):
     @require_voice_connection()
     @require_playing(require_user_listening=True)
     async def _scrub(self, ctx):
-        """ Shows a set of controls which can be used to skip forward or backwards in the song """
+        """Shows a set of controls which can be used to skip forward or backwards in the song."""
         player = self.get_player(ctx.guild)
         controls = '{scrub.controls}'
 
-        def seek_callback(player: MixPlayer, seconds):
-            async def inner(_interaction, _button):
-                newpos = player.position + seconds * 1000
-                return await player.seek(newpos)
-            return inner
+        @selector_button_callback
+        async def seek(_interacton, _button, seconds):
+            newpos = player.position + seconds * 1000
+            return await player.seek(newpos)
 
-        def toggle_pause_callback(player: MixPlayer):
-            async def inner(_interaction, button):
-                should_pause = not player.paused
-                button.style = discord.ButtonStyle.red if should_pause else discord.ButtonStyle.gray
-                return await player.set_pause(should_pause)
-            return inner
+        @selector_button_callback
+        async def toggle_pause(_interaction, button: SelectorButton):
+            should_pause = not player.paused
+            button.style = discord.ButtonStyle.red if should_pause else discord.ButtonStyle.gray
+            return await player.set_pause(should_pause)
 
         scrubber_controls = [
-            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, -1000)),
-            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek_callback(player, -15)),
-            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}',
-                         toggle_pause_callback(player)),
-            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek_callback(player, 15)),
-            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek_callback(player, 1000))
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek(-1000)),
+            SelectorItem("", '\N{BLACK LEFT-POINTING DOUBLE TRIANGLE}', seek(-15)),
+            SelectorItem("", '\N{Black Right-Pointing Triangle with Double Vertical Bar}', toggle_pause()),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE}', seek(15)),
+            SelectorItem("", '\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', seek(1000))
         ]
         scrubber = Selector(ctx, scrubber_controls, select_mode=SelectMode.MultiSelect, use_tick_for_stop_emoji=True,
                             default_text=ctx.localizer.format_str(controls), color=ctx.me.color)
-        await scrubber.start_scrolling(ClearOn.AnyExit)
+        await scrubber.start_scrolling(ClearMode.AnyExit)
 
     @commands.group(name='loop')
     async def _loop(self, ctx):
@@ -783,7 +783,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     @voteable(DJ_override=True, react_to_vote=True)
     async def _loop_start(self, ctx):
-        """ Set the equalizer to bass boost the music """
+        """Set the equalizer to bass boost the music."""
         player = self.get_player(ctx.guild)
         player.enable_looping(True)
         embed = discord.Embed(color=ctx.me.color)
@@ -795,7 +795,7 @@ class Music(commands.Cog):
     @require_playing(require_user_listening=True)
     @voteable(DJ_override=True, react_to_vote=True)
     async def _loop_stop(self, ctx):
-        """ Set the equalizer to bass boost the music """
+        """Set the equalizer to bass boost the music."""
         player = self.get_player(ctx.guild)
         player.enable_looping(False)
         embed = discord.Embed(color=ctx.me.color)
@@ -832,7 +832,8 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, _: discord.VoiceState, after: discord.VoiceState):
-        """ Updates listeners when the bot or a user changes voice state """
+        """Updates listeners when the bot or a user changes voice state."""
+        self.logger.debug("Voice state update, member: %s, new_state: %s", member, after)
         if self.bot.user is None:
             return  # Bot not logged in
         if member.id == self.bot.user.id and after.channel is not None:
@@ -846,6 +847,11 @@ class Music(commands.Cog):
                 if not member.bot:
                     player.update_listeners(member, member.voice)
 
+        if member.id == self.bot.user.id and after.channel is None:
+            voice_client: BasicVoiceClient
+            if voice_client := member.guild.voice_client:
+                await voice_client.disconnect(force=True)
+
         if not member.bot:
             try:
                 player = self.get_player(member.guild)
@@ -855,14 +861,15 @@ class Music(commands.Cog):
             await self.check_leave_voice(member.guild)
 
     async def check_leave_voice(self, guild: discord.Guild):
-        """ Checks if the bot should leave the voice channel """
+        """Checks if the bot should leave the voice channel."""
         # TODO, disconnect timer?
         player = self.get_player(guild)
         if len(player.listeners) == 0 and player.is_connected:
             if player.queue.empty and player.current is None:
                 await player.stop()
+                voice_client: BasicVoiceClient
                 if voice_client := guild.voice_client:
-                    await voice_client.disconnect(force=False)
+                    await voice_client.disconnect(force=True)
 
     async def leave_check(self):
         for player_id in self.lavalink.player_manager.players:
@@ -876,15 +883,6 @@ class Music(commands.Cog):
         except Exception as err:
             self.logger.error("Error in leave_timer loop")
             self.logger.exception(err)
-
-
-def wrap_in_button_callback(func, *args):
-    """
-    Take a callback and convert it to the form required by a SelectorItem
-    """
-    async def inner(_interaction, _button):
-        return await func(*args)
-    return inner
 
 
 async def setup(bot):

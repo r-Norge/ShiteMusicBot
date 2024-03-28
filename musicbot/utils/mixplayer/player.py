@@ -1,12 +1,11 @@
-# Discord Packages
+import logging
+from typing import Dict, List, Optional, Set, Tuple
+
 import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
 from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
 from lavalink.filters import Equalizer, Timescale
-
-import logging
-from typing import Dict, List, Optional, Set, Tuple
 
 from .mixqueue import MixQueue
 
@@ -42,18 +41,18 @@ class MixPlayer(DefaultPlayer):
 
     def add(self, requester: RequesterType, track: AudioTrack,
             pos: Optional[int] = None) -> Tuple[AudioTrack, int, int]:
-        """ Adds a track to the queue. """
+        """Adds a track to the queue."""
         track, global_position, localpos = self.queue.add_track(requester.id, track, pos)
         self.logger.info(f"Track {track.title} added for {requester.display_name} @ ({global_position}, {localpos}).")
         return track, global_position, localpos
 
     def add_priority(self, track: AudioTrack):
-        """ Adds a track to beginning of the queue """
+        """Adds a track to beginning of the queue."""
         self.queue.add_priorty_queue_track(track)
         self.logger.info(f"Track {track} added to priority queue.")
 
     def move_user_track(self, requester: RequesterType, initial: int, final: int):
-        """ Moves a track in a users queue"""
+        """Moves a track in a users queue."""
         if moved := self.queue.move_user_track(requester.id, initial, final):
             self.logger.info(f"Track {moved.title} moved from {initial} to {final}" +
                              f"for in queue for {requester.display_name}")
@@ -66,7 +65,7 @@ class MixPlayer(DefaultPlayer):
             self.logger.debug(f"User {requester.display_name} has no more tracks. Remove from queue")
 
     def remove_user_track(self, requester: RequesterType, pos: int) -> Optional[AudioTrack]:
-        """ Removes the song at <pos> from the queue of requester """
+        """Removes the song at <pos> from the queue of requester."""
         if track := self.queue.remove_user_track(requester.id, pos):
             self.logger.info(f"Track {track.title} for requester {requester.display_name} removed.")
             return track
@@ -75,11 +74,11 @@ class MixPlayer(DefaultPlayer):
         return self.queue.remove_track(track)
 
     def remove_global_track(self, pos: int) -> Optional[AudioTrack]:
-        """ Removes the song at <pos> in the global queue """
+        """Removes the song at <pos> in the global queue."""
         return self.queue.remove_global_track(pos)
 
     def shuffle_user_queue(self, requester: RequesterType):
-        """ Randomly reorders the queue of requester """
+        """Randomly reorders the queue of requester."""
         self.queue.shuffle_user_queue(requester.id)
 
     def user_queue(self, requester: RequesterType) -> List[AudioTrack]:
@@ -124,7 +123,7 @@ class MixPlayer(DefaultPlayer):
                 await self.bassboost(False)
                 await self.nightcoreify(False)
                 await self.stop()
-                await self.node._dispatch_event(QueueEndEvent(self))
+                await self.client._dispatch_event(QueueEndEvent(self))
                 return
             else:
                 # At this point track will not be None, as the queue is not empty
@@ -134,13 +133,13 @@ class MixPlayer(DefaultPlayer):
         if track is None or track.track is None:
             # Ignore, if the queue was empty we would have dispatched the event already
             return
-        await self.node._send(op='play', guildId=str(self.guild_id),
-                              track=track.track, startTime=start_time)
-        await self.node._dispatch_event(TrackStartEvent(self, track))
+        await self.play_track(track, start_time)
+
+        await self.client._dispatch_event(TrackStartEvent(self, track))
         self.logger.info(f"Playing track: {track.title}")
 
     async def skip(self, pos: int = 0):
-        """ Plays the next track in the queue, if any. """
+        """Plays the next track in the queue, if any."""
         for _ in range(pos):
             track = self.queue.pop_first()
             self.logger.debug(f"Track {track} skipped")
@@ -149,8 +148,9 @@ class MixPlayer(DefaultPlayer):
         await self.play()
 
     async def stop(self):
-        """ Stops the player. """
-        await self.node._send(op='stop', guildId=str(self.guild_id))
+        """Stops the player."""
+        # await self.node._send(op='stop', guildId=str(self.guild_id))
+        await super().stop()
         self.current = None
         self.queue.enable_looping(False)
         self.logger.info("Music player stopped, clearing current track and stopping looping")
@@ -207,9 +207,15 @@ class MixPlayer(DefaultPlayer):
             self.queue.enable_looping(looping)
 
     async def handle_event(self, event):
-        """ Handles the given event as necessary. """
+        """Handles the given event as necessary."""
         if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
-                isinstance(event, TrackEndEvent) and event.reason == 'FINISHED':
+                (isinstance(event, TrackEndEvent) and event.reason.may_start_next()):
+            if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)):
+                self.logger.debug("Event stuck or except: %s" % event)
+            if isinstance(event, TrackEndEvent) and event.reason.may_start_next():
+                self.logger.debug("Event end: %s, %s, %s" % (event, event.reason, event.reason.may_start_next()))
+                if event.track is not None:
+                    self.logger.debug("Event end track: %s, pos: %s" % (event.track, event.track.position))
             self.logger.debug("Track ended, clearing votes")
             self.skip_voters.clear()
             for _, votes in self.voteables.items():
@@ -217,20 +223,23 @@ class MixPlayer(DefaultPlayer):
             await self.play()
 
     async def bassboost(self, boost: bool):
+        changed = self.boosted != boost
         self.boosted = boost
+        if changed:
+            self.logger.info(f"{'Enabling' if self.boosted else 'Disabling'} bass boost")
         if boost:
             await self.set_filter(self.bass_boost_filter)
         else:
-            self.logger.info("Disabling bass boost")
             await self.remove_filter(self.bass_boost_filter)
 
     async def nightcoreify(self, nightcore: bool):
+        changed = self.nightcore_enabled != nightcore
         self.nightcore_enabled = nightcore
+        if changed:
+            self.logger.info(f"{'Enabling' if self.nightcore_enabled else 'Disabling'} nightcore mode")
         if nightcore:
-            self.logger.info("Enabling nightcore mode")
             await self.set_filter(self.nightcore_filter)
         else:
-            self.logger.info("Disabling nightcore mode")
             await self.remove_filter(self.nightcore_filter)
 
     @property

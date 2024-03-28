@@ -1,12 +1,11 @@
-# Discord Packages
+import sys
+
 import discord
 from discord.ext import commands
 
-import sys
-
 from bot import MusicBot
+from musicbot.utils.userinteraction import ClearMode, Scroller
 
-from ..utils.userinteraction import ClearOn, Scroller
 from .helpformatter import commandhelper
 from .music import music_errors
 
@@ -31,7 +30,7 @@ class Errors(commands.Cog):
                 isinstance(err, commands.BadArgument)):
             paginator = commandhelper(ctx, ctx.command, ctx.invoker, include_subcmd=False)
             scroller = Scroller(ctx, paginator)
-            await scroller.start_scrolling(ClearOn.AnyExit)
+            await scroller.start_scrolling(ClearMode.AnyExit)
 
         if isinstance(err, (commands.CommandNotFound)):
             return

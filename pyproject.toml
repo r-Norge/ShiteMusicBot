@@ -1,0 +1,16 @@
+
+
+# Required in order to make pytest handle imports correctly.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+# Allow lines to be as long as 120 characters.
+lint.select = ["F", "E", "B", "W", "I001"]
+line-length = 120
+
+[tool.ruff.lint.isort]
+section-order = ["future", "standard-library", "discord", "third-party", "first-party", "local-folder"]
+[tool.ruff.lint.isort.sections]
+"discord" = ["discord", "lavalink"]
+

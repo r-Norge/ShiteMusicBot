@@ -1,9 +1,9 @@
-# Discord Packages
-import discord
-
 from typing import Optional
 
-from ...mixplayer.player import MixPlayer
+import discord
+
+from musicbot.utils.mixplayer.player import MixPlayer
+
 from .textpaginator import TextPaginator
 
 

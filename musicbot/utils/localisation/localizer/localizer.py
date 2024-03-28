@@ -1,10 +1,9 @@
-# Discord Packages
-from discord import Embed
-
 import copy
 import re
 from glob import glob
 from os import path
+
+from discord import Embed
 
 import yaml
 
@@ -40,7 +39,7 @@ class Localizer:
             self._load_localization(lang)
 
         self.all_localizations = flatten(self.localization_table)
-        for lang, d in self.localization_table.items():
+        for lang, _ in self.localization_table.items():
             self.localization_table[lang] = Localizer._parse_localization_dictionary(self.localization_table[lang],
                                                                                      self.all_localizations)
 
@@ -69,7 +68,7 @@ class Localizer:
 
             l_table = flatten(l_table)
             # parsing a few times to resolve all values
-            for i in range(0, 5):
+            for _ in range(0, 5):
                 l_table = Localizer._parse_localization_dictionary(l_table, l_table)
 
             self.localization_table[lang] = Localizer._parse_localization_dictionary(l_table, l_table)
@@ -79,7 +78,7 @@ class Localizer:
     def _parse_localization_dictionary(d, lookup, prefix=None):
         n_dict = {}
         for k, v in d.items():
-            if type(v) is str:
+            if isinstance(v, str):
                 n_dict[k] = Localizer._parse_localization_string(v, lookup, prefix)
             else:
                 n_dict[k] = v
@@ -138,11 +137,11 @@ class Localizer:
         cursorQueue = [nd]
         while cursorQueue:
             cursor = cursorQueue.pop()
-            for k, v in (cursor.items() if type(cursor) == dict else enumerate(cursor)):
-                if type(v) == str:
+            for k, v in (cursor.items() if isinstance(cursor, dict) else enumerate(cursor)):
+                if isinstance(v, str):
                     # insert translations based on lang
                     cursor[k] = self.format_str(v, lang, prefix, **kvpairs)
-                elif type(v) == dict or type(v) == list:
+                elif isinstance(v, dict) or isinstance(v, list):
                     cursorQueue.append(v)
 
         return nd

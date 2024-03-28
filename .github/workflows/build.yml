@@ -4,25 +4,9 @@ on: [push, pull_request]
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      CheckFiles: "bot.py musicbot/"
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4.5.0
-        with:
-          python-version: 3.10.7
-
-      - name: Lint with flake8
-        run: |
-          pip install flake8
-          flake8 ${CheckFiles}
-
-      - name: Check with Isort
-        run: |
-          pip install isort
-          isort --check --sp setup.cfg ${CheckFiles}
+      - uses: chartboost/ruff-action@v1
 
   test:
     runs-on: ubuntu-latest

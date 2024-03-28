@@ -1,9 +1,8 @@
-# Discord Packages
-from discord.ext import commands
-
 import re
 
-from ...utils.userinteraction import HelpPaginator
+from discord.ext import commands
+
+from musicbot.utils.userinteraction import HelpPaginator
 
 usermention = r"<@!?\d{17,19}>"
 
@@ -91,14 +90,14 @@ def commandhelper(ctx, command, invoker, include_subcmd=True):
     description = f"```{description}```"
     paginator = HelpPaginator(max_size=5000, max_fields=5, color=ctx.me.color, title=cmd, description=description)
 
-    for sub_command, sub_cmd_dict in sub_commands.items():
+    for _sub_command, sub_cmd_dict in sub_commands.items():
         paginator.add_command_field(sub_cmd_dict)
     paginator.add_page_indicator(ctx.localizer, "{pageindicator}", _prefix=ctx.prefix)
     return paginator
 
 
 def prefix_cleaner(ctx):
-    """ Changes mentions to prefixes when commands are invoked with mentions."""
+    """Changes mentions to prefixes when commands are invoked with mentions."""
     bot = ctx.bot
     prefix = ctx.prefix
     if re.match(usermention, prefix):
