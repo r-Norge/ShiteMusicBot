@@ -84,7 +84,7 @@ networks:
 services:
     lavalink:
         hostname: lavalink
-        image: fredboat/lavalink:dev
+        image: ghcr.io/lavalink-devs/lavalink:4
         networks:
           - internal
         volumes:
