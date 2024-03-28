@@ -1,4 +1,5 @@
 import asyncio
+import random
 import re
 import urllib.parse as urlparse
 from typing import List, Optional, Tuple
@@ -15,6 +16,7 @@ from lavalink.events import (
     PlayerUpdateEvent,
     QueueEndEvent,
     TrackEndEvent,
+    TrackExceptionEvent,
     TrackStartEvent,
     TrackStuckEvent,
 )
@@ -807,6 +809,30 @@ class Music(commands.Cog):
         self.lavalink._event_hooks.clear()
 
     async def track_hook(self, event):
+        if isinstance(event, TrackExceptionEvent):
+            if isinstance(event, TrackExceptionEvent):
+                self.logger.debug("Event stuck or except: %s" % event)
+                self.logger.debug("Event except: %s" % event.track)
+                self.logger.debug("Event except msg: %s" % event.message)
+                self.logger.debug("Event except sev: %s" % event.severity)
+                self.logger.debug("Got track exception, trying to switch node")
+            track = None
+            if isinstance(event, TrackEndEvent):
+                self.logger.debug("TrackEndEvent %s" % event.reason)
+                track = event.track
+
+            self.logger.debug("Got trackexception")
+            player = event.player
+            nodes = self.lavalink.node_manager.nodes
+            for node in random.sample(nodes, len(nodes)):
+                if node != player.node:
+                    self.logger.debug("Changing node to %s" % node)
+                    await player.change_node(node)
+                    await asyncio.sleep(2)
+                    if track:
+                        self.logger.debug("Trying to restart track %s" % track)
+                        await player.play(track)
+                    return
         if isinstance(event, TrackEndEvent):
             if channel := self.bot.get_channel(event.player.fetch('channel')):
                 if isinstance(channel, VoiceChannel):
@@ -829,6 +855,7 @@ class Music(commands.Cog):
             pass
         if isinstance(event, TrackStuckEvent):
             pass
+        return
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, _: discord.VoiceState, after: discord.VoiceState):

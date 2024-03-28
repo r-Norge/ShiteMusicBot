@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import discord
 import lavalink
 from lavalink import AudioTrack, DefaultPlayer, Node
-from lavalink.events import QueueEndEvent, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent
+from lavalink.events import QueueEndEvent, TrackEndEvent, TrackStartEvent, TrackStuckEvent
 from lavalink.filters import Equalizer, Timescale
 
 from .mixqueue import MixQueue
@@ -208,10 +208,7 @@ class MixPlayer(DefaultPlayer):
 
     async def handle_event(self, event):
         """Handles the given event as necessary."""
-        if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)) or \
-                (isinstance(event, TrackEndEvent) and event.reason.may_start_next()):
-            if isinstance(event, (TrackStuckEvent, TrackExceptionEvent)):
-                self.logger.debug("Event stuck or except: %s" % event)
+        if isinstance(event, TrackStuckEvent) or isinstance(event, TrackEndEvent) and event.reason.may_start_next():
             if isinstance(event, TrackEndEvent) and event.reason.may_start_next():
                 self.logger.debug("Event end: %s, %s, %s" % (event, event.reason, event.reason.may_start_next()))
                 if event.track is not None:
