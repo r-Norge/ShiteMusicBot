@@ -559,11 +559,18 @@ class Music(commands.Cog):
         try:
             player = self.get_player(ctx.guild)
             player.queue.clear()
+            # Hopefully helps
+            player.channel_id = None
             await player.stop()
         except Exception as e:
             self.logger.error("Error forcedisconnecting")
             self.logger.exception(e)
-        await ctx.voice_client.disconnect(force=True)
+
+        if ctx.voice_client:
+            await ctx.voice_client.disconnect(force=True)
+        else:
+            self.logger.error("Voice client no longer exists")
+
         embed = discord.Embed(description='{disconnect.disconnected}', color=ctx.me.color)
         embed = ctx.localizer.format_embed(embed)
         await ctx.send(embed=embed)

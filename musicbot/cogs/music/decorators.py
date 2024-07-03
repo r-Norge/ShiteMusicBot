@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import logging
 import math
 
 import discord
@@ -10,6 +11,8 @@ from musicbot.utils.mixplayer.player import MixPlayer
 
 from . import music_errors
 from .voice_client import BasicVoiceClient
+
+logger = logging.getLogger("musicbot").getChild("decorators")
 
 
 def require_voice_connection(should_connect=False):
@@ -50,9 +53,15 @@ def require_voice_connection(should_connect=False):
                 await ctx.author.voice.channel.connect(cls=BasicVoiceClient)
 
             elif player.channel_id and int(player.channel_id) != ctx.author.voice.channel.id:
-                bot_channel = self.bot.get_channel(int(player.channel_id))
-                raise music_errors.UserInDifferentVoiceChannelError('You need to be in my voice channel',
-                                                                    channel=bot_channel)
+                if ctx.voice_client:
+                    bot_channel = self.bot.get_channel(int(player.channel_id))
+                    raise music_errors.UserInDifferentVoiceChannelError('You need to be in my voice channel',
+                                                                        channel=bot_channel)
+                else:
+                    # We are not connected anymore
+                    logger.debug("Voice client no longer exists, clear voice state")
+                    player.channel_id = None
+                    player._voice_state.clear()
 
             await func(self, ctx, *command_args, **kwargs)
 
